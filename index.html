@@ -248,6 +248,36 @@
 
     <div class="card">
       <div class="card-header">
+        <div class="card-icon orange"><i class="fas fa-fire"></i></div>
+        <div>
+          <div class="card-title">Energy & Protein Requirements</div>
+          <div class="card-subtitle">Real-time calculation × Body Weight</div>
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Body Weight for Calculation (kg)</label>
+        <input type="number" class="input-field" id="req-body-weight" placeholder="Use ABW from above" step="0.1" oninput="calculateRequirementsRealtime()">
+      </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label">Energy Factor (kcal/kg)</label>
+          <input type="number" class="input-field" id="energy-factor" placeholder="25-35" step="0.1" oninput="calculateRequirementsRealtime()">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Protein Factor (g/kg)</label>
+          <input type="number" class="input-field" id="protein-factor" placeholder="0.8-2.0" step="0.1" oninput="calculateRequirementsRealtime()">
+        </div>
+      </div>
+      <div id="req-results" class="result-box">
+        <div class="result-grid">
+          <div class="result-item"><div class="result-value" id="res-energy-req">--</div><div class="result-label">Energy (kcal/day)</div></div>
+          <div class="result-item"><div class="result-value" id="res-protein-req">--</div><div class="result-label">Protein (g/day)</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
         <div class="card-icon green"><i class="fas fa-balance-scale"></i></div>
         <div>
           <div class="card-title">Estimate Body Weight</div>
@@ -312,35 +342,6 @@
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-header">
-        <div class="card-icon orange"><i class="fas fa-fire"></i></div>
-        <div>
-          <div class="card-title">Energy & Protein Requirements</div>
-          <div class="card-subtitle">Real-time calculation × Body Weight</div>
-        </div>
-      </div>
-      <div class="input-group">
-        <label class="input-label">Body Weight for Calculation (kg)</label>
-        <input type="number" class="input-field" id="req-body-weight" placeholder="Use ABW from above" step="0.1" oninput="calculateRequirementsRealtime()">
-      </div>
-      <div class="input-row">
-        <div class="input-group">
-          <label class="input-label">Energy Factor (kcal/kg)</label>
-          <input type="number" class="input-field" id="energy-factor" placeholder="25-35" step="0.1" oninput="calculateRequirementsRealtime()">
-        </div>
-        <div class="input-group">
-          <label class="input-label">Protein Factor (g/kg)</label>
-          <input type="number" class="input-field" id="protein-factor" placeholder="0.8-2.0" step="0.1" oninput="calculateRequirementsRealtime()">
-        </div>
-      </div>
-      <div id="req-results" class="result-box">
-        <div class="result-grid">
-          <div class="result-item"><div class="result-value" id="res-energy-req">--</div><div class="result-label">Energy (kcal/day)</div></div>
-          <div class="result-item"><div class="result-value" id="res-protein-req">--</div><div class="result-label">Protein (g/day)</div></div>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- Tab 2: Pediatrics -->
@@ -1008,6 +1009,42 @@
         </div>
       </div>
     </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon teal"><i class="fas fa-tint"></i></div>
+        <div>
+          <div class="card-title">Ketocal 4:1 Dilution</div>
+          <div class="card-subtitle">Powder & water for desired strength & volume</div>
+        </div>
+      </div>
+      <div class="formula-note" style="margin-top: 0; margin-bottom: 14px;">
+        <small><i class="fas fa-info-circle"></i> Standard: 14.2g powder + 86ml water = 100ml milk at full strength</small>
+      </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label">Strength</label>
+          <select class="input-field" id="dilution-strength" oninput="calculateDilution()">
+            <option value="1.0">Full strength (1.0)</option>
+            <option value="0.75">¾ strength (0.75)</option>
+            <option value="0.67">⅔ strength (0.67)</option>
+            <option value="0.5">½ strength (0.5)</option>
+            <option value="0.33">⅓ strength (0.33)</option>
+            <option value="0.25">¼ strength (0.25)</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Desired Volume (ml)</label>
+          <input type="number" class="input-field" id="dilution-volume" placeholder="100" step="1" oninput="calculateDilution()">
+        </div>
+      </div>
+      <div id="dilution-results" class="result-box" style="display: none;">
+        <div class="result-grid">
+          <div class="result-item"><div class="result-value" id="res-dilution-powder">--</div><div class="result-label">Powder (g)</div></div>
+          <div class="result-item"><div class="result-value" id="res-dilution-water">--</div><div class="result-label">Water (ml)</div></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="tab-bar">
@@ -1218,19 +1255,62 @@
       return data[lowerAge].map((v, i) => v + (data[upperAge][i] - v) * ratio);
     }
 
+    // Inverse error function approximation (Winitzki 2008)
+    function erfinv(x) {
+      const a = 0.147;
+      const ln1mx2 = Math.log(1 - x * x);
+      const part1 = (2 / (Math.PI * a)) + (ln1mx2 / 2);
+      const part2 = ln1mx2 / a;
+      const sign = x < 0 ? -1 : 1;
+      return sign * Math.sqrt(Math.sqrt(part1 * part1 - part2) - part1);
+    }
+
+    // Convert percentile (0-100) to z-score
+    function percentileToZ(p) {
+      return Math.SQRT2 * erfinv(2 * (p / 100) - 1);
+    }
+
+    // Convert z-score to percentile (0-100)
+    function zToPercentile(z) {
+      return 100 * (0.5 * (1 + erf(z / Math.SQRT2)));
+    }
+
+    // Error function approximation
+    function erf(x) {
+      const sign = x < 0 ? -1 : 1;
+      x = Math.abs(x);
+      const t = 1 / (1 + 0.3275911 * x);
+      const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+      return sign * y;
+    }
+
+    // Precompute z-scores for our centile lines
+    const centileZScores = centiles.map(c => percentileToZ(c));
+
     function calculateExactPercentile(value, centileValues) {
       if (value <= centileValues[0]) return { exact: '<0.4', range: '<0.4th' };
       if (value >= centileValues[8]) return { exact: '>99.6', range: '>99.6th' };
+
+      // Find which interval the value falls in
       for (let i = 0; i < centileValues.length - 1; i++) {
         if (value >= centileValues[i] && value <= centileValues[i + 1]) {
+          // Linear interpolation in z-score space (not percentile space)
           const ratio = (value - centileValues[i]) / (centileValues[i + 1] - centileValues[i]);
-          const exactCentile = centiles[i] + ratio * (centiles[i + 1] - centiles[i]);
+          const zScore = centileZScores[i] + ratio * (centileZScores[i + 1] - centileZScores[i]);
+          const exactCentile = zToPercentile(zScore);
+
           const rangeLow = centiles[i];
           const rangeHigh = centiles[i + 1];
-          const suffix = (n) => n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th';
+          const suffix = (n) => {
+            const rounded = Math.round(n);
+            if (rounded === 1 || rounded === 21 || rounded === 31 || rounded === 41 || rounded === 51 || rounded === 61 || rounded === 71 || rounded === 81 || rounded === 91) return 'st';
+            if (rounded === 2 || rounded === 22 || rounded === 32 || rounded === 42 || rounded === 52 || rounded === 62 || rounded === 72 || rounded === 82 || rounded === 92) return 'nd';
+            if (rounded === 3 || rounded === 23 || rounded === 33 || rounded === 43 || rounded === 53 || rounded === 63 || rounded === 73 || rounded === 83 || rounded === 93) return 'rd';
+            return 'th';
+          };
           return {
             exact: exactCentile.toFixed(1),
-            range: `${rangeLow}${suffix(rangeLow)}-${rangeHigh}${suffix(rangeHigh)}`
+            range: `${rangeLow}${suffix(rangeLow)} - ${rangeHigh}${suffix(rangeHigh)}`
           };
         }
       }
@@ -2266,6 +2346,33 @@
       } else {
         proteinWarningDiv.style.display = 'none';
       }
+    }
+
+    // Ketocal 4:1 Dilution Calculator
+    // Standard: 14.2g powder + 86ml water = 100ml milk
+    // Powder displacement: 14.2g occupies (100 - 86) = 14ml volume
+    // So displacement factor = 14 / 14.2 ml per gram
+    function calculateDilution() {
+      const strength = parseFloat(document.getElementById('dilution-strength').value);
+      const volume = parseFloat(document.getElementById('dilution-volume').value);
+      const resultsDiv = document.getElementById('dilution-results');
+
+      if (!volume || volume <= 0) {
+        resultsDiv.style.display = 'none';
+        return;
+      }
+
+      const powderPer100 = 14.2; // grams per 100ml at full strength
+      const waterPer100 = 86;    // ml per 100ml at full strength
+      const displacementPerGram = 14 / 14.2; // ml volume per gram of powder
+
+      const powder = powderPer100 * strength * (volume / 100);
+      const powderVolume = powder * displacementPerGram;
+      const water = volume - powderVolume;
+
+      document.getElementById('res-dilution-powder').textContent = powder.toFixed(1);
+      document.getElementById('res-dilution-water').textContent = water.toFixed(1);
+      resultsDiv.style.display = 'block';
     }
 
     document.addEventListener('DOMContentLoaded', () => {
