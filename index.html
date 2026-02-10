@@ -1023,15 +1023,8 @@
       </div>
       <div class="input-row">
         <div class="input-group">
-          <label class="input-label">Strength</label>
-          <select class="input-field" id="dilution-strength" oninput="calculateDilution()">
-            <option value="1.0">Full strength (1.0)</option>
-            <option value="0.75">¾ strength (0.75)</option>
-            <option value="0.67">⅔ strength (0.67)</option>
-            <option value="0.5">½ strength (0.5)</option>
-            <option value="0.33">⅓ strength (0.33)</option>
-            <option value="0.25">¼ strength (0.25)</option>
-          </select>
+          <label class="input-label">Strength (1 = standard)</label>
+          <input type="number" class="input-field" id="dilution-strength" placeholder="1" step="0.01" value="1" oninput="calculateDilution()">
         </div>
         <div class="input-group">
           <label class="input-label">Desired Volume (ml)</label>
