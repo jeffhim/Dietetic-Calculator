@@ -1,0 +1,17 @@
+{
+  "name": "Dietetic Calculator",
+  "short_name": "Dietetic Calc",
+  "description": "My dietitian assistant",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f2f2f7",
+  "theme_color": "#007aff",
+  "icons": [
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

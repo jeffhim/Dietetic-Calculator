@@ -11,6 +11,7 @@
   <meta name="theme-color" content="#007aff">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cellipse cx='50' cy='70' rx='40' ry='18' fill='%238B5A2B'/%3E%3Cellipse cx='50' cy='65' rx='38' ry='16' fill='%23A0522D'/%3E%3Cellipse cx='50' cy='50' rx='42' ry='22' fill='%2390EE90'/%3E%3Cellipse cx='50' cy='48' rx='38' ry='18' fill='%2398FB98'/%3E%3Cellipse cx='35' cy='45' rx='12' ry='8' fill='%23228B22'/%3E%3Cellipse cx='55' cy='42' rx='14' ry='9' fill='%2332CD32'/%3E%3Cellipse cx='70' cy='48' rx='10' ry='7' fill='%23228B22'/%3E%3Cellipse cx='45' cy='38' rx='11' ry='7' fill='%233CB371'/%3E%3Ccircle cx='62' cy='40' r='8' fill='%23FF6347'/%3E%3Cellipse cx='62' cy='37' rx='3' ry='1.5' fill='%23228B22'/%3E%3Cellipse cx='30' cy='50' rx='6' ry='3' fill='%23FFA500' transform='rotate(-20 30 50)'/%3E%3Cellipse cx='72' cy='52' rx='5' ry='2.5' fill='%23FFA500' transform='rotate(15 72 52)'/%3E%3Cellipse cx='48' cy='52' rx='7' ry='4' fill='%2390EE90'/%3E%3Cellipse cx='48' cy='52' rx='5' ry='2.5' fill='%23F0FFF0'/%3E%3C/svg%3E">
   <link rel="apple-touch-icon" sizes="180x180" href="https://jeffhim.github.io/Jeff-dietetics/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700&family=SF+Pro+Text:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
@@ -2366,6 +2367,15 @@
       document.getElementById('res-dilution-powder').textContent = powder.toFixed(1);
       document.getElementById('res-dilution-water').textContent = water.toFixed(1);
       resultsDiv.style.display = 'block';
+    }
+
+    // Register Service Worker for offline use
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').then(reg => {
+        console.log('Service Worker registered, scope: ' + reg.scope);
+      }).catch(err => {
+        console.log('Service Worker registration failed: ' + err);
+      });
     }
 
     document.addEventListener('DOMContentLoaded', () => {
