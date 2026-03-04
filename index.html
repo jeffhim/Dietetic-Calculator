@@ -1041,12 +1041,297 @@
     </div>
   </div>
 
+  <!-- Tab 6: Pregnancy -->
+  <div id="tab-pregnancy" class="tab-content">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon pink"><i class="fas fa-calendar-alt"></i></div>
+        <div>
+          <div class="card-title">Estimated Date of Confinement</div>
+          <div class="card-subtitle">Calculate EDC from LMP or Conception</div>
+        </div>
+      </div>
+      <div class="segment-control">
+        <button class="segment-btn active" onclick="setEDCMethod('naegele')">Naegele's Rule</button>
+        <button class="segment-btn" onclick="setEDCMethod('conception')">Conception Date</button>
+      </div>
+      <div id="edc-naegele-input">
+        <div class="input-group">
+          <label class="input-label">First Day of Last Menstrual Period (LMP)</label>
+          <input type="date" class="input-field" id="lmp-date" oninput="calculateEDC()">
+        </div>
+      </div>
+      <div id="edc-conception-input" style="display: none;">
+        <div class="input-group">
+          <label class="input-label">Date of Conception</label>
+          <input type="date" class="input-field" id="conception-date" oninput="calculateEDC()">
+        </div>
+      </div>
+      <div id="edc-results" class="result-box" style="display: none;">
+        <div class="result-grid">
+          <div class="result-item full">
+            <div class="result-value" id="res-edc-date">--</div>
+            <div class="result-label">Estimated Date of Confinement (EDC)</div>
+          </div>
+          <div class="result-item">
+            <div class="result-value" id="res-edc-gestation">--</div>
+            <div class="result-label">Gestation (today)</div>
+          </div>
+          <div class="result-item">
+            <div class="result-value" id="res-edc-trimester">--</div>
+            <div class="result-label">Trimester</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon green"><i class="fas fa-weight"></i></div>
+        <div>
+          <div class="card-title">Weight Change Check</div>
+          <div class="card-subtitle">HK Dept of Health reference weight gain</div>
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label">Pre-pregnancy Weight (kg)</label>
+          <input type="number" class="input-field" id="preg-weight" placeholder="55" step="0.1" oninput="calculatePregnancyWeight()">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Pre-pregnancy BMI</label>
+          <input type="number" class="input-field" id="preg-bmi" placeholder="21" step="0.1" oninput="calculatePregnancyWeight()">
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Date to Check (default: today)</label>
+        <input type="date" class="input-field" id="preg-check-date" oninput="calculatePregnancyWeight()">
+      </div>
+      <div class="info-table" style="margin-top: 14px;">
+        <div class="info-table-header">Weight Gain Reference (HK Dept of Health)</div>
+        <table class="data-table">
+          <thead>
+            <tr><th>Pre-pregnancy BMI</th><th>Total Gain</th><th>Avg/Week (T2 & T3)</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>&lt;19.0</td><td>13 – 16.7 kg</td><td>0.52 – 0.67 kg</td></tr>
+            <tr><td>19.0 – 23.5</td><td>11 – 16.4 kg</td><td>0.44 – 0.66 kg</td></tr>
+            <tr><td>&gt;23.5</td><td>7.1 – 14.4 kg</td><td>0.28 – 0.58 kg</td></tr>
+          </tbody>
+        </table>
+        <div class="formula-note" style="margin-top: 8px;">
+          <small><i class="fas fa-info-circle"></i> First trimester (0–13 wks): BMI &lt;19 aims ≥2 kg gain; BMI ≥19 aims 0–2 kg gain</small>
+        </div>
+      </div>
+      <div id="preg-weight-results" class="result-box" style="display: none;">
+        <div class="result-grid">
+          <div class="result-item">
+            <div class="result-value" id="res-preg-weeks">--</div>
+            <div class="result-label">Weeks of Pregnancy</div>
+          </div>
+          <div class="result-item">
+            <div class="result-value" id="res-preg-trimester">--</div>
+            <div class="result-label">Trimester</div>
+          </div>
+          <div class="result-item full">
+            <div class="result-value" id="res-preg-ref-weight" style="font-size: 20px;">--</div>
+            <div class="result-label">Reference Body Weight Range (kg)</div>
+          </div>
+          <div class="result-item full">
+            <div class="result-value" id="res-preg-gain-range" style="font-size: 18px;">--</div>
+            <div class="result-label">Expected Weight Gain Range (kg)</div>
+          </div>
+        </div>
+        <div id="preg-bmi-category" class="formula-note" style="margin-top: 10px;">
+          <small><i class="fas fa-info-circle"></i> BMI category: --</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon orange"><i class="fas fa-fire"></i></div>
+        <div>
+          <div class="card-title">Energy & Protein Requirements</div>
+          <div class="card-subtitle">Based on pre-pregnancy body weight</div>
+        </div>
+      </div>
+      <div class="segment-control">
+        <button class="segment-btn active" id="preg-tri-auto-btn" onclick="setPregnancyTrimesterSource('auto')">From EDC Above</button>
+        <button class="segment-btn" id="preg-tri-manual-btn" onclick="setPregnancyTrimesterSource('manual')">Manual Input</button>
+      </div>
+      <div id="preg-tri-auto-display" style="margin-bottom: 14px;">
+        <div class="ref-display">
+          <div class="ref-grid">
+            <div class="ref-item">
+              <span class="ref-label">Trimester (from EDC)</span>
+              <span class="ref-value" id="preg-req-tri-auto">--</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="preg-tri-manual-input" style="display: none; margin-bottom: 14px;">
+        <div class="input-group" style="margin-bottom: 0;">
+          <label class="input-label">Trimester</label>
+          <select class="input-field" id="preg-req-tri-manual" onchange="calculatePregnancyRequirements()">
+            <option value="1">1st Trimester</option>
+            <option value="2">2nd Trimester</option>
+            <option value="3">3rd Trimester</option>
+          </select>
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label">Energy Factor (kcal/kg/d)</label>
+          <input type="number" class="input-field" id="preg-energy-factor" placeholder="27.5" value="27.5" step="0.1" oninput="calculatePregnancyRequirements()">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Protein Factor (g/kg/d)</label>
+          <input type="number" class="input-field" id="preg-protein-factor" placeholder="1.2" value="1.2" step="0.1" oninput="calculatePregnancyRequirements()">
+        </div>
+      </div>
+      <div class="info-table" style="margin-top: 14px; margin-bottom: 14px;">
+        <div class="info-table-header">Extra Energy by Trimester</div>
+        <table class="data-table">
+          <thead>
+            <tr><th>Trimester</th><th>ELNA</th><th>WHO</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1st</td><td>+0 kcal</td><td>+0 kcal</td></tr>
+            <tr><td>2nd</td><td>+340 kcal</td><td>+285 kcal</td></tr>
+            <tr><td>3rd</td><td>+452 kcal</td><td>+475 kcal</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="preg-req-results" class="result-box" style="display: none;">
+        <div class="result-grid">
+          <div class="result-item full">
+            <div class="result-value" id="res-preg-energy-range" style="font-size: 20px;">--</div>
+            <div class="result-label">Total Energy (kcal/day) incl. extra</div>
+          </div>
+          <div class="result-item">
+            <div class="result-value" id="res-preg-energy-base">--</div>
+            <div class="result-label">Base Energy (kcal)</div>
+          </div>
+          <div class="result-item">
+            <div class="result-value" id="res-preg-extra">--</div>
+            <div class="result-label">Extra Energy (kcal)</div>
+          </div>
+          <div class="result-item full">
+            <div class="result-value" id="res-preg-protein">--</div>
+            <div class="result-label">Protein (g/day)</div>
+          </div>
+        </div>
+        <div class="formula-note" style="margin-top: 10px;">
+          <small><i class="fas fa-info-circle"></i> <span id="preg-req-formula">--</span></small>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon purple"><i class="fas fa-clipboard-list"></i></div>
+        <div>
+          <div class="card-title">Other Requirements</div>
+          <div class="card-subtitle">Fluid & micronutrients by trimester</div>
+        </div>
+      </div>
+      <div id="preg-other-results" class="result-box" style="display: none;">
+        <div class="ref-header">Fluid Requirement</div>
+        <div class="result-grid" style="margin-bottom: 4px;">
+          <div class="result-item full">
+            <div class="result-value" id="res-preg-fluid" style="font-size: 20px;">--</div>
+            <div class="result-label">Fluid (ml/day)</div>
+          </div>
+        </div>
+        <div class="formula-note" style="margin-top: 0; margin-bottom: 14px;">
+          <small><i class="fas fa-info-circle"></i> <span id="preg-fluid-formula-text">--</span></small>
+        </div>
+
+        <div class="ref-header">Carbohydrate Requirement (45–64% energy)</div>
+        <div class="result-grid" style="margin-bottom: 4px;">
+          <div class="result-item full">
+            <div class="result-value" id="res-preg-cho" style="font-size: 20px;">--</div>
+            <div class="result-label">Carbohydrate (g/day)</div>
+          </div>
+        </div>
+        <div class="formula-note" style="margin-top: 0; margin-bottom: 14px;">
+          <small><i class="fas fa-info-circle"></i> <span id="preg-cho-formula-text">--</span></small>
+        </div>
+
+        <div class="ref-header">Fat Requirement (20–35% energy)</div>
+        <div class="result-grid" style="margin-bottom: 4px;">
+          <div class="result-item full">
+            <div class="result-value" id="res-preg-fat" style="font-size: 20px;">--</div>
+            <div class="result-label">Fat (g/day)</div>
+          </div>
+        </div>
+        <div class="formula-note" style="margin-top: 0; margin-bottom: 14px;">
+          <small><i class="fas fa-info-circle"></i> <span id="preg-fat-formula-text">--</span></small>
+        </div>
+
+        <div class="ref-header">Folate & Vitamin B12</div>
+        <div class="result-grid" style="margin-bottom: 4px;">
+          <div class="result-item">
+            <div class="result-value" id="res-preg-folate" style="font-size: 20px;">--</div>
+            <div class="result-label">Folate (mcg/day)</div>
+          </div>
+          <div class="result-item">
+            <div class="result-value" id="res-preg-b12" style="font-size: 20px;">--</div>
+            <div class="result-label">Vitamin B12 (mcg/day)</div>
+          </div>
+        </div>
+        <div class="formula-note" style="margin-top: 0; margin-bottom: 4px;">
+          <small><i class="fas fa-info-circle"></i> <span id="preg-folate-note-text">--</span></small>
+        </div>
+        <div id="preg-folate-highrisk" style="display: none; margin-top: 10px; padding: 10px 12px; background: rgba(255, 149, 0, 0.15); border: 1px solid rgba(255, 149, 0, 0.3); border-radius: 8px; color: var(--warning); margin-bottom: 14px;">
+          <i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i>
+          <span id="preg-folate-highrisk-text">If high risk (1st tri): 1000 mcg Folate + 2.6 mcg Vit B12</span>
+        </div>
+
+        <div class="ref-header">Iodine</div>
+        <div class="result-grid" style="margin-bottom: 4px;">
+          <div class="result-item">
+            <div class="result-value" id="res-preg-iodine" style="font-size: 20px;">--</div>
+            <div class="result-label">Iodine (mcg/day)</div>
+          </div>
+          <div class="result-item">
+            <div class="result-value" style="font-size: 20px;">150</div>
+            <div class="result-label">Aim from supplement (mcg)</div>
+          </div>
+        </div>
+        <div class="formula-note" style="margin-top: 0; margin-bottom: 14px;">
+          <small><i class="fas fa-info-circle"></i> 250–300 mcg/day all trimesters; aim 150 mcg from supplement</small>
+        </div>
+
+        <div class="ref-header">Iron</div>
+        <div class="result-grid" style="margin-bottom: 4px;">
+          <div class="result-item full">
+            <div class="result-value" id="res-preg-iron" style="font-size: 20px;">--</div>
+            <div class="result-label">Iron (mg/day)</div>
+          </div>
+        </div>
+        <div class="formula-note" style="margin-top: 0; margin-bottom: 4px;">
+          <small><i class="fas fa-info-circle"></i> <span id="preg-iron-note-text">--</span></small>
+        </div>
+        <div style="margin-top: 8px; padding: 10px 12px; background: rgba(0, 122, 255, 0.1); border-radius: 8px; color: var(--accent); font-size: 12px;">
+          <i class="fas fa-info-circle" style="margin-right: 6px;"></i>
+          Aim supplemental iron &lt;80 mg/d. Iron bisglycinate is better tolerated. Pre-pregnancy iron storage &gt;300 mg/L may absorb less than requirement.
+        </div>
+      </div>
+      <div id="preg-other-empty" style="text-align: center; padding: 20px; color: var(--text-secondary); font-size: 14px;">
+        <i class="fas fa-info-circle" style="margin-right: 6px;"></i> Enter pre-pregnancy weight and trimester above to see results
+      </div>
+    </div>
+  </div>
+
   <div class="tab-bar">
     <div class="tab-item active" onclick="switchTab('adult')"><i class="fas fa-user"></i><span>Adult</span></div>
-    <div class="tab-item" onclick="switchTab('peds')"><i class="fas fa-child"></i><span>Pediatric</span></div>
+    <div class="tab-item" onclick="switchTab('peds')"><i class="fas fa-child"></i><span>Peds</span></div>
     <div class="tab-item" onclick="switchTab('supplements')"><i class="fas fa-flask"></i><span>Suppl.</span></div>
     <div class="tab-item" onclick="switchTab('pedmilk')"><i class="fas fa-baby-carriage"></i><span>Ped Milk</span></div>
     <div class="tab-item" onclick="switchTab('keto')"><i class="fas fa-fire-flame-curved"></i><span>Keto</span></div>
+    <div class="tab-item" onclick="switchTab('pregnancy')"><i class="fas fa-person-pregnant"></i><span>Preg.</span></div>
   </div>
 
   <script>
@@ -1553,7 +1838,7 @@
     function calculateBMIAndABW() {
       const weight = parseFloat(document.getElementById('actual-weight').value);
       const height = parseFloat(document.getElementById('actual-height').value);
-      const idealBMI = parseFloat(document.getElementById('ideal-bmi').value) || 21.7;
+      const idealBMI = parseFloat(document.getElementById('ideal-bmi').value) || 20.7;
 
       // Reset values
       document.getElementById('res-actual-bmi').textContent = '--';
@@ -2369,6 +2654,352 @@
       resultsDiv.style.display = 'block';
     }
 
+    // ===== Pregnancy Tab Functions =====
+    let edcMethod = 'naegele';
+
+    function setEDCMethod(method) {
+      edcMethod = method;
+      document.querySelectorAll('#tab-pregnancy .segment-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', (method === 'naegele' && i === 0) || (method === 'conception' && i === 1));
+      });
+      document.getElementById('edc-naegele-input').style.display = method === 'naegele' ? 'block' : 'none';
+      document.getElementById('edc-conception-input').style.display = method === 'conception' ? 'block' : 'none';
+      calculateEDC();
+    }
+
+    function calculateEDC() {
+      let edc = null;
+      const resultsDiv = document.getElementById('edc-results');
+
+      if (edcMethod === 'naegele') {
+        const lmpStr = document.getElementById('lmp-date').value;
+        if (!lmpStr) { resultsDiv.style.display = 'none'; calculatePregnancyWeight(); return; }
+        const lmp = new Date(lmpStr);
+        // Naegele's rule: add 1 year, subtract 3 months, add 7 days
+        edc = new Date(lmp);
+        edc.setFullYear(edc.getFullYear() + 1);
+        edc.setMonth(edc.getMonth() - 3);
+        edc.setDate(edc.getDate() + 7);
+      } else {
+        const concStr = document.getElementById('conception-date').value;
+        if (!concStr) { resultsDiv.style.display = 'none'; calculatePregnancyWeight(); return; }
+        const conc = new Date(concStr);
+        // Conception method: add 266 days
+        edc = new Date(conc);
+        edc.setDate(edc.getDate() + 266);
+      }
+
+      const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' };
+      document.getElementById('res-edc-date').textContent = edc.toLocaleDateString('en-GB', options);
+
+      // Calculate gestation weeks+days and trimester from today
+      // Use local date parts to avoid UTC timezone mismatch
+      const lmpDate = new Date(edc);
+      lmpDate.setDate(lmpDate.getDate() - 280);
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const lmpLocal = new Date(lmpDate.getFullYear(), lmpDate.getMonth(), lmpDate.getDate());
+      const daysDiff = Math.round((today - lmpLocal) / (1000 * 60 * 60 * 24));
+      const gestWeeks = Math.floor(daysDiff / 7);
+      const gestDays = daysDiff % 7;
+
+      if (daysDiff >= 0 && daysDiff <= 294) {
+        document.getElementById('res-edc-gestation').textContent = gestWeeks + '+' + gestDays;
+        let trimester;
+        if (gestWeeks < 13 || (gestWeeks === 13 && gestDays === 0)) trimester = '1st';
+        else if (gestWeeks < 27) trimester = '2nd';
+        else trimester = '3rd';
+        document.getElementById('res-edc-trimester').textContent = trimester;
+      } else {
+        document.getElementById('res-edc-gestation').textContent = daysDiff < 0 ? 'Not yet' : 'Past due';
+        document.getElementById('res-edc-trimester').textContent = '--';
+      }
+
+      resultsDiv.style.display = 'block';
+
+      // Auto-fill check date if empty
+      const checkDateInput = document.getElementById('preg-check-date');
+      if (!checkDateInput.value) {
+        checkDateInput.value = new Date().toISOString().split('T')[0];
+      }
+      calculatePregnancyWeight();
+    }
+
+    function getEDCDate() {
+      if (edcMethod === 'naegele') {
+        const lmpStr = document.getElementById('lmp-date').value;
+        if (!lmpStr) return null;
+        const lmp = new Date(lmpStr);
+        const edc = new Date(lmp);
+        edc.setFullYear(edc.getFullYear() + 1);
+        edc.setMonth(edc.getMonth() - 3);
+        edc.setDate(edc.getDate() + 7);
+        return edc;
+      } else {
+        const concStr = document.getElementById('conception-date').value;
+        if (!concStr) return null;
+        const conc = new Date(concStr);
+        const edc = new Date(conc);
+        edc.setDate(edc.getDate() + 266);
+        return edc;
+      }
+    }
+
+    function calculatePregnancyWeight() {
+      const resultsDiv = document.getElementById('preg-weight-results');
+      const preWeight = parseFloat(document.getElementById('preg-weight').value);
+      const bmi = parseFloat(document.getElementById('preg-bmi').value);
+      const checkDateStr = document.getElementById('preg-check-date').value;
+      const edc = getEDCDate();
+
+      if (!preWeight || !bmi || !checkDateStr || !edc) {
+        resultsDiv.style.display = 'none';
+        return;
+      }
+
+      // LMP = EDC - 280 days
+      const lmpDate = new Date(edc);
+      lmpDate.setDate(lmpDate.getDate() - 280);
+
+      // Parse check date using local timezone to avoid UTC mismatch
+      const cdParts = checkDateStr.split('-');
+      const checkDate = new Date(parseInt(cdParts[0]), parseInt(cdParts[1]) - 1, parseInt(cdParts[2]));
+      const lmpLocal = new Date(lmpDate.getFullYear(), lmpDate.getMonth(), lmpDate.getDate());
+      const daysDiff = Math.round((checkDate - lmpLocal) / (1000 * 60 * 60 * 24));
+      const weeks = daysDiff / 7;
+
+      if (weeks < 0 || weeks > 42) {
+        resultsDiv.style.display = 'none';
+        return;
+      }
+
+      // Determine BMI category
+      // T1: BMI<19 aims 2kg; BMI>=19 allows 0-2kg
+      let bmiCategory, t1GainLow, t1GainHigh, weeklyLow, weeklyHigh;
+      if (bmi < 19) {
+        bmiCategory = 'Underweight (BMI < 19)';
+        t1GainLow = 2; t1GainHigh = 2;
+        weeklyLow = 0.52; weeklyHigh = 0.67;
+      } else if (bmi <= 23.5) {
+        bmiCategory = 'Normal (BMI 19–23.5)';
+        t1GainLow = 0; t1GainHigh = 2;
+        weeklyLow = 0.44; weeklyHigh = 0.66;
+      } else {
+        bmiCategory = 'Overweight (BMI > 23.5)';
+        t1GainLow = 0; t1GainHigh = 2;
+        weeklyLow = 0.28; weeklyHigh = 0.58;
+      }
+
+      // Calculate expected weight gain at current week
+      let gainLow, gainHigh;
+      if (weeks <= 13) {
+        // First trimester
+        gainLow = (weeks / 13) * t1GainLow;
+        gainHigh = (weeks / 13) * t1GainHigh;
+      } else {
+        // Second/third trimester
+        const weeksAfterT1 = weeks - 13;
+        gainLow = t1GainLow + (weeksAfterT1 * weeklyLow);
+        gainHigh = t1GainHigh + (weeksAfterT1 * weeklyHigh);
+      }
+
+      const refWeightLow = preWeight + gainLow;
+      const refWeightHigh = preWeight + gainHigh;
+
+      // Trimester
+      let trimester;
+      if (weeks <= 13) trimester = '1st';
+      else if (weeks <= 26) trimester = '2nd';
+      else trimester = '3rd';
+
+      // Display
+      document.getElementById('res-preg-weeks').textContent = Math.floor(weeks) + '+' + Math.floor(daysDiff % 7);
+      document.getElementById('res-preg-trimester').textContent = trimester;
+
+      // Underweight has no upper limit — show "≥ X kg"
+      if (bmi < 19) {
+        document.getElementById('res-preg-ref-weight').textContent = '≥ ' + refWeightLow.toFixed(1) + ' kg';
+        document.getElementById('res-preg-gain-range').textContent = '≥ +' + gainLow.toFixed(1) + ' kg';
+      } else {
+        document.getElementById('res-preg-ref-weight').textContent = refWeightLow.toFixed(1) + ' – ' + refWeightHigh.toFixed(1) + ' kg';
+        document.getElementById('res-preg-gain-range').textContent = '+' + gainLow.toFixed(1) + ' – +' + gainHigh.toFixed(1) + ' kg';
+      }
+      document.getElementById('preg-bmi-category').innerHTML = '<small><i class="fas fa-info-circle"></i> ' + bmiCategory + ' • Weekly gain (T2 & T3): ' + weeklyLow + '–' + weeklyHigh + ' kg/wk</small>';
+      resultsDiv.style.display = 'block';
+      calculatePregnancyRequirements();
+    }
+
+    let pregTrimesterSource = 'auto';
+
+    function setPregnancyTrimesterSource(source) {
+      pregTrimesterSource = source;
+      document.getElementById('preg-tri-auto-btn').classList.toggle('active', source === 'auto');
+      document.getElementById('preg-tri-manual-btn').classList.toggle('active', source === 'manual');
+      document.getElementById('preg-tri-auto-display').style.display = source === 'auto' ? 'block' : 'none';
+      document.getElementById('preg-tri-manual-input').style.display = source === 'manual' ? 'block' : 'none';
+      calculatePregnancyRequirements();
+    }
+
+    function getPregnancyTrimester() {
+      if (pregTrimesterSource === 'manual') {
+        return parseInt(document.getElementById('preg-req-tri-manual').value);
+      }
+      // Auto: get from EDC calculation
+      const edcTrimesterText = document.getElementById('res-edc-trimester').textContent;
+      if (edcTrimesterText === '1st') return 1;
+      if (edcTrimesterText === '2nd') return 2;
+      if (edcTrimesterText === '3rd') return 3;
+      return null;
+    }
+
+    function updateAutoTrimesterDisplay() {
+      const edcTrimesterText = document.getElementById('res-edc-trimester').textContent;
+      const autoDisplay = document.getElementById('preg-req-tri-auto');
+      if (edcTrimesterText && edcTrimesterText !== '--') {
+        autoDisplay.textContent = edcTrimesterText;
+      } else {
+        autoDisplay.textContent = 'Enter EDC above first';
+      }
+    }
+
+    // Extra energy by trimester: { trimester: [ELNA, WHO] }
+    const extraEnergy = { 1: [0, 0], 2: [340, 285], 3: [452, 475] };
+
+    function calculatePregnancyRequirements() {
+      const preWeight = parseFloat(document.getElementById('preg-weight').value);
+      const energyFactor = parseFloat(document.getElementById('preg-energy-factor').value);
+      const proteinFactor = parseFloat(document.getElementById('preg-protein-factor').value);
+      const resultsDiv = document.getElementById('preg-req-results');
+
+      updateAutoTrimesterDisplay();
+
+      const trimester = getPregnancyTrimester();
+
+      if (!preWeight || !energyFactor || !proteinFactor || !trimester) {
+        resultsDiv.style.display = 'none';
+        return;
+      }
+
+      const baseEnergy = preWeight * energyFactor;
+      const protein = preWeight * proteinFactor;
+      const trimesterLabel = trimester === 1 ? '1st' : trimester === 2 ? '2nd' : '3rd';
+
+      const [elnaExtra, whoExtra] = extraEnergy[trimester];
+      const totalELNA = Math.round(baseEnergy + elnaExtra);
+      const totalWHO = Math.round(baseEnergy + whoExtra);
+
+      // Display range (lower–higher) or single value if both are 0
+      const extraLow = Math.min(elnaExtra, whoExtra);
+      const extraHigh = Math.max(elnaExtra, whoExtra);
+      const totalLow = Math.min(totalELNA, totalWHO);
+      const totalHigh = Math.max(totalELNA, totalWHO);
+
+      if (extraLow === extraHigh) {
+        document.getElementById('res-preg-energy-range').textContent = totalLow + ' kcal';
+        document.getElementById('res-preg-extra').textContent = '+' + extraLow;
+      } else {
+        document.getElementById('res-preg-energy-range').textContent = totalLow + ' – ' + totalHigh + ' kcal';
+        document.getElementById('res-preg-extra').textContent = '+' + extraLow + ' – +' + extraHigh;
+      }
+
+      document.getElementById('res-preg-energy-base').textContent = Math.round(baseEnergy);
+      document.getElementById('res-preg-protein').textContent = protein.toFixed(1);
+      document.getElementById('preg-req-formula').textContent =
+        preWeight.toFixed(1) + 'kg × ' + energyFactor + ' = ' + Math.round(baseEnergy) + ' kcal + ' +
+        trimesterLabel + ' tri extra (ELNA +' + elnaExtra + ' / WHO +' + whoExtra + ') = ' + totalLow + '–' + totalHigh + ' kcal';
+      resultsDiv.style.display = 'block';
+      calculatePregnancyOther();
+    }
+
+    function calculatePregnancyOther() {
+      const preWeight = parseFloat(document.getElementById('preg-weight').value);
+      const trimester = getPregnancyTrimester();
+      const resultsDiv = document.getElementById('preg-other-results');
+      const emptyDiv = document.getElementById('preg-other-empty');
+
+      if (!preWeight || !trimester) {
+        resultsDiv.style.display = 'none';
+        emptyDiv.style.display = 'block';
+        return;
+      }
+
+      emptyDiv.style.display = 'none';
+
+      // Fluid: baseline = weight × 30ml/kg/d
+      const baselineFluid = preWeight * 30;
+      const fluidLow = Math.round(baselineFluid * 1.1);
+      const fluidHigh = Math.round(baselineFluid + 1000);
+      let fluidText, fluidFormula;
+      if (trimester === 1) {
+        fluidText = fluidLow + ' ml';
+        fluidFormula = preWeight.toFixed(1) + 'kg × 30ml = ' + Math.round(baselineFluid) + 'ml × 1.1 = ' + fluidLow + ' ml/day';
+      } else {
+        fluidText = fluidLow + ' – ' + fluidHigh + ' ml';
+        fluidFormula = preWeight.toFixed(1) + 'kg × 30ml = ' + Math.round(baselineFluid) + 'ml; range: ×1.1 = ' + fluidLow + 'ml to baseline +1000ml = ' + fluidHigh + ' ml/day';
+      }
+      document.getElementById('res-preg-fluid').textContent = fluidText;
+      document.getElementById('preg-fluid-formula-text').textContent = fluidFormula;
+
+      // Carbohydrate & Fat from total energy range
+      // Need the energy range from the requirement section
+      const energyFactor = parseFloat(document.getElementById('preg-energy-factor').value);
+      const proteinFactor = parseFloat(document.getElementById('preg-protein-factor').value);
+      const [elnaE, whoE] = extraEnergy[trimester];
+      let energyLow = 0, energyHigh = 0;
+      if (energyFactor && preWeight) {
+        const baseE = preWeight * energyFactor;
+        energyLow = Math.round(baseE + Math.min(elnaE, whoE));
+        energyHigh = Math.round(baseE + Math.max(elnaE, whoE));
+      }
+
+      if (energyLow > 0) {
+        // CHO: 45-64% of energy, 1g = 4kcal
+        const choLow = Math.round((energyLow * 0.45) / 4);
+        const choHigh = Math.round((energyHigh * 0.64) / 4);
+        document.getElementById('res-preg-cho').textContent = choLow + ' – ' + choHigh + ' g';
+        document.getElementById('preg-cho-formula-text').textContent =
+          '45% of ' + energyLow + ' ÷ 4 = ' + choLow + 'g to 64% of ' + energyHigh + ' ÷ 4 = ' + choHigh + 'g';
+
+        // Fat: 20-35% of energy, 1g = 9kcal
+        const fatLow = Math.round((energyLow * 0.20) / 9);
+        const fatHigh = Math.round((energyHigh * 0.35) / 9);
+        document.getElementById('res-preg-fat').textContent = fatLow + ' – ' + fatHigh + ' g';
+        document.getElementById('preg-fat-formula-text').textContent =
+          '20% of ' + energyLow + ' ÷ 9 = ' + fatLow + 'g to 35% of ' + energyHigh + ' ÷ 9 = ' + fatHigh + 'g';
+      } else {
+        document.getElementById('res-preg-cho').textContent = '--';
+        document.getElementById('preg-cho-formula-text').textContent = 'Enter energy factor above to calculate';
+        document.getElementById('res-preg-fat').textContent = '--';
+        document.getElementById('preg-fat-formula-text').textContent = 'Enter energy factor above to calculate';
+      }
+
+      // Folate & B12
+      const trimesterLabel = trimester === 1 ? '1st' : trimester === 2 ? '2nd' : '3rd';
+      const highRiskDiv = document.getElementById('preg-folate-highrisk');
+
+      document.getElementById('res-preg-folate').textContent = '400';
+      document.getElementById('res-preg-b12').textContent = '--';
+      document.getElementById('preg-folate-note-text').textContent = '400 mcg folate throughout all trimesters';
+
+      if (trimester === 1) {
+        highRiskDiv.style.display = 'block';
+        document.getElementById('preg-folate-highrisk-text').textContent = 'If high risk (1st tri): 1000 mcg Folate + 2.6 mcg Vit B12';
+      } else {
+        highRiskDiv.style.display = 'none';
+      }
+
+      // Iodine
+      document.getElementById('res-preg-iodine').textContent = '250 – 300';
+
+      // Iron by trimester
+      const ironData = { 1: '18.8', 2: '22 – 23', 3: '24 – 27' };
+      document.getElementById('res-preg-iron').textContent = ironData[trimester] + ' mg';
+      document.getElementById('preg-iron-note-text').textContent =
+        trimesterLabel + ' tri: ' + ironData[trimester] + ' mg/d (RDI: 18 mg/d)';
+
+      resultsDiv.style.display = 'block';
+    }
+
     // Register Service Worker for offline use
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').then(reg => {
@@ -2381,6 +3012,8 @@
     document.addEventListener('DOMContentLoaded', () => {
       populateSupplementDropdown();
       populateFormulaDropdown();
+      // Set default pregnancy check date to today
+      document.getElementById('preg-check-date').value = new Date().toISOString().split('T')[0];
     });
     document.getElementById('edit-modal').addEventListener('click', e => { if (e.target === document.getElementById('edit-modal')) closeModal(); });
   </script>
