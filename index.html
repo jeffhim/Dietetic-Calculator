@@ -1142,18 +1142,15 @@
             <div class="result-label">Expected Weight Gain Range (kg)</div>
           </div>
         </div>
-        <div id="preg-bmi-category" class="formula-note" style="margin-top: 10px;">
-          <small><i class="fas fa-info-circle"></i> BMI category: --</small>
-        </div>
       </div>
     </div>
 
     <div class="card">
       <div class="card-header">
-        <div class="card-icon orange"><i class="fas fa-fire"></i></div>
+        <div class="card-icon orange"><i class="fas fa-clipboard-list"></i></div>
         <div>
-          <div class="card-title">Energy & Protein Requirements</div>
-          <div class="card-subtitle">Based on pre-pregnancy body weight</div>
+          <div class="card-title">Nutrient Requirements</div>
+          <div class="card-subtitle">Based on pre-pregnancy body weight &amp; trimester</div>
         </div>
       </div>
       <div class="segment-control">
@@ -1204,7 +1201,11 @@
         </table>
       </div>
       <div id="preg-req-results" class="result-box" style="display: none;">
-        <div class="result-grid">
+        <!-- ═══ MACRONUTRIENTS ═══ -->
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--accent);">Macronutrients</div>
+
+        <div class="ref-header">Energy</div>
+        <div class="result-grid" style="margin-bottom: 14px;">
           <div class="result-item full">
             <div class="result-value" id="res-preg-energy-range" style="font-size: 20px;">--</div>
             <div class="result-label">Total Energy (kcal/day) incl. extra</div>
@@ -1217,129 +1218,100 @@
             <div class="result-value" id="res-preg-extra">--</div>
             <div class="result-label">Extra Energy (kcal)</div>
           </div>
+        </div>
+
+        <div class="ref-header">Protein</div>
+        <div class="result-grid" style="margin-bottom: 14px;">
           <div class="result-item full">
-            <div class="result-value" id="res-preg-protein">--</div>
+            <div class="result-value" id="res-preg-protein" style="font-size: 20px;">--</div>
             <div class="result-label">Protein (g/day)</div>
           </div>
         </div>
-        <div class="formula-note" style="margin-top: 10px;">
-          <small><i class="fas fa-info-circle"></i> <span id="preg-req-formula">--</span></small>
-        </div>
-      </div>
-    </div>
 
-    <div class="card">
-      <div class="card-header">
-        <div class="card-icon purple"><i class="fas fa-clipboard-list"></i></div>
-        <div>
-          <div class="card-title">Other Requirements</div>
-          <div class="card-subtitle">Fluid & micronutrients by trimester</div>
-        </div>
-      </div>
-      <div id="preg-other-results" class="result-box" style="display: none;">
-        <div class="ref-header">Fluid Requirement</div>
-        <div class="result-grid" style="margin-bottom: 4px;">
-          <div class="result-item full">
-            <div class="result-value" id="res-preg-fluid" style="font-size: 20px;">--</div>
-            <div class="result-label">Fluid (ml/day)</div>
-          </div>
-        </div>
-        <div class="formula-note" style="margin-top: 0; margin-bottom: 14px;">
-          <small><i class="fas fa-info-circle"></i> <span id="preg-fluid-formula-text">--</span></small>
-        </div>
-
-        <div class="ref-header">Carbohydrate Requirement (45–64% energy)</div>
-        <div class="result-grid" style="margin-bottom: 4px;">
+        <div class="ref-header">Carbohydrate (45–64% energy)</div>
+        <div class="result-grid" style="margin-bottom: 14px;">
           <div class="result-item full">
             <div class="result-value" id="res-preg-cho" style="font-size: 20px;">--</div>
             <div class="result-label">Carbohydrate (g/day)</div>
           </div>
         </div>
-        <div class="formula-note" style="margin-top: 0; margin-bottom: 14px;">
-          <small><i class="fas fa-info-circle"></i> <span id="preg-cho-formula-text">--</span></small>
-        </div>
 
-        <div class="ref-header">Fat Requirement (20–35% energy)</div>
-        <div class="result-grid" style="margin-bottom: 4px;">
+        <div class="ref-header">Fat (20–35% energy)</div>
+        <div class="result-grid" style="margin-bottom: 14px;">
           <div class="result-item full">
             <div class="result-value" id="res-preg-fat" style="font-size: 20px;">--</div>
             <div class="result-label">Fat (g/day)</div>
           </div>
         </div>
-        <div class="formula-note" style="margin-top: 0; margin-bottom: 14px;">
-          <small><i class="fas fa-info-circle"></i> <span id="preg-fat-formula-text">--</span></small>
-        </div>
 
-        <div class="ref-header">Folate & Vitamin B12</div>
+        <div class="ref-header">Omega-3 Fatty Acid</div>
         <div class="result-grid" style="margin-bottom: 4px;">
           <div class="result-item">
+            <div class="result-value" style="font-size: 18px;">500 – 1000 mg</div>
+            <div class="result-label">Long-chain PUFA (mg/day)</div>
+          </div>
+          <div class="result-item">
+            <div class="result-value" style="font-size: 18px;">≥ 200 mg</div>
+            <div class="result-label">DHA included (mg/day)</div>
+          </div>
+        </div>
+        <div style="margin-top: 8px; padding: 10px 12px; background: rgba(0, 122, 255, 0.1); border-radius: 8px; color: var(--accent); font-size: 12px; margin-bottom: 14px;">
+          <i class="fas fa-info-circle" style="margin-right: 6px;"></i>
+          Salmon, mackerel, tuna, anchovies contains 1700–2000 mg in 4 ex
+        </div>
+
+        <div class="ref-header">Fluid Requirement</div>
+        <div class="result-grid" style="margin-bottom: 14px;">
+          <div class="result-item full">
+            <div class="result-value" id="res-preg-fluid" style="font-size: 20px;">--</div>
+            <div class="result-label">Fluid (ml/day)</div>
+          </div>
+        </div>
+
+        <!-- ═══ VITAMINS ═══ -->
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--purple); margin-bottom: 10px; margin-top: 6px; padding-bottom: 6px; border-bottom: 2px solid var(--purple);">Vitamins</div>
+
+        <div class="ref-header">Folate</div>
+        <div class="result-grid" style="margin-bottom: 4px;">
+          <div class="result-item full">
             <div class="result-value" id="res-preg-folate" style="font-size: 20px;">--</div>
             <div class="result-label">Folate (mcg/day)</div>
           </div>
-          <div class="result-item">
-            <div class="result-value" id="res-preg-b12" style="font-size: 20px;">--</div>
-            <div class="result-label">Vitamin B12 (mcg/day)</div>
-          </div>
-        </div>
-        <div class="formula-note" style="margin-top: 0; margin-bottom: 4px;">
-          <small><i class="fas fa-info-circle"></i> <span id="preg-folate-note-text">--</span></small>
         </div>
         <div id="preg-folate-highrisk" style="display: none; margin-top: 10px; padding: 10px 12px; background: rgba(255, 149, 0, 0.15); border: 1px solid rgba(255, 149, 0, 0.3); border-radius: 8px; color: var(--warning); margin-bottom: 14px;">
           <i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i>
           <span id="preg-folate-highrisk-text">If high risk (1st tri): 1000 mcg Folate + 2.6 mcg Vit B12</span>
         </div>
 
-        <div class="ref-header">Iodine</div>
-        <div class="result-grid" style="margin-bottom: 4px;">
-          <div class="result-item">
-            <div class="result-value" id="res-preg-iodine" style="font-size: 20px;">--</div>
-            <div class="result-label">Iodine (mcg/day)</div>
-          </div>
-          <div class="result-item">
-            <div class="result-value" style="font-size: 20px;">150</div>
-            <div class="result-label">Aim from supplement (mcg)</div>
-          </div>
-        </div>
-        <div class="formula-note" style="margin-top: 0; margin-bottom: 14px;">
-          <small><i class="fas fa-info-circle"></i> 250–300 mcg/day all trimesters; aim 150 mcg from supplement</small>
-        </div>
-
-        <div class="ref-header">Iron</div>
+        <div class="ref-header">Choline</div>
         <div class="result-grid" style="margin-bottom: 4px;">
           <div class="result-item full">
-            <div class="result-value" id="res-preg-iron" style="font-size: 20px;">--</div>
-            <div class="result-label">Iron (mg/day)</div>
+            <div class="result-value" style="font-size: 20px;">415 – 480 mg</div>
+            <div class="result-label">Choline (mg/day)</div>
           </div>
         </div>
-        <div class="formula-note" style="margin-top: 0; margin-bottom: 4px;">
-          <small><i class="fas fa-info-circle"></i> <span id="preg-iron-note-text">--</span></small>
-        </div>
-        <div style="margin-top: 8px; padding: 10px 12px; background: rgba(0, 122, 255, 0.1); border-radius: 8px; color: var(--accent); font-size: 12px;">
+        <div style="margin-top: 8px; padding: 10px 12px; background: rgba(0, 122, 255, 0.1); border-radius: 8px; color: var(--accent); font-size: 12px; margin-bottom: 14px;">
           <i class="fas fa-info-circle" style="margin-right: 6px;"></i>
-          Aim supplemental iron &lt;80 mg/d. Iron bisglycinate is better tolerated. Pre-pregnancy iron storage &gt;300 mg/L may absorb less than requirement.
+          100 mg ≈ meat 3 ex / egg 1 ex
         </div>
 
-        <div class="ref-header" style="margin-top: 14px;">Zinc</div>
+        <div class="ref-header">Vitamin B6</div>
         <div class="result-grid" style="margin-bottom: 4px;">
           <div class="result-item">
-            <div class="result-value" style="font-size: 20px;">11 – 12</div>
-            <div class="result-label">Base (mg/day)</div>
+            <div class="result-value" style="font-size: 20px;">9 mg</div>
+            <div class="result-label">RDA (mg/day)</div>
           </div>
           <div class="result-item">
-            <div class="result-value" style="font-size: 20px;">+ 2 – 4</div>
-            <div class="result-label">Extra (mg/day)</div>
-          </div>
-          <div class="result-item full">
-            <div class="result-value" style="font-size: 20px;">13 – 16 mg</div>
-            <div class="result-label">Total Zinc (mg/day)</div>
+            <div class="result-value" style="font-size: 20px;">10 mg</div>
+            <div class="result-label">RCT – reduce nausea (mg/day)</div>
           </div>
         </div>
-        <div style="margin-top: 8px; padding: 10px 12px; background: rgba(0, 122, 255, 0.1); border-radius: 8px; color: var(--accent); font-size: 12px;">
-          <i class="fas fa-info-circle" style="margin-right: 6px;"></i>
-          <strong>Supplement notes:</strong> Take with food. Add 1 mg Cu for every 8–15 mg Zn supplemented. Take Zn 2 hours apart from Fe and Ca supplements.
+        <div style="margin-top: 8px; padding: 10px 12px; background: rgba(255, 149, 0, 0.1); border-radius: 8px; color: var(--warning); font-size: 12px; margin-bottom: 14px;">
+          <i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i>
+          If &gt;50 mg/d, check for photosensitivity &amp; numbness
         </div>
 
-        <div class="ref-header" style="margin-top: 14px;">Vitamin D <span style="font-weight: 400; font-size: 11px;">(1 mcg = 40 IU)</span></div>
+        <div class="ref-header">Vitamin D <span style="font-weight: 400; font-size: 11px;">(1 mcg = 40 IU)</span></div>
         <div class="result-grid" style="margin-bottom: 4px;">
           <div class="result-item">
             <div class="result-value" style="font-size: 18px;">400 – 600 IU</div>
@@ -1358,8 +1330,59 @@
           <i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i>
           Requirement is controversial. Upper limit: 4000 IU/d (100 mcg/d). Better taken daily rather than intermittently.
         </div>
+
+        <!-- ═══ MINERALS ═══ -->
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--success); margin-bottom: 10px; margin-top: 18px; padding-bottom: 6px; border-bottom: 2px solid var(--success);">Minerals</div>
+
+        <div class="ref-header">Calcium</div>
+        <div class="result-grid" style="margin-bottom: 4px;">
+          <div class="result-item">
+            <div class="result-value" style="font-size: 20px;">1000 mg</div>
+            <div class="result-label">Adults (mg/day)</div>
+          </div>
+          <div class="result-item">
+            <div class="result-value" style="font-size: 20px;">1300 mg</div>
+            <div class="result-label">Teenagers (mg/day)</div>
+          </div>
+        </div>
+        <div style="margin-top: 8px; padding: 10px 12px; background: rgba(52, 199, 89, 0.1); border-radius: 8px; color: var(--success); font-size: 12px; margin-bottom: 14px;">
+          <i class="fas fa-info-circle" style="margin-right: 6px;"></i>
+          ≥1000 mg/d will reduce preeclampsia risk.
+        </div>
+
+        <div class="ref-header">Iodine</div>
+        <div class="result-grid" style="margin-bottom: 4px;">
+          <div class="result-item">
+            <div class="result-value" id="res-preg-iodine" style="font-size: 20px;">--</div>
+            <div class="result-label">Iodine (mcg/day)</div>
+          </div>
+          <div class="result-item">
+            <div class="result-value" style="font-size: 20px;">150</div>
+            <div class="result-label">Aim from supplement (mcg)</div>
+          </div>
+        </div>
+
+        <div class="ref-header" style="margin-top: 14px;">Iron</div>
+        <div class="result-grid" style="margin-bottom: 14px;">
+          <div class="result-item full">
+            <div class="result-value" id="res-preg-iron" style="font-size: 20px;">--</div>
+            <div class="result-label">Iron (mg/day)</div>
+          </div>
+        </div>
+
+        <div class="ref-header">Zinc</div>
+        <div class="result-grid" style="margin-bottom: 4px;">
+          <div class="result-item full">
+            <div class="result-value" style="font-size: 20px;">13 – 16 mg</div>
+            <div class="result-label">Zinc (mg/day)</div>
+          </div>
+        </div>
+        <div style="margin-top: 8px; padding: 10px 12px; background: rgba(0, 122, 255, 0.1); border-radius: 8px; color: var(--accent); font-size: 12px;">
+          <i class="fas fa-info-circle" style="margin-right: 6px;"></i>
+          Supplement: extra Cu 1 mg for every 8–15 mg Zn. Take it 2h apart from Fe/Ca supp.
+        </div>
       </div>
-      <div id="preg-other-empty" style="text-align: center; padding: 20px; color: var(--text-secondary); font-size: 14px;">
+      <div id="preg-req-empty" style="text-align: center; padding: 20px; color: var(--text-secondary); font-size: 14px;">
         <i class="fas fa-info-circle" style="margin-right: 6px;"></i> Enter pre-pregnancy weight and trimester above to see results
       </div>
     </div>
@@ -2864,7 +2887,6 @@
         document.getElementById('res-preg-ref-weight').textContent = refWeightLow.toFixed(1) + ' – ' + refWeightHigh.toFixed(1) + ' kg';
         document.getElementById('res-preg-gain-range').textContent = '+' + gainLow.toFixed(1) + ' – +' + gainHigh.toFixed(1) + ' kg';
       }
-      document.getElementById('preg-bmi-category').innerHTML = '<small><i class="fas fa-info-circle"></i> ' + bmiCategory + ' • Weekly gain (T2 & T3): ' + weeklyLow + '–' + weeklyHigh + ' kg/wk</small>';
       resultsDiv.style.display = 'block';
       calculatePregnancyRequirements();
     }
@@ -2910,6 +2932,7 @@
       const energyFactor = parseFloat(document.getElementById('preg-energy-factor').value);
       const proteinFactor = parseFloat(document.getElementById('preg-protein-factor').value);
       const resultsDiv = document.getElementById('preg-req-results');
+      const emptyDiv = document.getElementById('preg-req-empty');
 
       updateAutoTrimesterDisplay();
 
@@ -2917,18 +2940,19 @@
 
       if (!preWeight || !energyFactor || !proteinFactor || !trimester) {
         resultsDiv.style.display = 'none';
+        emptyDiv.style.display = 'block';
         return;
       }
 
-      const baseEnergy = preWeight * energyFactor;
-      const protein = preWeight * proteinFactor;
-      const trimesterLabel = trimester === 1 ? '1st' : trimester === 2 ? '2nd' : '3rd';
+      emptyDiv.style.display = 'none';
 
+      // === MACRONUTRIENTS ===
+
+      // Energy
+      const baseEnergy = preWeight * energyFactor;
       const [elnaExtra, whoExtra] = extraEnergy[trimester];
       const totalELNA = Math.round(baseEnergy + elnaExtra);
       const totalWHO = Math.round(baseEnergy + whoExtra);
-
-      // Display range (lower–higher) or single value if both are 0
       const extraLow = Math.min(elnaExtra, whoExtra);
       const extraHigh = Math.max(elnaExtra, whoExtra);
       const totalLow = Math.min(totalELNA, totalWHO);
@@ -2941,86 +2965,36 @@
         document.getElementById('res-preg-energy-range').textContent = totalLow + ' – ' + totalHigh + ' kcal';
         document.getElementById('res-preg-extra').textContent = '+' + extraLow + ' – +' + extraHigh;
       }
-
       document.getElementById('res-preg-energy-base').textContent = Math.round(baseEnergy);
+
+      // Protein
+      const protein = preWeight * proteinFactor;
       document.getElementById('res-preg-protein').textContent = protein.toFixed(1);
-      document.getElementById('preg-req-formula').textContent =
-        preWeight.toFixed(1) + 'kg × ' + energyFactor + ' = ' + Math.round(baseEnergy) + ' kcal + ' +
-        trimesterLabel + ' tri extra (ELNA +' + elnaExtra + ' / WHO +' + whoExtra + ') = ' + totalLow + '–' + totalHigh + ' kcal';
-      resultsDiv.style.display = 'block';
-      calculatePregnancyOther();
-    }
 
-    function calculatePregnancyOther() {
-      const preWeight = parseFloat(document.getElementById('preg-weight').value);
-      const trimester = getPregnancyTrimester();
-      const resultsDiv = document.getElementById('preg-other-results');
-      const emptyDiv = document.getElementById('preg-other-empty');
+      // Carbohydrate & Fat
+      const choLow = Math.round((totalLow * 0.45) / 4);
+      const choHigh = Math.round((totalHigh * 0.64) / 4);
+      document.getElementById('res-preg-cho').textContent = choLow + ' – ' + choHigh + ' g';
 
-      if (!preWeight || !trimester) {
-        resultsDiv.style.display = 'none';
-        emptyDiv.style.display = 'block';
-        return;
-      }
+      const fatLow = Math.round((totalLow * 0.20) / 9);
+      const fatHigh = Math.round((totalHigh * 0.35) / 9);
+      document.getElementById('res-preg-fat').textContent = fatLow + ' – ' + fatHigh + ' g';
 
-      emptyDiv.style.display = 'none';
-
-      // Fluid: baseline = weight × 30ml/kg/d
+      // Fluid
       const baselineFluid = preWeight * 30;
       const fluidLow = Math.round(baselineFluid * 1.1);
       const fluidHigh = Math.round(baselineFluid + 1000);
-      let fluidText, fluidFormula;
       if (trimester === 1) {
-        fluidText = fluidLow + ' ml';
-        fluidFormula = preWeight.toFixed(1) + 'kg × 30ml = ' + Math.round(baselineFluid) + 'ml × 1.1 = ' + fluidLow + ' ml/day';
+        document.getElementById('res-preg-fluid').textContent = fluidLow + ' ml';
       } else {
-        fluidText = fluidLow + ' – ' + fluidHigh + ' ml';
-        fluidFormula = preWeight.toFixed(1) + 'kg × 30ml = ' + Math.round(baselineFluid) + 'ml; range: ×1.1 = ' + fluidLow + 'ml to baseline +1000ml = ' + fluidHigh + ' ml/day';
-      }
-      document.getElementById('res-preg-fluid').textContent = fluidText;
-      document.getElementById('preg-fluid-formula-text').textContent = fluidFormula;
-
-      // Carbohydrate & Fat from total energy range
-      // Need the energy range from the requirement section
-      const energyFactor = parseFloat(document.getElementById('preg-energy-factor').value);
-      const proteinFactor = parseFloat(document.getElementById('preg-protein-factor').value);
-      const [elnaE, whoE] = extraEnergy[trimester];
-      let energyLow = 0, energyHigh = 0;
-      if (energyFactor && preWeight) {
-        const baseE = preWeight * energyFactor;
-        energyLow = Math.round(baseE + Math.min(elnaE, whoE));
-        energyHigh = Math.round(baseE + Math.max(elnaE, whoE));
+        document.getElementById('res-preg-fluid').textContent = fluidLow + ' – ' + fluidHigh + ' ml';
       }
 
-      if (energyLow > 0) {
-        // CHO: 45-64% of energy, 1g = 4kcal
-        const choLow = Math.round((energyLow * 0.45) / 4);
-        const choHigh = Math.round((energyHigh * 0.64) / 4);
-        document.getElementById('res-preg-cho').textContent = choLow + ' – ' + choHigh + ' g';
-        document.getElementById('preg-cho-formula-text').textContent =
-          '45% of ' + energyLow + ' ÷ 4 = ' + choLow + 'g to 64% of ' + energyHigh + ' ÷ 4 = ' + choHigh + 'g';
+      // === VITAMINS ===
 
-        // Fat: 20-35% of energy, 1g = 9kcal
-        const fatLow = Math.round((energyLow * 0.20) / 9);
-        const fatHigh = Math.round((energyHigh * 0.35) / 9);
-        document.getElementById('res-preg-fat').textContent = fatLow + ' – ' + fatHigh + ' g';
-        document.getElementById('preg-fat-formula-text').textContent =
-          '20% of ' + energyLow + ' ÷ 9 = ' + fatLow + 'g to 35% of ' + energyHigh + ' ÷ 9 = ' + fatHigh + 'g';
-      } else {
-        document.getElementById('res-preg-cho').textContent = '--';
-        document.getElementById('preg-cho-formula-text').textContent = 'Enter energy factor above to calculate';
-        document.getElementById('res-preg-fat').textContent = '--';
-        document.getElementById('preg-fat-formula-text').textContent = 'Enter energy factor above to calculate';
-      }
-
-      // Folate & B12
-      const trimesterLabel = trimester === 1 ? '1st' : trimester === 2 ? '2nd' : '3rd';
-      const highRiskDiv = document.getElementById('preg-folate-highrisk');
-
+      // Folate
       document.getElementById('res-preg-folate').textContent = '400';
-      document.getElementById('res-preg-b12').textContent = '--';
-      document.getElementById('preg-folate-note-text').textContent = '400 mcg folate throughout all trimesters';
-
+      const highRiskDiv = document.getElementById('preg-folate-highrisk');
       if (trimester === 1) {
         highRiskDiv.style.display = 'block';
         document.getElementById('preg-folate-highrisk-text').textContent = 'If high risk (1st tri): 1000 mcg Folate + 2.6 mcg Vit B12';
@@ -3028,14 +3002,14 @@
         highRiskDiv.style.display = 'none';
       }
 
+      // === MINERALS ===
+
       // Iodine
       document.getElementById('res-preg-iodine').textContent = '250 – 300';
 
       // Iron by trimester
       const ironData = { 1: '18.8', 2: '22 – 23', 3: '24 – 27' };
       document.getElementById('res-preg-iron').textContent = ironData[trimester] + ' mg';
-      document.getElementById('preg-iron-note-text').textContent =
-        trimesterLabel + ' tri: ' + ironData[trimester] + ' mg/d (RDI: 18 mg/d)';
 
       resultsDiv.style.display = 'block';
     }
