@@ -8,38 +8,53 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Dietetic Calculator">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="theme-color" content="#007aff">
+  <meta name="theme-color" content="#059669">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cellipse cx='50' cy='70' rx='40' ry='18' fill='%238B5A2B'/%3E%3Cellipse cx='50' cy='65' rx='38' ry='16' fill='%23A0522D'/%3E%3Cellipse cx='50' cy='50' rx='42' ry='22' fill='%2390EE90'/%3E%3Cellipse cx='50' cy='48' rx='38' ry='18' fill='%2398FB98'/%3E%3Cellipse cx='35' cy='45' rx='12' ry='8' fill='%23228B22'/%3E%3Cellipse cx='55' cy='42' rx='14' ry='9' fill='%2332CD32'/%3E%3Cellipse cx='70' cy='48' rx='10' ry='7' fill='%23228B22'/%3E%3Cellipse cx='45' cy='38' rx='11' ry='7' fill='%233CB371'/%3E%3Ccircle cx='62' cy='40' r='8' fill='%23FF6347'/%3E%3Cellipse cx='62' cy='37' rx='3' ry='1.5' fill='%23228B22'/%3E%3Cellipse cx='30' cy='50' rx='6' ry='3' fill='%23FFA500' transform='rotate(-20 30 50)'/%3E%3Cellipse cx='72' cy='52' rx='5' ry='2.5' fill='%23FFA500' transform='rotate(15 72 52)'/%3E%3Cellipse cx='48' cy='52' rx='7' ry='4' fill='%2390EE90'/%3E%3Cellipse cx='48' cy='52' rx='5' ry='2.5' fill='%23F0FFF0'/%3E%3C/svg%3E">
   <link rel="apple-touch-icon" sizes="180x180" href="https://jeffhim.github.io/Jeff-dietetics/apple-touch-icon.png">
   <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700&family=SF+Pro+Text:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <!-- Firebase SDK (compat for simpler API) -->
+  <script src="https://cdn.jsdelivr.net/npm/firebase@11.7.1/firebase-app-compat.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@11.7.1/firebase-auth-compat.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@11.7.1/firebase-database-compat.min.js"></script>
   <style>
     :root {
-      --bg-primary: #f2f2f7;
+      --bg-primary: #f0faf6;
       --bg-secondary: #ffffff;
-      --bg-tertiary: #e5e5ea;
-      --text-primary: #1c1c1e;
-      --text-secondary: #8e8e93;
-      --accent: #007aff;
-      --accent-light: rgba(0, 122, 255, 0.1);
-      --success: #34c759;
-      --warning: #ff9500;
-      --danger: #ff3b30;
-      --card-shadow: 0 2px 10px rgba(0,0,0,0.08);
-      --border-color: rgba(60,60,67,0.12);
-      --pink: #ff2d55;
-      --purple: #af52de;
-      --teal: #5ac8fa;
+      --bg-tertiary: #e6f2ed;
+      --text-primary: #1a2e28;
+      --text-secondary: #5f7a72;
+      --accent: #0d9f6e;
+      --accent-light: rgba(13, 159, 110, 0.12);
+      --accent-gradient: linear-gradient(135deg, #0d9f6e, #06b6a4);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --card-shadow: 0 2px 12px rgba(13, 159, 110, 0.1);
+      --border-color: rgba(13, 159, 110, 0.12);
+      --pink: #ec4899;
+      --purple: #8b5cf6;
+      --teal: #06b6d4;
+      --header-bg: linear-gradient(135deg, #059669 0%, #0d9488 50%, #0891b2 100%);
+      --tab-active: #059669;
     }
     .dark {
-      --bg-primary: #000000;
-      --bg-secondary: #1c1c1e;
-      --bg-tertiary: #2c2c2e;
-      --text-primary: #ffffff;
-      --text-secondary: #8e8e93;
-      --border-color: rgba(255,255,255,0.1);
-      --card-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      --bg-primary: #0a1612;
+      --bg-secondary: #132620;
+      --bg-tertiary: #1a3a30;
+      --text-primary: #e8f5f0;
+      --text-secondary: #7fada0;
+      --accent: #34d399;
+      --accent-light: rgba(52, 211, 153, 0.15);
+      --accent-gradient: linear-gradient(135deg, #34d399, #2dd4bf);
+      --success: #34d399;
+      --warning: #fbbf24;
+      --danger: #f87171;
+      --border-color: rgba(52, 211, 153, 0.15);
+      --card-shadow: 0 2px 12px rgba(0,0,0,0.4);
+      --header-bg: linear-gradient(135deg, #065f46 0%, #115e59 50%, #164e63 100%);
+      --tab-active: #34d399;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body {
@@ -52,16 +67,15 @@
       overflow-x: hidden;
     }
     .header {
-      background: var(--bg-secondary);
-      padding: 50px 20px 15px;
-      padding-top: calc(env(safe-area-inset-top) + 15px);
-      border-bottom: 1px solid var(--border-color);
+      background: var(--header-bg);
+      padding: 12px 20px;
+      padding-top: calc(env(safe-area-inset-top) + 10px);
       position: sticky;
       top: 0;
       z-index: 100;
+      box-shadow: 0 2px 16px rgba(5, 150, 105, 0.25);
     }
-    .header h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
-    .header-subtitle { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+    .header h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.3px; color: #ffffff; text-shadow: 0 1px 2px rgba(0,0,0,0.15); }
     .tab-bar {
       position: fixed;
       bottom: 0;
@@ -71,8 +85,8 @@
       border-top: 1px solid var(--border-color);
       display: flex;
       justify-content: space-around;
-      padding: 8px 0 25px;
-      padding-bottom: calc(env(safe-area-inset-bottom) + 8px);
+      padding: 6px 0 22px;
+      padding-bottom: calc(env(safe-area-inset-bottom) + 6px);
       z-index: 1000;
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
@@ -81,28 +95,31 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
       color: var(--text-secondary);
       font-size: 10px;
       font-weight: 500;
       cursor: pointer;
-      transition: color 0.2s;
-      padding: 5px 15px;
+      transition: all 0.25s;
+      padding: 5px 12px;
+      border-radius: 10px;
+      position: relative;
     }
-    .tab-item.active { color: var(--accent); }
-    .tab-item i { font-size: 22px; }
+    .tab-item.active { color: var(--tab-active); font-weight: 700; }
+    .tab-item.active i { transform: scale(1.1); }
+    .tab-item i { font-size: 20px; transition: transform 0.25s; }
     .tab-content { display: none; padding: 20px; animation: fadeIn 0.3s ease; }
     .tab-content.active { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .card { background: var(--bg-secondary); border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: var(--card-shadow); }
     .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
     .card-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; }
-    .card-icon.blue { background: linear-gradient(135deg, #007aff, #5856d6); }
-    .card-icon.green { background: linear-gradient(135deg, #34c759, #30d158); }
-    .card-icon.orange { background: linear-gradient(135deg, #ff9500, #ff6b00); }
-    .card-icon.pink { background: linear-gradient(135deg, #ff2d55, #ff375f); }
-    .card-icon.purple { background: linear-gradient(135deg, #af52de, #bf5af2); }
-    .card-icon.teal { background: linear-gradient(135deg, #5ac8fa, #64d2ff); }
+    .card-icon.blue { background: linear-gradient(135deg, #0d9f6e, #0891b2); }
+    .card-icon.green { background: linear-gradient(135deg, #10b981, #34d399); }
+    .card-icon.orange { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+    .card-icon.pink { background: linear-gradient(135deg, #ec4899, #f43f5e); }
+    .card-icon.purple { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
+    .card-icon.teal { background: linear-gradient(135deg, #06b6d4, #22d3ee); }
     .card-title { font-size: 17px; font-weight: 600; }
     .card-subtitle { font-size: 13px; color: var(--text-secondary); }
     .input-group { margin-bottom: 14px; }
@@ -113,12 +130,12 @@
     .input-row.three { grid-template-columns: 1fr 1fr 1fr; }
     .segment-control { display: flex; background: var(--bg-tertiary); border-radius: 10px; padding: 3px; margin-bottom: 14px; }
     .segment-btn { flex: 1; padding: 10px; border: none; background: transparent; border-radius: 8px; font-size: 14px; font-weight: 500; color: var(--text-primary); cursor: pointer; transition: all 0.2s; }
-    .segment-btn.active { background: var(--bg-secondary); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .segment-btn.active { background: var(--bg-secondary); box-shadow: 0 2px 6px rgba(0,0,0,0.1); color: var(--accent); font-weight: 600; }
     .btn { width: 100%; padding: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
     .btn-primary { background: var(--accent); color: white; }
     .btn-primary:active { transform: scale(0.98); opacity: 0.9; }
     .btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); }
-    .result-box { background: linear-gradient(135deg, var(--accent-light), rgba(88, 86, 214, 0.1)); border-radius: 14px; padding: 18px; margin-top: 16px; }
+    .result-box { background: linear-gradient(135deg, var(--accent-light), rgba(6, 182, 212, 0.1)); border-radius: 14px; padding: 18px; margin-top: 16px; }
     .result-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
     .result-item { text-align: center; padding: 12px; background: var(--bg-secondary); border-radius: 12px; }
     .result-value { font-size: 24px; font-weight: 700; color: var(--accent); }
@@ -129,7 +146,7 @@
     .formula-note small { display: flex; align-items: center; gap: 8px; font-size: 12px; }
     .conversion-section { margin-bottom: 8px; }
     .conversion-section > .input-label { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-    .ref-display { background: linear-gradient(135deg, rgba(0, 122, 255, 0.08), rgba(88, 86, 214, 0.08)); border-radius: 12px; padding: 14px; margin-bottom: 8px; }
+    .ref-display { background: linear-gradient(135deg, rgba(13, 159, 110, 0.08), rgba(6, 182, 212, 0.08)); border-radius: 12px; padding: 14px; margin-bottom: 8px; }
     .ref-header { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
     .ref-grid { display: flex; flex-direction: column; gap: 8px; }
     .ref-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--bg-secondary); border-radius: 8px; }
@@ -142,7 +159,7 @@
     .data-table th { background: var(--bg-tertiary); font-weight: 600; font-size: 12px; color: var(--text-secondary); }
     .data-table tr:last-child td { border-bottom: none; }
     .table-note { font-size: 12px; color: var(--accent); padding: 8px 12px; font-style: italic; }
-    .highlight-box { background: linear-gradient(135deg, var(--accent-light), rgba(90, 200, 250, 0.15)); padding: 14px 16px; border-radius: 10px; font-size: 15px; font-weight: 600; color: var(--accent); text-align: center; }
+    .highlight-box { background: linear-gradient(135deg, var(--accent-light), rgba(6, 182, 164, 0.15)); padding: 14px 16px; border-radius: 10px; font-size: 15px; font-weight: 600; color: var(--accent); text-align: center; }
     .info-list { background: var(--bg-primary); border-radius: 12px; padding: 14px 16px; }
     .info-list-header { font-size: 13px; font-weight: 600; margin-bottom: 10px; color: var(--text-primary); }
     .info-list ul { margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.8; color: var(--text-secondary); }
@@ -150,15 +167,42 @@
     .status-indicator { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 500; margin-top: 10px; }
     .status-indicator.normal { background: rgba(52, 199, 89, 0.15); color: var(--success); }
     .status-indicator.warning { background: rgba(255, 149, 0, 0.15); color: var(--warning); }
-    .supplement-item { display: flex; justify-content: space-between; align-items: center; background: var(--bg-primary); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
-    .supplement-info { flex: 1; }
-    .supplement-name { font-weight: 600; font-size: 15px; }
-    .supplement-amount { font-size: 13px; color: var(--text-secondary); }
-    .supplement-actions { display: flex; gap: 8px; }
+    /* Supplement tab – compact layout */
+    .supp-add-btn { height: 28px; padding: 0 10px; border-radius: 8px; border: none; background: var(--accent); color: white; cursor: pointer; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+    .supp-grid-head { display: grid; grid-template-columns: 1fr 36px 50px 12px 36px; gap: 3px; padding: 4px 4px; font-size: 10px; font-weight: 700; text-decoration: underline; }
+    .supp-grid-head span:nth-child(3), .supp-grid-head span:nth-child(5) { text-align: center; }
+    .supp-grid-head span:nth-child(2) { text-align: center; }
+    .supp-grid-row { display: grid; grid-template-columns: 1fr 36px 50px 12px 36px; gap: 3px; padding: 3px 4px; align-items: center; border-bottom: 1px solid var(--border-color); }
+    .supp-grid-row select { font-size: 11px; padding: 2px 14px 2px 2px; height: 28px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); width: 100%; -webkit-appearance: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%238e8e93'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 3px center; overflow: hidden; text-overflow: ellipsis; }
+    .supp-grid-row input[type="number"] { font-size: 13px; padding: 2px 2px; height: 28px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); width: 100%; text-align: center; -moz-appearance: textfield; }
+    .supp-grid-row input[type="number"]::-webkit-inner-spin-button, .supp-grid-row input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .supp-grid-row .supp-x { text-align: center; font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+    .supp-grid-row.water-row { border-bottom: none; }
+    .supp-grid-row.water-row span:first-child { font-size: 12px; font-weight: 600; padding-left: 2px; }
+    .supp-btn-bar { display: flex; gap: 6px; padding: 6px 4px; }
+    .supp-btn-sm { height: 28px; padding: 0 12px; border: none; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; }
+    .supp-btn-sm.primary { background: var(--accent); color: white; }
+    .supp-btn-sm.secondary { background: var(--bg-tertiary); color: var(--text-primary); }
+    .supp-bw-row { display: flex; align-items: center; gap: 6px; padding: 2px 4px 4px; font-size: 11px; color: var(--text-secondary); }
+    .supp-bw-row input { width: 52px; font-size: 12px; padding: 2px 4px; height: 24px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); text-align: center; }
+    .supp-result-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 4px; }
+    .supp-result-table td { padding: 2px 4px; border-bottom: 1px solid var(--border-color); }
+    .supp-result-table td:nth-child(1), .supp-result-table td:nth-child(3) { color: var(--text-secondary); }
+    .supp-result-table td:nth-child(2), .supp-result-table td:nth-child(4) { font-weight: 600; text-align: right; min-width: 46px; }
+    .supp-result-table tr:last-child td { border-bottom: none; }
+    .supp-section-row td { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 6px 4px 3px; border-bottom: 2px solid var(--accent); color: var(--accent); }
+    .supp-section-row.vitamin td { border-bottom-color: var(--purple); color: var(--purple); }
+    .supp-section-row.mineral td { border-bottom-color: var(--teal); color: var(--teal); }
+    .supp-manage-row { display: flex; align-items: center; gap: 6px; padding: 5px 8px; background: var(--bg-primary); border-radius: 8px; margin-bottom: 4px; }
+    .supp-manage-name { font-weight: 600; font-size: 12px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .supp-manage-detail { font-size: 10px; color: var(--text-secondary); }
+    .supp-manage-actions { display: flex; gap: 3px; flex-shrink: 0; }
+    .supp-icon-btn { width: 24px; height: 24px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+    .supp-info-btn { width: 26px; height: 26px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; background: var(--accent-light); color: var(--accent); }
     .action-btn { width: 36px; height: 36px; border-radius: 10px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
     .action-btn.edit { background: var(--accent-light); color: var(--accent); }
     .action-btn.delete { background: rgba(255, 59, 48, 0.1); color: var(--danger); }
-    .nutrient-summary { background: linear-gradient(135deg, rgba(52, 199, 89, 0.1), rgba(90, 200, 250, 0.1)); border-radius: 14px; padding: 20px; margin-top: 16px; }
+    .nutrient-summary { background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 182, 212, 0.1)); border-radius: 14px; padding: 20px; margin-top: 16px; }
     .nutrient-summary h4 { font-size: 15px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
     .nutrient-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
     .nutrient-item { text-align: center; padding: 12px 8px; background: var(--bg-secondary); border-radius: 10px; }
@@ -183,34 +227,12 @@
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="header-logo">
-      <svg viewBox="0 0 100 100" width="48" height="48" style="margin-bottom: 8px;">
-        <!-- Bowl -->
-        <ellipse cx="50" cy="70" rx="40" ry="18" fill="#8B5A2B"/>
-        <ellipse cx="50" cy="65" rx="38" ry="16" fill="#A0522D"/>
-        <ellipse cx="50" cy="50" rx="42" ry="22" fill="#90EE90"/>
-        <ellipse cx="50" cy="48" rx="38" ry="18" fill="#98FB98"/>
-        <!-- Salad greens -->
-        <ellipse cx="35" cy="45" rx="12" ry="8" fill="#228B22"/>
-        <ellipse cx="55" cy="42" rx="14" ry="9" fill="#32CD32"/>
-        <ellipse cx="70" cy="48" rx="10" ry="7" fill="#228B22"/>
-        <ellipse cx="45" cy="38" rx="11" ry="7" fill="#3CB371"/>
-        <!-- Tomato -->
-        <circle cx="62" cy="40" r="8" fill="#FF6347"/>
-        <ellipse cx="62" cy="37" rx="3" ry="1.5" fill="#228B22"/>
-        <!-- Carrot pieces -->
-        <ellipse cx="30" cy="50" rx="6" ry="3" fill="#FFA500" transform="rotate(-20 30 50)"/>
-        <ellipse cx="72" cy="52" rx="5" ry="2.5" fill="#FFA500" transform="rotate(15 72 52)"/>
-        <!-- Cucumber -->
-        <ellipse cx="48" cy="52" rx="7" ry="4" fill="#90EE90"/>
-        <ellipse cx="48" cy="52" rx="5" ry="2.5" fill="#F0FFF0"/>
-        <!-- Bowl rim highlight -->
-        <ellipse cx="50" cy="58" rx="36" ry="4" fill="rgba(255,255,255,0.2)"/>
-      </svg>
-    </div>
+  <div class="header" style="display:flex;align-items:center;justify-content:space-between;">
     <h1>Dietetic Calculator</h1>
-    <p class="header-subtitle">My dietitian assistant</p>
+    <button id="fb-auth-btn" onclick="fbToggleAuth()" style="background:rgba(255,255,255,0.2);border:none;border-radius:16px;padding:4px 10px;font-size:11px;color:#fff;cursor:pointer;display:none;align-items:center;gap:5px;font-family:inherit;">
+      <i class="fas fa-user-circle" style="font-size:14px;"></i>
+      <span id="fb-auth-label">Sign in</span>
+    </button>
   </div>
 
   <!-- Tab 1: Adult -->
@@ -482,182 +504,210 @@
 
   <!-- Tab 3: Supplements -->
   <div id="tab-supplements" class="tab-content">
-    <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 12px 16px; border-radius: 10px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);">
-      <i class="fas fa-tools" style="font-size: 18px;"></i>
-      <span style="font-weight: 600;">Work in Progress</span>
+    <div class="card" style="padding: 10px 8px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <span style="font-size: 14px; font-weight: 700;">Tube Feed Calculation</span>
+        <div style="display: flex; gap: 6px;">
+          <button class="supp-add-btn" onclick="toggleSuppManage()" style="background: var(--bg-tertiary); color: var(--text-primary);"><i class="fas fa-cog" style="font-size: 10px;"></i> Manage</button>
+          <button class="supp-add-btn" onclick="openSuppModal('add')"><i class="fas fa-plus" style="font-size: 10px;"></i> New</button>
+        </div>
+      </div>
+      <div class="supp-grid-head">
+        <span>Product</span><span>Str</span><span>Vol/feed</span><span></span><span>Fd/day</span>
+      </div>
+      <div class="supp-grid-row"><select id="supp-sel-1" onchange="calcSuppTotals()"></select><input type="number" id="supp-str-1" step="0.1" placeholder="1" oninput="calcSuppTotals()"><input type="number" id="supp-vol-1" oninput="calcSuppTotals()"><span class="supp-x">x</span><input type="number" id="supp-freq-1" value="0" oninput="calcSuppTotals()"></div>
+      <div class="supp-grid-row"><select id="supp-sel-2" onchange="calcSuppTotals()"></select><input type="number" id="supp-str-2" step="0.1" placeholder="1" oninput="calcSuppTotals()"><input type="number" id="supp-vol-2" oninput="calcSuppTotals()"><span class="supp-x">x</span><input type="number" id="supp-freq-2" value="0" oninput="calcSuppTotals()"></div>
+      <div class="supp-grid-row"><select id="supp-sel-3" onchange="calcSuppTotals()"></select><input type="number" id="supp-str-3" step="0.1" placeholder="1" oninput="calcSuppTotals()"><input type="number" id="supp-vol-3" oninput="calcSuppTotals()"><span class="supp-x">x</span><input type="number" id="supp-freq-3" value="0" oninput="calcSuppTotals()"></div>
+      <div class="supp-grid-row"><select id="supp-sel-4" onchange="calcSuppTotals()"></select><input type="number" id="supp-str-4" step="0.1" placeholder="1" oninput="calcSuppTotals()"><input type="number" id="supp-vol-4" oninput="calcSuppTotals()"><span class="supp-x">x</span><input type="number" id="supp-freq-4" value="0" oninput="calcSuppTotals()"></div>
+      <div class="supp-grid-row"><select id="supp-sel-5" onchange="calcSuppTotals()"></select><input type="number" id="supp-str-5" step="0.1" placeholder="1" oninput="calcSuppTotals()"><input type="number" id="supp-vol-5" oninput="calcSuppTotals()"><span class="supp-x">x</span><input type="number" id="supp-freq-5" value="0" oninput="calcSuppTotals()"></div>
+      <div class="supp-grid-row water-row"><span>Water</span><span></span><input type="number" id="supp-water-vol" oninput="calcSuppTotals()"><span class="supp-x">x</span><input type="number" id="supp-water-freq" value="0" oninput="calcSuppTotals()"></div>
+      <div class="supp-btn-bar">
+        <button class="supp-btn-sm secondary" onclick="clearAllSuppRows()"><i class="fas fa-eraser"></i> Clear</button>
+      </div>
+      <div class="supp-bw-row">
+        <span>Body Wt (kg):</span>
+        <input type="number" id="supp-bw" step="0.1" oninput="calcSuppTotals()">
+      </div>
+      <div id="supp-results-container"></div>
     </div>
-    <div class="card">
-      <div class="card-header">
-        <div class="card-icon green"><i class="fas fa-prescription-bottle"></i></div>
-        <div>
-          <div class="card-title">Milk Supplements</div>
-          <div class="card-subtitle">Add and calculate nutrition</div>
-        </div>
+
+    <div class="card" id="supp-manage-card" style="display: none; padding: 10px 8px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 13px; font-weight: 700;"><i class="fas fa-database" style="margin-right: 4px; color: var(--accent);"></i> My Supplements</span>
+        <button class="supp-icon-btn" onclick="toggleSuppManage()" style="background:var(--bg-tertiary);color:var(--text-secondary);"><i class="fas fa-times"></i></button>
       </div>
-      <div class="input-group">
-        <label class="input-label">Select Supplement</label>
-        <select class="input-field" id="supplement-select"></select>
+      <input type="text" class="input-field" id="supp-manage-search" placeholder="Search supplements..." oninput="renderSuppManageList()" style="margin-bottom: 8px; font-size: 13px; padding: 6px 10px;">
+      <div id="supp-manage-list" style="font-size: 12px;">
+        <div style="text-align:center;padding:12px;color:var(--text-secondary);font-size:12px;">No supplements added yet. Tap "+ New" to create one.</div>
       </div>
-      <div class="input-row">
-        <div class="input-group">
-          <label class="input-label">Amount (mL)</label>
-          <input type="number" class="input-field" id="supplement-amount" placeholder="100">
-        </div>
-        <div class="input-group">
-          <label class="input-label">&nbsp;</label>
-          <button class="btn btn-primary" onclick="addSupplement()"><i class="fas fa-plus"></i> Add</button>
-        </div>
-      </div>
-      <div class="supplement-list" id="supplement-list">
-        <div class="empty-state"><i class="fas fa-flask"></i><p>No supplements added yet</p></div>
-      </div>
-    </div>
-    <div class="card" id="nutrition-summary-card" style="display: none;">
-      <div class="card-header">
-        <div class="card-icon orange"><i class="fas fa-chart-pie"></i></div>
-        <div>
-          <div class="card-title">Total Nutrition</div>
-          <div class="card-subtitle">Combined supplement values</div>
-        </div>
-      </div>
-      <div class="nutrient-summary"><h4><i class="fas fa-fire"></i> Macronutrients</h4><div class="nutrient-grid" id="macro-grid"></div></div>
-      <button class="btn btn-secondary" style="margin-top: 16px;" onclick="clearAllSupplements()"><i class="fas fa-trash"></i> Clear All</button>
     </div>
   </div>
 
-  <div class="modal-overlay" id="edit-modal">
-    <div class="modal">
+  <!-- Add/Edit Supplement Modal -->
+  <div class="modal-overlay" id="supp-modal">
+    <div class="modal" style="max-width: 440px;">
       <div class="modal-header">
-        <h3 class="modal-title">Edit Amount</h3>
-        <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+        <h3 class="modal-title" id="supp-modal-title">Add Supplement</h3>
+        <button class="modal-close" onclick="closeSuppModal()"><i class="fas fa-times"></i></button>
       </div>
       <div class="input-group">
-        <label class="input-label">Amount (mL)</label>
-        <input type="number" class="input-field" id="edit-amount">
+        <label class="input-label">Product Name</label>
+        <input type="text" class="input-field" id="ns-name" placeholder="e.g. Ensure Plus">
       </div>
-      <button class="btn btn-primary" onclick="saveEdit()">Save</button>
+      <div class="input-group">
+        <label class="input-label">Category</label>
+        <select class="input-field" id="ns-category">
+          <option value="">-- Select Category --</option>
+          <option value="Standard Oral Supplement">Standard Oral Supplement</option>
+          <option value="High Energy Oral Supplement">High Energy Oral Supplement</option>
+          <option value="High Protein Oral Supplement">High Protein Oral Supplement</option>
+          <option value="Fibre-enriched Supplement">Fibre-enriched Supplement</option>
+          <option value="Renal Supplement">Renal Supplement</option>
+          <option value="Diabetic Supplement">Diabetic Supplement</option>
+          <option value="Wound Healing Supplement">Wound Healing Supplement</option>
+          <option value="Modular Supplement">Modular Supplement</option>
+          <option value="Tube Feed">Tube Feed</option>
+          <option value="Other">Other</option>
+        </select>
+        <input type="text" class="input-field" id="ns-category-custom" placeholder="Or type custom category..." style="margin-top: 6px; font-size: 13px;">
+      </div>
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Per 100 mL (all optional)</div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Energy (kcal)</label><input type="number" class="input-field" id="ns-kcal" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Protein (g)</label><input type="number" class="input-field" id="ns-protein" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">CHO (g)</label><input type="number" class="input-field" id="ns-carbs" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Fat (g)</label><input type="number" class="input-field" id="ns-fat" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Fibre (g)</label><input type="number" class="input-field" id="ns-fibre" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Na (mmol)</label><input type="number" class="input-field" id="ns-na" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">K (mmol)</label><input type="number" class="input-field" id="ns-k" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">P (mmol)</label><input type="number" class="input-field" id="ns-p" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Ca (mg)</label><input type="number" class="input-field" id="ns-ca" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Water (mL)</label><input type="number" class="input-field" id="ns-water" placeholder="--" step="any"></div>
+      </div>
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--purple); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Vitamins (per 100 mL)</div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Vit A (mcg RE)</label><input type="number" class="input-field" id="ns-vitA" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Vit D (mcg)</label><input type="number" class="input-field" id="ns-vitD" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Vit E (mg)</label><input type="number" class="input-field" id="ns-vitE" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Vit K (mcg)</label><input type="number" class="input-field" id="ns-vitK" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Vit C (mg)</label><input type="number" class="input-field" id="ns-vitC" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Thiamin (mg)</label><input type="number" class="input-field" id="ns-thiamin" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Riboflavin (mg)</label><input type="number" class="input-field" id="ns-riboflavin" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Niacin (mg NE)</label><input type="number" class="input-field" id="ns-niacin" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Vit B6 (mg)</label><input type="number" class="input-field" id="ns-vitB6" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Folate (mcg DFE)</label><input type="number" class="input-field" id="ns-folate" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Vit B12 (mcg)</label><input type="number" class="input-field" id="ns-vitB12" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Panto. Acid (mg)</label><input type="number" class="input-field" id="ns-pantoAcid" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Biotin (mcg)</label><input type="number" class="input-field" id="ns-biotin" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Choline (mg)</label><input type="number" class="input-field" id="ns-choline" placeholder="--" step="any"></div>
+      </div>
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--teal); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Minerals (per 100 mL)</div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Chromium (mcg)</label><input type="number" class="input-field" id="ns-chromium" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Copper (mg)</label><input type="number" class="input-field" id="ns-copper" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Iodine (mcg)</label><input type="number" class="input-field" id="ns-iodine" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Iron (mg)</label><input type="number" class="input-field" id="ns-iron" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Magnesium (mg)</label><input type="number" class="input-field" id="ns-magnesium" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Manganese (mg)</label><input type="number" class="input-field" id="ns-manganese" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Molybdenum (mcg)</label><input type="number" class="input-field" id="ns-molybdenum" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Selenium (mcg)</label><input type="number" class="input-field" id="ns-selenium" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Zinc (mg)</label><input type="number" class="input-field" id="ns-zinc" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Chloride (mg)</label><input type="number" class="input-field" id="ns-chloride" placeholder="--" step="any"></div>
+      </div>
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Preparation</div>
+      <div class="input-group">
+        <label class="input-label">Dilution (powder to water)</label>
+        <input type="text" class="input-field" id="ns-dilution" placeholder="e.g. 1 scoop (4.5g) per 30mL water">
+      </div>
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Notes</div>
+      <div class="input-group">
+        <textarea class="input-field" id="ns-notes" rows="2" placeholder="Any extra notes..." style="resize: vertical; min-height: 48px;"></textarea>
+      </div>
+      <button class="btn btn-primary" style="width: 100%; margin-top: 14px;" id="supp-modal-save-btn" onclick="saveSupp()"><i class="fas fa-save" style="margin-right: 6px;"></i> Save Supplement</button>
+    </div>
+  </div>
+
+  <!-- Supplement Info Modal -->
+  <div class="modal-overlay" id="supp-info-modal">
+    <div class="modal" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="supp-info-title">Supplement Info</h3>
+        <button class="modal-close" onclick="closeSuppInfoModal()"><i class="fas fa-times"></i></button>
+      </div>
+      <div id="supp-info-body"></div>
     </div>
   </div>
 
   <!-- Tab 4: Ped Milk -->
   <div id="tab-pedmilk" class="tab-content">
-    <!-- Formula 1 -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-icon pink"><i class="fas fa-baby-carriage"></i></div>
-        <div>
-          <div class="card-title">Formula 1</div>
-          <div class="card-subtitle">Nutrition calculator</div>
-        </div>
-      </div>
-      <div class="input-group">
-        <label class="input-label">Select Formula</label>
-        <select class="input-field" id="formula-select-1" onchange="updateFormulaInfo(1)">
-          <option value="">-- Select Formula --</option>
-        </select>
-      </div>
-      <div id="formula-info-1" class="ref-display" style="display: none;">
-        <div class="ref-header">Formula Information (per 100mL)</div>
-        <div class="ref-grid">
-          <div class="ref-item"><span class="ref-label">Energy:</span><span class="ref-value" id="formula-energy-1">--</span></div>
-          <div class="ref-item"><span class="ref-label">Protein:</span><span class="ref-value" id="formula-protein-1">--</span></div>
-          <div class="ref-item"><span class="ref-label">Fat:</span><span class="ref-value" id="formula-fat-1">--</span></div>
-          <div class="ref-item"><span class="ref-label">Std Dilution:</span><span class="ref-value" id="formula-dilution-1">--</span></div>
-        </div>
-      </div>
-      <div class="section-divider"></div>
-      <div class="input-row">
-        <div class="input-group">
-          <label class="input-label">Volume (mL)</label>
-          <input type="number" class="input-field" id="formula-volume-1" placeholder="e.g. 150" step="1" oninput="calculateFormulaNutrition(1)">
-        </div>
-        <div class="input-group">
-          <label class="input-label">Strength</label>
-          <input type="number" class="input-field" id="formula-strength-1" placeholder="1.0" step="0.05" value="1.0" oninput="calculateFormulaNutrition(1)">
-        </div>
-        <div class="input-group">
-          <label class="input-label">Frequency</label>
-          <input type="number" class="input-field" id="formula-freq-1" placeholder="e.g. 6" step="1" min="1" value="1" oninput="calculateFormulaNutrition(1)">
-        </div>
-      </div>
-      <div id="formula-nutrition-results-1" class="result-box">
-        <div class="result-grid">
-          <div class="result-item"><div class="result-value" id="formula-kcal-result-1">--</div><div class="result-label">Energy (kcal)</div></div>
-          <div class="result-item"><div class="result-value" id="formula-protein-result-1">--</div><div class="result-label">Protein (g)</div></div>
-          <div class="result-item"><div class="result-value" id="formula-fat-result-1">--</div><div class="result-label">Fat (g)</div></div>
-          <div class="result-item"><div class="result-value" id="formula-carb-result-1">--</div><div class="result-label">Carbs (g)</div></div>
-        </div>
+    <!-- Manage bar -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <span style="font-size: 16px; font-weight: 700;">Paediatric Milk</span>
+      <div style="display: flex; gap: 6px;">
+        <button class="supp-add-btn" onclick="toggleFormulaManage()" style="background: var(--bg-tertiary); color: var(--text-primary);"><i class="fas fa-cog" style="font-size: 10px;"></i> Manage</button>
+        <button class="supp-add-btn" onclick="openFormulaModal('add')"><i class="fas fa-plus" style="font-size: 10px;"></i> New</button>
       </div>
     </div>
-
-    <!-- Formula 2 -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-icon purple"><i class="fas fa-baby-carriage"></i></div>
-        <div>
-          <div class="card-title">Formula 2</div>
-          <div class="card-subtitle">Nutrition calculator</div>
-        </div>
+    <!-- Formula Manage Card -->
+    <div class="card" id="formula-manage-card" style="display: none; padding: 10px 8px; margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 13px; font-weight: 700;"><i class="fas fa-database" style="margin-right: 4px; color: var(--pink);"></i> Formula Database</span>
+        <button class="supp-icon-btn" onclick="toggleFormulaManage()" style="background:var(--bg-tertiary);color:var(--text-secondary);"><i class="fas fa-times"></i></button>
       </div>
-      <div class="input-group">
-        <label class="input-label">Select Formula</label>
-        <select class="input-field" id="formula-select-2" onchange="updateFormulaInfo(2)">
-          <option value="">-- Select Formula --</option>
-        </select>
+      <div class="input-group" style="margin-bottom: 8px;">
+        <input type="text" class="input-field" id="formula-manage-search" placeholder="Search formula..." oninput="renderFormulaManageList()" style="font-size: 13px; padding: 8px 12px;">
       </div>
-      <div id="formula-info-2" class="ref-display" style="display: none;">
-        <div class="ref-header">Formula Information (per 100mL)</div>
-        <div class="ref-grid">
-          <div class="ref-item"><span class="ref-label">Energy:</span><span class="ref-value" id="formula-energy-2">--</span></div>
-          <div class="ref-item"><span class="ref-label">Protein:</span><span class="ref-value" id="formula-protein-2">--</span></div>
-          <div class="ref-item"><span class="ref-label">Fat:</span><span class="ref-value" id="formula-fat-2">--</span></div>
-          <div class="ref-item"><span class="ref-label">Std Dilution:</span><span class="ref-value" id="formula-dilution-2">--</span></div>
-        </div>
-      </div>
-      <div class="section-divider"></div>
-      <div class="input-row">
-        <div class="input-group">
-          <label class="input-label">Volume (mL)</label>
-          <input type="number" class="input-field" id="formula-volume-2" placeholder="e.g. 150" step="1" oninput="calculateFormulaNutrition(2)">
-        </div>
-        <div class="input-group">
-          <label class="input-label">Strength</label>
-          <input type="number" class="input-field" id="formula-strength-2" placeholder="1.0" step="0.05" value="1.0" oninput="calculateFormulaNutrition(2)">
-        </div>
-        <div class="input-group">
-          <label class="input-label">Frequency</label>
-          <input type="number" class="input-field" id="formula-freq-2" placeholder="e.g. 6" step="1" min="1" value="1" oninput="calculateFormulaNutrition(2)">
-        </div>
-      </div>
-      <div id="formula-nutrition-results-2" class="result-box">
-        <div class="result-grid">
-          <div class="result-item"><div class="result-value" id="formula-kcal-result-2">--</div><div class="result-label">Energy (kcal)</div></div>
-          <div class="result-item"><div class="result-value" id="formula-protein-result-2">--</div><div class="result-label">Protein (g)</div></div>
-          <div class="result-item"><div class="result-value" id="formula-fat-result-2">--</div><div class="result-label">Fat (g)</div></div>
-          <div class="result-item"><div class="result-value" id="formula-carb-result-2">--</div><div class="result-label">Carbs (g)</div></div>
-        </div>
+      <div id="formula-manage-list" style="font-size: 12px; max-height: 400px; overflow-y: auto;">
+        <div style="text-align:center;padding:12px;color:var(--text-secondary);font-size:12px;">No formulas added yet.</div>
       </div>
     </div>
-
-    <!-- Combined Total -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-icon green"><i class="fas fa-plus-circle"></i></div>
-        <div>
-          <div class="card-title">Combined Total</div>
-          <div class="card-subtitle">Formula 1 + Formula 2</div>
-        </div>
+    <!-- Compact formula grid -->
+    <div class="card" style="padding: 10px 8px;">
+      <div class="supp-grid-head">
+        <span>Formula</span><span>Str</span><span>Vol/feed</span><span></span><span>Fd/day</span>
       </div>
-      <div class="result-box">
-        <div class="result-grid">
-          <div class="result-item"><div class="result-value" id="combined-volume">--</div><div class="result-label">Total Volume (mL)</div></div>
-          <div class="result-item"><div class="result-value" id="combined-kcal">--</div><div class="result-label">Energy (kcal)</div></div>
-          <div class="result-item"><div class="result-value" id="combined-protein">--</div><div class="result-label">Protein (g)</div></div>
-          <div class="result-item"><div class="result-value" id="combined-carbs">--</div><div class="result-label">Carbs (g)</div></div>
-          <div class="result-item"><div class="result-value" id="combined-fat">--</div><div class="result-label">Fat (g)</div></div>
-          <div class="result-item"><div class="result-value" id="combined-kcal-per-100">--</div><div class="result-label">kcal/100mL</div></div>
-        </div>
+      <div class="supp-grid-row"><select id="fm-sel-1" onchange="calcFormulaTotals()"></select><input type="number" id="fm-str-1" step="0.1" placeholder="1" oninput="calcFormulaTotals()"><input type="number" id="fm-vol-1" oninput="calcFormulaTotals()"><span class="supp-x">x</span><input type="number" id="fm-freq-1" value="0" oninput="calcFormulaTotals()"></div>
+      <div class="supp-grid-row"><select id="fm-sel-2" onchange="calcFormulaTotals()"></select><input type="number" id="fm-str-2" step="0.1" placeholder="1" oninput="calcFormulaTotals()"><input type="number" id="fm-vol-2" oninput="calcFormulaTotals()"><span class="supp-x">x</span><input type="number" id="fm-freq-2" value="0" oninput="calcFormulaTotals()"></div>
+      <div class="supp-grid-row"><select id="fm-sel-3" onchange="calcFormulaTotals()"></select><input type="number" id="fm-str-3" step="0.1" placeholder="1" oninput="calcFormulaTotals()"><input type="number" id="fm-vol-3" oninput="calcFormulaTotals()"><span class="supp-x">x</span><input type="number" id="fm-freq-3" value="0" oninput="calcFormulaTotals()"></div>
+      <div class="supp-grid-row"><select id="fm-sel-4" onchange="calcFormulaTotals()"></select><input type="number" id="fm-str-4" step="0.1" placeholder="1" oninput="calcFormulaTotals()"><input type="number" id="fm-vol-4" oninput="calcFormulaTotals()"><span class="supp-x">x</span><input type="number" id="fm-freq-4" value="0" oninput="calcFormulaTotals()"></div>
+      <div class="supp-grid-row"><select id="fm-sel-5" onchange="calcFormulaTotals()"></select><input type="number" id="fm-str-5" step="0.1" placeholder="1" oninput="calcFormulaTotals()"><input type="number" id="fm-vol-5" oninput="calcFormulaTotals()"><span class="supp-x">x</span><input type="number" id="fm-freq-5" value="0" oninput="calcFormulaTotals()"></div>
+      <div class="supp-grid-row water-row"><span>Water</span><span></span><input type="number" id="fm-water-vol" oninput="calcFormulaTotals()"><span class="supp-x">x</span><input type="number" id="fm-water-freq" value="0" oninput="calcFormulaTotals()"></div>
+      <div class="supp-btn-bar">
+        <button class="supp-btn-sm secondary" onclick="clearAllFormulaRows()"><i class="fas fa-eraser"></i> Clear</button>
       </div>
+      <div class="supp-bw-row">
+        <span>Body Wt (kg):</span>
+        <input type="number" id="fm-bw" step="0.1" oninput="calcFormulaTotals()">
+      </div>
+      <div id="fm-results-container"></div>
     </div>
 
     <div class="card">
@@ -750,6 +800,129 @@
           <div class="result-item"><div class="result-value" id="reverse-fat">--</div><div class="result-label">Fat (g)</div></div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Formula Modal -->
+  <div class="modal-overlay" id="formula-modal">
+    <div class="modal" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="formula-modal-title">Add Formula</h3>
+        <button class="modal-close" onclick="closeFormulaModal()"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Product Name (English)</label>
+        <input type="text" class="input-field" id="fm-name" placeholder="e.g. Neocate Junior">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Product Name (Chinese) – optional</label>
+        <input type="text" class="input-field" id="fm-nameCN" placeholder="e.g. 紐康特 1+">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Category</label>
+        <select class="input-field" id="fm-category">
+          <option value="">-- Select Category --</option>
+          <option value="Amino Acid Formula">Amino Acid Formula</option>
+          <option value="Extensively Hydrolyzed Formula">Extensively Hydrolyzed Formula</option>
+          <option value="High Energy Formula (<1 year)">High Energy Formula (&lt;1 year)</option>
+          <option value="High Energy Formula (>1 year)">High Energy Formula (&gt;1 year)</option>
+          <option value="Soy/Lactose-free Formula">Soy/Lactose-free Formula</option>
+          <option value="Stage 1 Formula (0-6m)">Stage 1 Formula (0-6m)</option>
+          <option value="Stage 2 Formula (6-12m)">Stage 2 Formula (6-12m)</option>
+          <option value="Stage 3 Formula (1-3y)">Stage 3 Formula (1-3y)</option>
+          <option value="Preterm Formula">Preterm Formula</option>
+          <option value="Other">Other</option>
+        </select>
+        <input type="text" class="input-field" id="fm-category-custom" placeholder="Or type custom category..." style="margin-top: 6px; font-size: 13px;">
+      </div>
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--pink); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Per 100 mL (all optional)</div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Energy (kcal)</label><input type="number" class="input-field" id="fm-kcal" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Protein (g)</label><input type="number" class="input-field" id="fm-protein" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">CHO (g)</label><input type="number" class="input-field" id="fm-carbs" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Fat (g)</label><input type="number" class="input-field" id="fm-fat" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Fibre (g)</label><input type="number" class="input-field" id="fm-fibre" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Na (mmol)</label><input type="number" class="input-field" id="fm-na" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">K (mmol)</label><input type="number" class="input-field" id="fm-k" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">P (mmol)</label><input type="number" class="input-field" id="fm-p" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Ca (mg)</label><input type="number" class="input-field" id="fm-ca" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Water (mL)</label><input type="number" class="input-field" id="fm-water" placeholder="--" step="any"></div>
+      </div>
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--purple); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Vitamins (per 100 mL)</div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Vit A (mcg RE)</label><input type="number" class="input-field" id="fm-vitA" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Vit D (mcg)</label><input type="number" class="input-field" id="fm-vitD" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Vit E (mg)</label><input type="number" class="input-field" id="fm-vitE" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Vit K (mcg)</label><input type="number" class="input-field" id="fm-vitK" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Vit C (mg)</label><input type="number" class="input-field" id="fm-vitC" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Thiamin (mg)</label><input type="number" class="input-field" id="fm-thiamin" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Riboflavin (mg)</label><input type="number" class="input-field" id="fm-riboflavin" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Niacin (mg NE)</label><input type="number" class="input-field" id="fm-niacin" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Vit B6 (mg)</label><input type="number" class="input-field" id="fm-vitB6" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Folate (mcg DFE)</label><input type="number" class="input-field" id="fm-folate" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Vit B12 (mcg)</label><input type="number" class="input-field" id="fm-vitB12" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Panto. Acid (mg)</label><input type="number" class="input-field" id="fm-pantoAcid" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Biotin (mcg)</label><input type="number" class="input-field" id="fm-biotin" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Choline (mg)</label><input type="number" class="input-field" id="fm-choline" placeholder="--" step="any"></div>
+      </div>
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--teal); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Minerals (per 100 mL)</div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Chromium (mcg)</label><input type="number" class="input-field" id="fm-chromium" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Copper (mg)</label><input type="number" class="input-field" id="fm-copper" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Iodine (mcg)</label><input type="number" class="input-field" id="fm-iodine" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Iron (mg)</label><input type="number" class="input-field" id="fm-iron" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Magnesium (mg)</label><input type="number" class="input-field" id="fm-magnesium" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Manganese (mg)</label><input type="number" class="input-field" id="fm-manganese" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Molybdenum (mcg)</label><input type="number" class="input-field" id="fm-molybdenum" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Selenium (mcg)</label><input type="number" class="input-field" id="fm-selenium" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Zinc (mg)</label><input type="number" class="input-field" id="fm-zinc" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Chloride (mg)</label><input type="number" class="input-field" id="fm-chloride" placeholder="--" step="any"></div>
+      </div>
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Preparation</div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Scoop Weight (g)</label><input type="number" class="input-field" id="fm-scoopWeight" placeholder="e.g. 4.5" step="any"></div>
+        <div class="input-group"><label class="input-label">Dilution</label><input type="text" class="input-field" id="fm-dilution" placeholder="e.g. 1:30ml"></div>
+      </div>
+      <button class="btn btn-primary" style="width: 100%; margin-top: 14px;" onclick="saveFormula()"><i class="fas fa-save" style="margin-right: 6px;"></i> Save Formula</button>
+    </div>
+  </div>
+
+  <!-- Formula Info Modal -->
+  <div class="modal-overlay" id="formula-info-modal">
+    <div class="modal" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="formula-info-title">Formula Info</h3>
+        <button class="modal-close" onclick="closeFormulaInfoModal()"><i class="fas fa-times"></i></button>
+      </div>
+      <div id="formula-info-body"></div>
     </div>
   </div>
 
@@ -1200,7 +1373,7 @@
           </tbody>
         </table>
       </div>
-      <div id="preg-req-results" class="result-box" style="display: none;">
+      <div class="result-box">
         <!-- ═══ MACRONUTRIENTS ═══ -->
         <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--accent); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--accent);">Macronutrients</div>
 
@@ -1274,7 +1447,7 @@
         <div class="ref-header">Folate</div>
         <div class="result-grid" style="margin-bottom: 4px;">
           <div class="result-item full">
-            <div class="result-value" id="res-preg-folate" style="font-size: 20px;">--</div>
+            <div class="result-value" style="font-size: 20px;">400 mcg</div>
             <div class="result-label">Folate (mcg/day)</div>
           </div>
         </div>
@@ -1353,7 +1526,7 @@
         <div class="ref-header">Iodine</div>
         <div class="result-grid" style="margin-bottom: 4px;">
           <div class="result-item">
-            <div class="result-value" id="res-preg-iodine" style="font-size: 20px;">--</div>
+            <div class="result-value" style="font-size: 20px;">250 – 300 mcg</div>
             <div class="result-label">Iodine (mcg/day)</div>
           </div>
           <div class="result-item">
@@ -1366,7 +1539,7 @@
         <div class="result-grid" style="margin-bottom: 14px;">
           <div class="result-item full">
             <div class="result-value" id="res-preg-iron" style="font-size: 20px;">--</div>
-            <div class="result-label">Iron (mg/day)</div>
+            <div class="result-label">Iron (mg/day) – varies by trimester</div>
           </div>
         </div>
 
@@ -1381,9 +1554,6 @@
           <i class="fas fa-info-circle" style="margin-right: 6px;"></i>
           Supplement: extra Cu 1 mg for every 8–15 mg Zn. Take it 2h apart from Fe/Ca supp.
         </div>
-      </div>
-      <div id="preg-req-empty" style="text-align: center; padding: 20px; color: var(--text-secondary); font-size: 14px;">
-        <i class="fas fa-info-circle" style="margin-right: 6px;"></i> Enter pre-pregnancy weight and trimester above to see results
       </div>
     </div>
   </div>
@@ -1406,9 +1576,153 @@
       document.documentElement.classList.toggle('dark', e.matches);
     });
 
+    // ========== Firebase Configuration ==========
+    // INSTRUCTIONS:
+    // 1. Go to https://console.firebase.google.com/ → Create project
+    // 2. Project Settings > Your apps > Web (</>) → Register app → Copy config
+    // 3. Paste the config values below
+    // 4. Authentication > Sign-in method > Enable Google
+    // 5. Realtime Database > Create Database > Locked mode
+    // 6. Set rules: { "rules": { "supplements": { ".read": "auth != null", ".write": "auth != null" }, "formulaDatabase": { ".read": "auth != null", ".write": "auth != null" } } }
+    // 7. (Optional) Lock to your UID: replace "auth != null" with "auth.uid === 'YOUR_UID'"
+    const firebaseConfig = {
+      apiKey: "AIzaSyDLoNony7-NG6dt7jwePBiEUXkWbisH-aw",
+      authDomain: "dietetic-calculator-68832.firebaseapp.com",
+      databaseURL: "https://dietetic-calculator-68832-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "dietetic-calculator-68832",
+      storageBucket: "dietetic-calculator-68832.firebasestorage.app",
+      messagingSenderId: "926898253484",
+      appId: "1:926898253484:web:2b2c6ff3d56722790eb909"
+    };
+
+    let fbApp = null;
+    let fbDb = null;
+    let fbAuth = null;
+    let fbReady = false;
+    let fbUser = null;
+
+    // Initialize Firebase (only if config is filled in)
+    function initFirebase() {
+      try {
+        if (firebaseConfig.apiKey === 'YOUR_API_KEY') {
+          console.log('Firebase: using local-only mode (no config set)');
+          return;
+        }
+        if (typeof firebase !== 'undefined') {
+          fbApp = firebase.initializeApp(firebaseConfig);
+          fbDb = firebase.database();
+          fbAuth = firebase.auth();
+          // Show the auth button
+          document.getElementById('fb-auth-btn').style.display = 'flex';
+          // Listen for auth state changes
+          fbAuth.onAuthStateChanged(function(user) {
+            fbUser = user;
+            fbReady = !!user;
+            var btn = document.getElementById('fb-auth-btn');
+            var label = document.getElementById('fb-auth-label');
+            if (user) {
+              // Signed in — show name or email
+              var displayName = user.displayName || user.email || 'Signed in';
+              label.textContent = displayName.split(' ')[0];
+              btn.style.background = 'rgba(255,255,255,0.3)';
+              console.log('Firebase: signed in as ' + user.email + ' (UID: ' + user.uid + ')');
+              // Now load data
+              fbLoadAllData();
+            } else {
+              label.textContent = 'Sign in';
+              btn.style.background = 'rgba(255,255,255,0.2)';
+              fbReady = false;
+              console.log('Firebase: signed out');
+            }
+          });
+        }
+      } catch (e) {
+        console.log('Firebase init error: ' + e.message);
+      }
+    }
+
+    // Google sign-in / sign-out toggle
+    function fbToggleAuth() {
+      if (!fbAuth) return;
+      if (fbUser) {
+        // Already signed in — sign out
+        fbAuth.signOut();
+      } else {
+        // Sign in with Google popup
+        var provider = new firebase.auth.GoogleAuthProvider();
+        fbAuth.signInWithPopup(provider).catch(function(e) {
+          // If popup blocked, try redirect
+          if (e.code === 'auth/popup-blocked' || e.code === 'auth/cancelled-popup-request') {
+            fbAuth.signInWithRedirect(provider);
+          } else {
+            console.log('Firebase sign-in error: ' + e.message);
+          }
+        });
+      }
+    }
+
+    // Load all data after sign-in
+    function fbLoadAllData() {
+      fbLoadFormulaDB(function(fbFormulas) {
+        if (fbFormulas && Array.isArray(fbFormulas) && fbFormulas.length > 0) {
+          formulaDatabase.length = 0;
+          fbFormulas.forEach(function(f) { formulaDatabase.push(f); });
+        }
+        initFormulaNextId();
+        initFormulaGrid();
+      });
+      fbLoadSuppDB(function() {
+        initSuppDropdowns();
+      });
+    }
+
+    // --- Firebase: Supplements CRUD ---
+    function fbSaveSuppDB() {
+      if (!fbReady) return;
+      fbDb.ref('supplements').set({ items: suppDB, nextId: suppNextId });
+    }
+
+    function fbLoadSuppDB(callback) {
+      if (!fbReady) { callback(); return; }
+      fbDb.ref('supplements').once('value').then(function(snap) {
+        var data = snap.val();
+        if (data && data.items) {
+          suppDB = data.items;
+          suppNextId = data.nextId || (suppDB.length > 0 ? Math.max.apply(null, suppDB.map(function(s) { return s.id; })) + 1 : 1);
+        }
+        callback();
+      }).catch(function(e) {
+        console.log('Firebase load supplements error: ' + e.message);
+        callback();
+      });
+    }
+
+    // --- Firebase: Ped Milk / Formula Database ---
+    function fbSaveFormulaDB() {
+      if (!fbReady) return;
+      fbDb.ref('formulaDatabase').set(formulaDatabase);
+    }
+
+    function fbLoadFormulaDB(callback) {
+      if (!fbReady) { callback(null); return; }
+      fbDb.ref('formulaDatabase').once('value').then(function(snap) {
+        var data = snap.val();
+        callback(data);
+      }).catch(function(e) {
+        console.log('Firebase load formula error: ' + e.message);
+        callback(null);
+      });
+    }
+
+    // Upload local hardcoded formula data to Firebase (run once)
+    function fbUploadFormulaDB() {
+      if (!fbReady) return;
+      fbDb.ref('formulaDatabase').set(formulaDatabase).then(function() {
+        console.log('Formula database uploaded to Firebase successfully');
+      });
+    }
+
     let pedGender = 'male';
-    let addedSupplements = [];
-    let editingIndex = -1;
 
     // HK Growth Study 2020 centile lines
     const centiles = [0.4, 2, 9, 25, 50, 75, 91, 98, 99.6];
@@ -1979,129 +2293,319 @@
       document.getElementById('res-protein-req').textContent = bw && pf ? Math.round(bw * pf) : '--';
     }
 
-    // Supplements - Hong Kong Market Only (values per 100ml)
-    const supplementDatabase = [
-      // Abbott Products (Hong Kong)
-      { id: 1, brand: 'Abbott', name: 'Ensure Gold 金裝加營素', kcal: 100, protein: 4.0, carbs: 13.8, fat: 3.3 },
-      { id: 2, brand: 'Abbott', name: 'Ensure Plus 加營素', kcal: 150, protein: 6.3, carbs: 20.0, fat: 5.0 },
-      { id: 3, brand: 'Abbott', name: 'Ensure Plus Advance', kcal: 150, protein: 9.1, carbs: 14.5, fat: 5.8 },
-      { id: 4, brand: 'Abbott', name: 'Ensure Nutrivigor', kcal: 150, protein: 6.3, carbs: 19.3, fat: 5.0 },
-      { id: 5, brand: 'Abbott', name: 'Glucerna 怡保康', kcal: 100, protein: 4.2, carbs: 10.6, fat: 4.8 },
-      { id: 6, brand: 'Abbott', name: 'Glucerna Tube Feed', kcal: 100, protein: 4.2, carbs: 9.6, fat: 5.4 },
-      { id: 7, brand: 'Abbott', name: 'Nepro LP 腎加營', kcal: 180, protein: 4.1, carbs: 20.0, fat: 9.6 },
-      { id: 8, brand: 'Abbott', name: 'Nepro HP 腎加營', kcal: 180, protein: 8.1, carbs: 16.1, fat: 9.6 },
-      { id: 9, brand: 'Abbott', name: 'Jevity 健力體', kcal: 105, protein: 4.4, carbs: 12.7, fat: 3.9 },
-      { id: 10, brand: 'Abbott', name: 'Osmolite 安素', kcal: 100, protein: 4.4, carbs: 13.3, fat: 3.5 },
-      { id: 11, brand: 'Abbott', name: 'Pulmocare 肺加營', kcal: 150, protein: 6.3, carbs: 10.6, fat: 9.4 },
-      { id: 12, brand: 'Abbott', name: 'ProSure 倍力康', kcal: 130, protein: 6.7, carbs: 14.5, fat: 5.0 },
-      { id: 13, brand: 'Abbott', name: 'PediaSure 小安素', kcal: 100, protein: 3.0, carbs: 11.0, fat: 5.0 },
-      { id: 14, brand: 'Abbott', name: 'Abound 速愈素', kcal: 78, protein: 7.0, carbs: 11.9, fat: 0.0 },
-      // Nestlé Products (Hong Kong)
-      { id: 15, brand: 'Nestlé', name: 'Isosource 1.2 HN 益源素', kcal: 120, protein: 5.4, carbs: 14.0, fat: 4.8 },
-      { id: 16, brand: 'Nestlé', name: 'Nutren Optimum 佳膳', kcal: 100, protein: 4.0, carbs: 12.7, fat: 3.8 },
-      { id: 17, brand: 'Nestlé', name: 'Nutren Diabetic Plus 佳膳適糖', kcal: 100, protein: 6.0, carbs: 9.5, fat: 4.3 },
-      { id: 18, brand: 'Nestlé', name: 'Nutren Junior 兒童佳膳', kcal: 100, protein: 3.0, carbs: 11.2, fat: 4.8 },
-      { id: 19, brand: 'Nestlé', name: 'Resource 力源素高蛋白', kcal: 125, protein: 9.4, carbs: 11.2, fat: 4.9 },
-      { id: 20, brand: 'Nestlé', name: 'Impact Advanced', kcal: 100, protein: 7.8, carbs: 10.8, fat: 2.8 },
-      // Nutricia Products (Hong Kong)
-      { id: 21, brand: 'Nutricia', name: 'Fortisip 營保健', kcal: 150, protein: 6.0, carbs: 18.4, fat: 5.8 },
-      { id: 22, brand: 'Nutricia', name: 'Fortisip Compact Protein 營保健', kcal: 245, protein: 14.4, carbs: 24.2, fat: 9.7 },
-      { id: 23, brand: 'Nutricia', name: 'Fortimel 金裝能全素', kcal: 150, protein: 6.0, carbs: 18.4, fat: 5.8 },
-      { id: 24, brand: 'Nutricia', name: 'Fortimel Protein 2kcal 能全素EX', kcal: 200, protein: 10.0, carbs: 22.5, fat: 8.0 },
-      { id: 25, brand: 'Nutricia', name: 'Nutrison Standard', kcal: 100, protein: 4.0, carbs: 12.3, fat: 3.9 },
-      { id: 26, brand: 'Nutricia', name: 'Nutrison Energy', kcal: 150, protein: 6.0, carbs: 18.4, fat: 5.8 },
-      { id: 27, brand: 'Nutricia', name: 'Nutrison Protein Plus', kcal: 125, protein: 7.5, carbs: 14.5, fat: 4.9 },
-      { id: 28, brand: 'Nutricia', name: 'Cubitan 康全力', kcal: 125, protein: 10.0, carbs: 14.0, fat: 3.5 },
-      // Fresenius Kabi Products (Hong Kong) 倍力康
-      { id: 29, brand: 'Fresenius Kabi', name: 'Fresubin Original 倍力康', kcal: 100, protein: 3.8, carbs: 13.0, fat: 3.3 },
-      { id: 30, brand: 'Fresenius Kabi', name: 'Fresubin Energy 倍力康1.5千卡', kcal: 150, protein: 5.6, carbs: 18.8, fat: 5.8 },
-      { id: 31, brand: 'Fresenius Kabi', name: 'Fresubin Energy Fibre 倍健纖', kcal: 150, protein: 5.6, carbs: 18.0, fat: 5.8 },
-      { id: 32, brand: 'Fresenius Kabi', name: 'Fresubin 2kcal 倍力康2千卡', kcal: 200, protein: 10.0, carbs: 22.5, fat: 7.8 },
-      { id: 33, brand: 'Fresenius Kabi', name: 'Fresubin 2kcal Fibre', kcal: 200, protein: 10.0, carbs: 22.5, fat: 7.8 },
-      { id: 34, brand: 'Fresenius Kabi', name: 'Fresubin Pro 倍速定', kcal: 150, protein: 10.0, carbs: 14.0, fat: 5.8 },
-      { id: 35, brand: 'Fresenius Kabi', name: 'Fresubin Jucy 果之保', kcal: 150, protein: 4.0, carbs: 33.5, fat: 0.0 },
-      { id: 36, brand: 'Fresenius Kabi', name: 'Fresubin Hepa 肝力康', kcal: 130, protein: 4.0, carbs: 16.0, fat: 5.4 },
-      { id: 37, brand: 'Fresenius Kabi', name: 'Fresubin Renal 腎力康', kcal: 200, protein: 7.0, carbs: 25.0, fat: 8.3 },
-      { id: 38, brand: 'Fresenius Kabi', name: 'Supportan 加力康', kcal: 150, protein: 10.0, carbs: 12.3, fat: 6.7 },
-      { id: 39, brand: 'Fresenius Kabi', name: 'Diben 倍糖適', kcal: 100, protein: 4.5, carbs: 9.4, fat: 5.0 }
-    ];
+    // Supplements - user-defined (values per 100mL)
+    let suppDB = [];
+    let suppNextId = 1;
+    let suppEditId = null;
+    const SUPP_ROWS = 5;
 
-    function populateSupplementDropdown() {
-      const sel = document.getElementById('supplement-select');
-      let currentBrand = '';
-      let optionsHtml = '<option value="">-- Select Supplement --</option>';
+    const SUPP_FIELDS = ['kcal','protein','carbs','fat','fibre','na','k','p','ca','water','vitA','vitD','vitE','vitK','vitC','thiamin','riboflavin','niacin','vitB6','folate','vitB12','pantoAcid','biotin','choline','chromium','copper','iodine','iron','magnesium','manganese','molybdenum','selenium','zinc','chloride'];
+    const SUPP_LABELS = { kcal:'Energy (kcal)', protein:'Protein (g)', carbs:'CHO (g)', fat:'Fat (g)', fibre:'Fibre (g)', na:'Na (mmol)', k:'K (mmol)', p:'P (mmol)', ca:'Ca (mg)', water:'Water (mL)', vitA:'Vit A (mcg RE)', vitD:'Vit D (mcg)', vitE:'Vit E (mg)', vitK:'Vit K (mcg)', vitC:'Vit C (mg)', thiamin:'Thiamin (mg)', riboflavin:'Riboflavin (mg)', niacin:'Niacin (mg NE)', vitB6:'Vit B6 (mg)', folate:'Folate (mcg DFE)', vitB12:'Vit B12 (mcg)', pantoAcid:'Panto. Acid (mg)', biotin:'Biotin (mcg)', choline:'Choline (mg)', chromium:'Chromium (mcg)', copper:'Copper (mg)', iodine:'Iodine (mcg)', iron:'Iron (mg)', magnesium:'Magnesium (mg)', manganese:'Manganese (mg)', molybdenum:'Molybdenum (mcg)', selenium:'Selenium (mcg)', zinc:'Zinc (mg)', chloride:'Chloride (mg)' };
 
-      supplementDatabase.forEach(s => {
-        if (s.brand !== currentBrand) {
-          if (currentBrand !== '') optionsHtml += '</optgroup>';
-          optionsHtml += `<optgroup label="${s.brand}">`;
-          currentBrand = s.brand;
+    // === Modal for Add/Edit Supplement ===
+    function openSuppModal(mode, id) {
+      suppEditId = (mode === 'edit') ? id : null;
+      document.getElementById('supp-modal-title').textContent = (mode === 'edit') ? 'Edit Supplement' : 'Add Supplement';
+      // clear fields
+      document.getElementById('ns-name').value = '';
+      document.getElementById('ns-category').value = '';
+      document.getElementById('ns-category-custom').value = '';
+      SUPP_FIELDS.forEach(function(f) { document.getElementById('ns-' + f).value = ''; });
+      document.getElementById('ns-dilution').value = '';
+      document.getElementById('ns-notes').value = '';
+      // fill if editing
+      if (mode === 'edit') {
+        var s = suppDB.find(function(x) { return x.id === id; });
+        if (s) {
+          document.getElementById('ns-name').value = s.name || '';
+          // Try to match category in dropdown
+          var catSelect = document.getElementById('ns-category');
+          var matched = false;
+          if (s.category) {
+            for (var i = 0; i < catSelect.options.length; i++) {
+              if (catSelect.options[i].value === s.category) { catSelect.value = s.category; matched = true; break; }
+            }
+            if (!matched) { document.getElementById('ns-category-custom').value = s.category; }
+          }
+          SUPP_FIELDS.forEach(function(f) { if (s[f] != null && s[f] !== '') document.getElementById('ns-' + f).value = s[f]; });
+          document.getElementById('ns-dilution').value = s.dilution || '';
+          document.getElementById('ns-notes').value = s.notes || '';
         }
-        optionsHtml += `<option value="${s.id}">${s.name} (${s.kcal} kcal/100mL)</option>`;
+      }
+      document.getElementById('supp-modal').classList.add('active');
+    }
+    function closeSuppModal() { document.getElementById('supp-modal').classList.remove('active'); suppEditId = null; }
+
+    function saveSupp() {
+      var name = document.getElementById('ns-name').value.trim() || 'Unnamed Supplement';
+      var category = document.getElementById('ns-category-custom').value.trim() || document.getElementById('ns-category').value || 'Other';
+      var obj = { name: name, category: category, dilution: document.getElementById('ns-dilution').value.trim(), notes: document.getElementById('ns-notes').value.trim() };
+      SUPP_FIELDS.forEach(function(f) {
+        var v = document.getElementById('ns-' + f).value;
+        obj[f] = v !== '' ? parseFloat(v) : null;
       });
-      optionsHtml += '</optgroup>';
-      sel.innerHTML = optionsHtml;
+      if (suppEditId !== null) {
+        // update existing
+        var idx = suppDB.findIndex(function(x) { return x.id === suppEditId; });
+        if (idx >= 0) { obj.id = suppEditId; suppDB[idx] = obj; }
+      } else {
+        obj.id = suppNextId++;
+        suppDB.push(obj);
+      }
+      // Sort by category then name
+      suppDB.sort(function(a, b) {
+        var catA = (a.category || 'Other').toLowerCase();
+        var catB = (b.category || 'Other').toLowerCase();
+        if (catA < catB) return -1;
+        if (catA > catB) return 1;
+        return a.name.localeCompare(b.name);
+      });
+      closeSuppModal();
+      refreshAllSuppDropdowns();
+      renderSuppManageList();
+      calcSuppTotals();
+      fbSaveSuppDB();
     }
 
-    function addSupplement() {
-      const id = parseInt(document.getElementById('supplement-select').value);
-      const amt = parseFloat(document.getElementById('supplement-amount').value);
-      if (!id || !amt) return;
-      const supp = supplementDatabase.find(s => s.id === id);
-      addedSupplements.push({ ...supp, amount: amt });
-      updateSupplementList();
-      document.getElementById('supplement-select').value = '';
-      document.getElementById('supplement-amount').value = '';
+    function deleteSupp(id) {
+      suppDB = suppDB.filter(function(s) { return s.id !== id; });
+      refreshAllSuppDropdowns();
+      renderSuppManageList();
+      calcSuppTotals();
+      fbSaveSuppDB();
     }
 
-    function updateSupplementList() {
-      const list = document.getElementById('supplement-list');
-      const summary = document.getElementById('nutrition-summary-card');
-      if (addedSupplements.length === 0) {
-        list.innerHTML = '<div class="empty-state"><i class="fas fa-flask"></i><p>No supplements added yet</p></div>';
-        summary.style.display = 'none';
+    // === Supplement info modal ===
+    function openSuppInfo(id) {
+      var s = suppDB.find(function(x) { return x.id === id; });
+      if (!s) return;
+      document.getElementById('supp-info-title').textContent = s.name;
+      var html = '<table style="width:100%; font-size: 13px; border-collapse: collapse;">';
+      if (s.category) html += '<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 6px 4px; color: var(--text-secondary);">Category</td><td style="padding: 6px 4px; text-align: right; font-weight: 600;">' + s.category + '</td></tr>';
+      html += '<tr style="border-bottom: 1px solid var(--border-color);"><td colspan="2" style="padding: 8px 4px; font-weight: 700; color: var(--accent);">Per 100 mL</td></tr>';
+      SUPP_FIELDS.forEach(function(f) {
+        if (s[f] != null) {
+          html += '<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 6px 4px; color: var(--text-secondary);">' + SUPP_LABELS[f] + '</td><td style="padding: 6px 4px; text-align: right; font-weight: 600;">' + s[f] + '</td></tr>';
+        }
+      });
+      if (s.dilution) html += '<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 6px 4px; color: var(--text-secondary);">Dilution</td><td style="padding: 6px 4px; text-align: right;">' + s.dilution + '</td></tr>';
+      if (s.notes) html += '<tr><td colspan="2" style="padding: 8px 4px; color: var(--text-secondary); font-style: italic;">' + s.notes + '</td></tr>';
+      html += '</table>';
+      document.getElementById('supp-info-body').innerHTML = html;
+      document.getElementById('supp-info-modal').classList.add('active');
+    }
+    function closeSuppInfoModal() { document.getElementById('supp-info-modal').classList.remove('active'); }
+
+    // === Manage list ===
+    function renderSuppManageList() {
+      var list = document.getElementById('supp-manage-list');
+      if (!list) return;
+      var search = (document.getElementById('supp-manage-search').value || '').toLowerCase();
+      var filtered = suppDB.filter(function(s) {
+        if (!search) return true;
+        return (s.name.toLowerCase().indexOf(search) >= 0) ||
+               (s.category && s.category.toLowerCase().indexOf(search) >= 0);
+      });
+      if (filtered.length === 0) {
+        list.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-secondary);font-size:12px;">' + (suppDB.length === 0 ? 'No supplements added yet. Tap "+ New" to create one.' : 'No matches found.') + '</div>';
         return;
       }
-      list.innerHTML = addedSupplements.map((s, i) => `
-        <div class="supplement-item">
-          <div class="supplement-info">
-            <div class="supplement-name">${s.name}</div>
-            <div class="supplement-amount">${s.amount} mL • ${Math.round(s.kcal * s.amount / 100)} kcal</div>
-          </div>
-          <div class="supplement-actions">
-            <button class="action-btn edit" onclick="editSupplement(${i})"><i class="fas fa-pen"></i></button>
-            <button class="action-btn delete" onclick="deleteSupplement(${i})"><i class="fas fa-trash"></i></button>
-          </div>
-        </div>
-      `).join('');
-      updateNutritionSummary();
-      summary.style.display = 'block';
+      var currentCat = '';
+      var html = '';
+      filtered.forEach(function(s) {
+        var cat = s.category || 'Uncategorized';
+        if (cat !== currentCat) {
+          currentCat = cat;
+          html += '<div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--pink); padding: 8px 4px 3px; border-bottom: 1px solid var(--border-color);">' + currentCat + '</div>';
+        }
+        var detail = [];
+        if (s.kcal != null) detail.push(s.kcal + ' kcal');
+        if (s.protein != null) detail.push(s.protein + 'g Pro');
+        html += '<div class="supp-manage-row">' +
+          '<div style="flex:1; min-width:0;">' +
+            '<div class="supp-manage-name">' + s.name + '</div>' +
+            (detail.length ? '<div class="supp-manage-detail">' + detail.join(' · ') + ' /100mL</div>' : '') +
+          '</div>' +
+          '<div class="supp-manage-actions">' +
+            '<button class="supp-info-btn" onclick="openSuppInfo(' + s.id + ')" title="Info"><i class="fas fa-info"></i></button>' +
+            '<button class="supp-info-btn" onclick="openSuppModal(\'edit\',' + s.id + ')" title="Edit" style="background:rgba(255,149,0,0.1);color:var(--warning);"><i class="fas fa-pen"></i></button>' +
+            '<button class="supp-info-btn" onclick="deleteSupp(' + s.id + ')" title="Delete" style="background:rgba(255,59,48,0.1);color:var(--danger);"><i class="fas fa-trash"></i></button>' +
+          '</div>' +
+        '</div>';
+      });
+      list.innerHTML = html;
     }
 
-    function updateNutritionSummary() {
-      const totals = addedSupplements.reduce((a, s) => {
-        const f = s.amount / 100;
-        return { kcal: a.kcal + s.kcal * f, protein: a.protein + s.protein * f, carbs: a.carbs + s.carbs * f, fat: a.fat + s.fat * f };
-      }, { kcal: 0, protein: 0, carbs: 0, fat: 0 });
-      const vol = addedSupplements.reduce((a, s) => a + s.amount, 0);
-      document.getElementById('macro-grid').innerHTML = `
-        <div class="nutrient-item"><div class="nutrient-value">${Math.round(totals.kcal)}</div><div class="nutrient-name">kcal</div></div>
-        <div class="nutrient-item"><div class="nutrient-value">${totals.protein.toFixed(1)}</div><div class="nutrient-name">Protein (g)</div></div>
-        <div class="nutrient-item"><div class="nutrient-value">${totals.carbs.toFixed(1)}</div><div class="nutrient-name">Carbs (g)</div></div>
-        <div class="nutrient-item"><div class="nutrient-value">${totals.fat.toFixed(1)}</div><div class="nutrient-name">Fat (g)</div></div>
-        <div class="nutrient-item"><div class="nutrient-value">${vol}</div><div class="nutrient-name">Volume (mL)</div></div>
-        <div class="nutrient-item"><div class="nutrient-value">${(totals.kcal / vol * 100).toFixed(0)}</div><div class="nutrient-name">kcal/100mL</div></div>
-      `;
+    function toggleSuppManage() {
+      var card = document.getElementById('supp-manage-card');
+      if (!card) return;
+      if (card.style.display === 'none' || !card.style.display) {
+        renderSuppManageList();
+        card.style.display = 'block';
+      } else {
+        card.style.display = 'none';
+      }
     }
 
-    function editSupplement(i) { editingIndex = i; document.getElementById('edit-amount').value = addedSupplements[i].amount; document.getElementById('edit-modal').classList.add('active'); }
-    function saveEdit() { const amt = parseFloat(document.getElementById('edit-amount').value); if (amt && editingIndex >= 0) { addedSupplements[editingIndex].amount = amt; updateSupplementList(); } closeModal(); }
-    function deleteSupplement(i) { addedSupplements.splice(i, 1); updateSupplementList(); }
-    function clearAllSupplements() { addedSupplements = []; updateSupplementList(); }
-    function closeModal() { document.getElementById('edit-modal').classList.remove('active'); editingIndex = -1; }
+    // === Dropdown builder ===
+    function buildSuppDropdownHTML(selectedId) {
+      var html = '<option value="">-- Select --</option>';
+      suppDB.forEach(function(s) {
+        var label = s.name;
+        if (s.kcal != null) label += ' (' + s.kcal + ' kcal)';
+        var sel = (selectedId && s.id === selectedId) ? ' selected' : '';
+        html += '<option value="' + s.id + '"' + sel + '>' + label + '</option>';
+      });
+      return html;
+    }
+
+    function refreshAllSuppDropdowns() {
+      for (var i = 1; i <= 5; i++) {
+        var sel = document.getElementById('supp-sel-' + i);
+        if (sel) {
+          var curVal = parseInt(sel.value);
+          sel.innerHTML = buildSuppDropdownHTML(curVal || 0);
+        }
+      }
+    }
+
+    // === Fixed row helpers ===
+    function clearAllSuppRows() {
+      for (var i = 1; i <= 5; i++) {
+        var sel = document.getElementById('supp-sel-' + i);
+        var str = document.getElementById('supp-str-' + i);
+        var vol = document.getElementById('supp-vol-' + i);
+        var freq = document.getElementById('supp-freq-' + i);
+        if (sel) sel.selectedIndex = 0;
+        if (str) str.value = '';
+        if (vol) vol.value = '';
+        if (freq) freq.value = '0';
+      }
+      var wv = document.getElementById('supp-water-vol');
+      var wf = document.getElementById('supp-water-freq');
+      if (wv) wv.value = '';
+      if (wf) wf.value = '0';
+      var bwEl = document.getElementById('supp-bw');
+      if (bwEl) bwEl.value = '';
+      // Show blank results table
+      var emptyTotals = {};
+      SUPP_FIELDS.forEach(function(f) { emptyTotals[f] = 0; });
+      document.getElementById('supp-results-container').innerHTML = buildSuppResultsHTML(emptyTotals, 0, 0, false);
+    }
+
+    // === Build results table HTML (always visible) ===
+    function buildSuppResultsHTML(totals, totalVol, bw, hasAny) {
+      function fmtV(v, dp) { return (hasAny && v) ? v.toFixed(dp !== undefined ? dp : 1) : ''; }
+      function fmtPkg(v) { return (hasAny && bw && v) ? (v / bw).toFixed(1) : ''; }
+      function fmtMicro(v, dp) { return (hasAny && v) ? v.toFixed(dp !== undefined ? dp : 2) : ''; }
+
+      var kcal = totals.kcal;
+      var pro = totals.protein;
+      var carbs = totals.carbs;
+      var fat = totals.fat;
+      var pTE = kcal > 0 ? ((pro * 4) / kcal * 100) : 0;
+      var cTE = kcal > 0 ? ((carbs * 4) / kcal * 100) : 0;
+      var fTE = kcal > 0 ? ((fat * 9) / kcal * 100) : 0;
+
+      var html = '<table class="supp-result-table">';
+      // Section: Macronutrients
+      html += '<tr class="supp-section-row macro"><td colspan="4">Macronutrients</td></tr>';
+      html += '<tr><td>Energy (kcal)</td><td>' + (hasAny ? Math.round(kcal) : '') + '</td><td>Vol (mL)</td><td>' + (hasAny && totalVol ? Math.round(totalVol) : '') + '</td></tr>';
+      html += '<tr><td>kcal/kg</td><td>' + fmtPkg(kcal) + '</td><td>mL/kg</td><td>' + fmtPkg(totalVol) + '</td></tr>';
+      html += '<tr><td>Protein (g)</td><td>' + fmtV(pro) + '</td><td>%TE Pro</td><td>' + (hasAny && pTE > 0 ? pTE.toFixed(1) : '') + '</td></tr>';
+      html += '<tr><td>Pro g/kg</td><td>' + fmtPkg(pro) + '</td><td>%TE CHO</td><td>' + (hasAny && cTE > 0 ? cTE.toFixed(1) : '') + '</td></tr>';
+      html += '<tr><td>CHO (g)</td><td>' + fmtV(carbs) + '</td><td>%TE Fat</td><td>' + (hasAny && fTE > 0 ? fTE.toFixed(1) : '') + '</td></tr>';
+      html += '<tr><td>Fat (g)</td><td>' + fmtV(fat) + '</td><td>Fibre (g)</td><td>' + fmtV(totals.fibre) + '</td></tr>';
+      html += '<tr><td>Water (mL)</td><td>' + fmtV(totals.water, 0) + '</td><td>kcal/100mL</td><td>' + (hasAny && totalVol > 0 ? (kcal / totalVol * 100).toFixed(0) : '') + '</td></tr>';
+      // Section: Vitamins
+      html += '<tr class="supp-section-row vitamin"><td colspan="4">Vitamins</td></tr>';
+      html += '<tr><td>Vit A (mcg)</td><td>' + fmtMicro(totals.vitA) + '</td><td>Vit D (mcg)</td><td>' + fmtMicro(totals.vitD) + '</td></tr>';
+      html += '<tr><td>Vit E (mg)</td><td>' + fmtMicro(totals.vitE) + '</td><td>Vit K (mcg)</td><td>' + fmtMicro(totals.vitK) + '</td></tr>';
+      html += '<tr><td>Vit C (mg)</td><td>' + fmtMicro(totals.vitC) + '</td><td>Thiamin (mg)</td><td>' + fmtMicro(totals.thiamin) + '</td></tr>';
+      html += '<tr><td>Riboflavin (mg)</td><td>' + fmtMicro(totals.riboflavin) + '</td><td>Niacin (mg)</td><td>' + fmtMicro(totals.niacin) + '</td></tr>';
+      html += '<tr><td>Vit B6 (mg)</td><td>' + fmtMicro(totals.vitB6) + '</td><td>Folate (mcg)</td><td>' + fmtMicro(totals.folate, 0) + '</td></tr>';
+      html += '<tr><td>Vit B12 (mcg)</td><td>' + fmtMicro(totals.vitB12) + '</td><td>Panto. Acid (mg)</td><td>' + fmtMicro(totals.pantoAcid) + '</td></tr>';
+      html += '<tr><td>Biotin (mcg)</td><td>' + fmtMicro(totals.biotin) + '</td><td>Choline (mg)</td><td>' + fmtMicro(totals.choline) + '</td></tr>';
+      // Section: Minerals
+      html += '<tr class="supp-section-row mineral"><td colspan="4">Minerals</td></tr>';
+      html += '<tr><td>Na (mmol)</td><td>' + fmtV(totals.na) + '</td><td>K (mmol)</td><td>' + fmtV(totals.k) + '</td></tr>';
+      html += '<tr><td>P (mmol)</td><td>' + fmtV(totals.p) + '</td><td>Ca (mg)</td><td>' + fmtV(totals.ca, 0) + '</td></tr>';
+      html += '<tr><td>Iron (mg)</td><td>' + fmtMicro(totals.iron) + '</td><td>Zinc (mg)</td><td>' + fmtMicro(totals.zinc) + '</td></tr>';
+      html += '<tr><td>Iodine (mcg)</td><td>' + fmtMicro(totals.iodine) + '</td><td>Selenium (mcg)</td><td>' + fmtMicro(totals.selenium) + '</td></tr>';
+      html += '<tr><td>Copper (mg)</td><td>' + fmtMicro(totals.copper) + '</td><td>Manganese (mg)</td><td>' + fmtMicro(totals.manganese) + '</td></tr>';
+      html += '<tr><td>Chromium (mcg)</td><td>' + fmtMicro(totals.chromium) + '</td><td>Molybdenum (mcg)</td><td>' + fmtMicro(totals.molybdenum) + '</td></tr>';
+      html += '<tr><td>Magnesium (mg)</td><td>' + fmtMicro(totals.magnesium, 0) + '</td><td>Chloride (mg)</td><td>' + fmtMicro(totals.chloride, 0) + '</td></tr>';
+      html += '</table>';
+      return html;
+    }
+
+    // === Calculate combined totals (fixed 5 rows) ===
+    function calcSuppTotals() {
+      var bw = parseFloat(document.getElementById('supp-bw').value);
+      var totals = {};
+      SUPP_FIELDS.forEach(function(f) { totals[f] = 0; });
+      var totalVol = 0;
+      var hasAny = false;
+
+      for (var i = 1; i <= 5; i++) {
+        var selEl = document.getElementById('supp-sel-' + i);
+        var strEl = document.getElementById('supp-str-' + i);
+        var volEl = document.getElementById('supp-vol-' + i);
+        var freqEl = document.getElementById('supp-freq-' + i);
+        if (!selEl || !volEl || !freqEl) continue;
+
+        var suppId = parseInt(selEl.value);
+        var vol = parseFloat(volEl.value);
+        var freq = parseFloat(freqEl.value);
+        var str = parseFloat(strEl.value);
+        if (isNaN(freq)) freq = 0;
+        if (isNaN(str) || str === 0) str = 1;
+        if (!suppId || !vol || freq <= 0) continue;
+
+        var supp = suppDB.find(function(s) { return s.id === suppId; });
+        if (!supp) continue;
+
+        var f = vol / 100;
+        var dailyVol = vol * freq;
+
+        SUPP_FIELDS.forEach(function(key) {
+          if (supp[key] != null) totals[key] += supp[key] * f * freq * str;
+        });
+        totalVol += dailyVol;
+        hasAny = true;
+      }
+
+      // Add water volume
+      var waterVol = parseFloat(document.getElementById('supp-water-vol').value) || 0;
+      var waterFreq = parseFloat(document.getElementById('supp-water-freq').value) || 0;
+      var dailyWater = waterVol * waterFreq;
+      if (dailyWater > 0) {
+        totalVol += dailyWater;
+        totals.water += dailyWater;
+        hasAny = true;
+      }
+
+      var container = document.getElementById('supp-results-container');
+      container.innerHTML = buildSuppResultsHTML(totals, totalVol, bw, hasAny);
+    }
+
+    // === Init supplement dropdowns + render blank results on page load ===
+    function initSuppDropdowns() {
+      refreshAllSuppDropdowns();
+      // Render blank results table immediately
+      var emptyTotals = {};
+      SUPP_FIELDS.forEach(function(f) { emptyTotals[f] = 0; });
+      document.getElementById('supp-results-container').innerHTML = buildSuppResultsHTML(emptyTotals, 0, 0, false);
+    }
+
+    // Close modals on overlay click
+    document.getElementById('supp-modal').addEventListener('click', function(e) { if (e.target === this) closeSuppModal(); });
+    document.getElementById('supp-info-modal').addEventListener('click', function(e) { if (e.target === this) closeSuppInfoModal(); });
+    document.getElementById('formula-modal').addEventListener('click', function(e) { if (e.target === this) closeFormulaModal(); });
+    document.getElementById('formula-info-modal').addEventListener('click', function(e) { if (e.target === this) closeFormulaInfoModal(); });
 
     // Infant Formula Database (from Excel) - includes CHO (carbohydrates)
-    const formulaDatabase = [
+    let formulaDatabase = [
       { id: 1, category: 'Amino Acid Formula', name: 'Neocate Junior', nameCN: '紐康特 1+', kcal: 100, protein: 3.1, fat: 5.0, carbs: 10.7, scoopWeight: 7.3, dilution: '1:30ml' },
       { id: 2, category: 'Amino Acid Formula', name: 'Neocate LCP', nameCN: '紐康特™ Neocate LCP 無敏配方', kcal: 67, protein: 1.8, fat: 3.5, carbs: 7.1, scoopWeight: 4.5, dilution: '1:30ml' },
       { id: 3, category: 'Amino Acid Formula', name: 'Neocate Syneo HMO (0-12 months)', nameCN: '紐康特星諾100%氨基酸無敏配方(0-12個月)', kcal: 68, protein: 1.9, fat: 3.4, carbs: 7.2, scoopWeight: 4.8, dilution: '1:30ml' },
@@ -2208,128 +2712,324 @@
       { id: 104, category: 'Thickened Formula', name: 'Frisolac Gold Comfort', nameCN: '美素力金裝倍護', kcal: 66, protein: 1.4, fat: 3.4, carbs: 7.5, scoopWeight: 4.3, dilution: '1:30ml' }
     ];
 
-    function populateFormulaDropdown() {
+    function buildFormulaOptionsHTML() {
       let currentCategory = '';
-      let optionsHtml = '<option value="">-- Select Formula --</option>';
-
+      let html = '<option value="">-- Select --</option>';
       formulaDatabase.forEach(f => {
         if (f.category !== currentCategory) {
-          if (currentCategory !== '') optionsHtml += '</optgroup>';
-          optionsHtml += `<optgroup label="${f.category}">`;
+          if (currentCategory !== '') html += '</optgroup>';
+          html += '<optgroup label="' + f.category + '">';
           currentCategory = f.category;
         }
-        const displayName = f.nameCN ? `${f.name} (${f.nameCN})` : f.name;
-        optionsHtml += `<option value="${f.id}">${displayName}</option>`;
+        const displayName = f.nameCN ? f.name + ' (' + f.nameCN + ')' : f.name;
+        html += '<option value="' + f.id + '">' + displayName + '</option>';
       });
-      optionsHtml += '</optgroup>';
+      if (currentCategory !== '') html += '</optgroup>';
+      return html;
+    }
 
-      // Populate all formula dropdowns
-      document.getElementById('formula-select-1').innerHTML = optionsHtml;
-      document.getElementById('formula-select-2').innerHTML = optionsHtml;
+    function populateFormulaDropdown() {
+      var optionsHtml = buildFormulaOptionsHTML();
+      // Populate grid dropdowns (preserve selections)
+      for (var i = 1; i <= 5; i++) {
+        var sel = document.getElementById('fm-sel-' + i);
+        if (sel) {
+          var curVal = parseInt(sel.value);
+          sel.innerHTML = optionsHtml;
+          if (curVal) sel.value = curVal;
+        }
+      }
+      // Populate calculator dropdowns
       document.getElementById('strength-formula-select').innerHTML = optionsHtml;
       document.getElementById('reverse-formula-select').innerHTML = optionsHtml;
     }
+
+    // === Formula CRUD ===
+    let formulaEditId = null;
+    let formulaNextId = 200; // Start high to avoid clashing with hardcoded IDs
+
+    function initFormulaNextId() {
+      if (formulaDatabase.length > 0) {
+        var maxId = Math.max.apply(null, formulaDatabase.map(function(f) { return f.id; }));
+        if (maxId >= formulaNextId) formulaNextId = maxId + 1;
+      }
+    }
+
+    function openFormulaModal(mode, id) {
+      formulaEditId = (mode === 'edit') ? id : null;
+      document.getElementById('formula-modal-title').textContent = (mode === 'edit') ? 'Edit Formula' : 'Add Formula';
+      // clear
+      document.getElementById('fm-name').value = '';
+      document.getElementById('fm-nameCN').value = '';
+      document.getElementById('fm-category').value = '';
+      document.getElementById('fm-category-custom').value = '';
+      SUPP_FIELDS.forEach(function(f) {
+        var el = document.getElementById('fm-' + f);
+        if (el) el.value = '';
+      });
+      document.getElementById('fm-scoopWeight').value = '';
+      document.getElementById('fm-dilution').value = '';
+      // fill if editing
+      if (mode === 'edit') {
+        var f = formulaDatabase.find(function(x) { return x.id === id; });
+        if (f) {
+          document.getElementById('fm-name').value = f.name || '';
+          document.getElementById('fm-nameCN').value = f.nameCN || '';
+          // Try to match category in dropdown
+          var catSelect = document.getElementById('fm-category');
+          var matched = false;
+          for (var i = 0; i < catSelect.options.length; i++) {
+            if (catSelect.options[i].value === f.category) { catSelect.value = f.category; matched = true; break; }
+          }
+          if (!matched) { document.getElementById('fm-category-custom').value = f.category || ''; }
+          SUPP_FIELDS.forEach(function(key) {
+            if (f[key] != null && f[key] !== '') {
+              var el = document.getElementById('fm-' + key);
+              if (el) el.value = f[key];
+            }
+          });
+          if (f.scoopWeight != null) document.getElementById('fm-scoopWeight').value = f.scoopWeight;
+          document.getElementById('fm-dilution').value = f.dilution || '';
+        }
+      }
+      document.getElementById('formula-modal').classList.add('active');
+    }
+
+    function closeFormulaModal() { document.getElementById('formula-modal').classList.remove('active'); formulaEditId = null; }
+
+    function saveFormula() {
+      var name = document.getElementById('fm-name').value.trim();
+      if (!name) { document.getElementById('fm-name').style.borderColor = 'var(--danger)'; return; }
+      document.getElementById('fm-name').style.borderColor = '';
+      var category = document.getElementById('fm-category-custom').value.trim() || document.getElementById('fm-category').value || 'Other';
+      var scoopVal = document.getElementById('fm-scoopWeight').value;
+      var obj = {
+        name: name,
+        nameCN: document.getElementById('fm-nameCN').value.trim(),
+        category: category,
+        scoopWeight: scoopVal !== '' ? parseFloat(scoopVal) : null,
+        dilution: document.getElementById('fm-dilution').value.trim() || ''
+      };
+      SUPP_FIELDS.forEach(function(f) {
+        var el = document.getElementById('fm-' + f);
+        var v = el ? el.value : '';
+        obj[f] = v !== '' ? parseFloat(v) : null;
+      });
+      if (formulaEditId !== null) {
+        var idx = formulaDatabase.findIndex(function(x) { return x.id === formulaEditId; });
+        if (idx >= 0) { obj.id = formulaEditId; formulaDatabase[idx] = obj; }
+      } else {
+        obj.id = formulaNextId++;
+        formulaDatabase.push(obj);
+      }
+      closeFormulaModal();
+      // Sort by category then name
+      formulaDatabase.sort(function(a, b) {
+        if (a.category < b.category) return -1;
+        if (a.category > b.category) return 1;
+        return a.name.localeCompare(b.name);
+      });
+      populateFormulaDropdown();
+      renderFormulaManageList();
+      calcFormulaTotals();
+      fbSaveFormulaDB();
+    }
+
+    function deleteFormula(id) {
+      formulaDatabase = formulaDatabase.filter(function(f) { return f.id !== id; });
+      populateFormulaDropdown();
+      renderFormulaManageList();
+      calcFormulaTotals();
+      fbSaveFormulaDB();
+    }
+
+    function toggleFormulaManage() {
+      var card = document.getElementById('formula-manage-card');
+      if (!card) return;
+      if (card.style.display === 'none' || !card.style.display) {
+        renderFormulaManageList();
+        card.style.display = 'block';
+      } else {
+        card.style.display = 'none';
+      }
+    }
+
+    function renderFormulaManageList() {
+      var list = document.getElementById('formula-manage-list');
+      if (!list) return;
+      var search = (document.getElementById('formula-manage-search').value || '').toLowerCase();
+      var filtered = formulaDatabase.filter(function(f) {
+        if (!search) return true;
+        return (f.name.toLowerCase().indexOf(search) >= 0) ||
+               (f.nameCN && f.nameCN.toLowerCase().indexOf(search) >= 0) ||
+               (f.category && f.category.toLowerCase().indexOf(search) >= 0);
+      });
+      if (filtered.length === 0) {
+        list.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-secondary);font-size:12px;">' + (formulaDatabase.length === 0 ? 'No formulas yet. Tap "+ New" to add one.' : 'No matches found.') + '</div>';
+        return;
+      }
+      var currentCat = '';
+      var html = '';
+      filtered.forEach(function(f) {
+        if (f.category !== currentCat) {
+          currentCat = f.category;
+          html += '<div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--pink); padding: 8px 4px 3px; border-bottom: 1px solid var(--border-color);">' + (currentCat || 'Uncategorized') + '</div>';
+        }
+        var detail = [];
+        if (f.kcal) detail.push(f.kcal + ' kcal');
+        if (f.protein) detail.push(f.protein + 'g Pro');
+        if (f.dilution) detail.push(f.dilution);
+        html += '<div class="supp-manage-row">' +
+          '<div style="flex:1; min-width:0;">' +
+            '<div class="supp-manage-name">' + f.name + (f.nameCN ? ' <span style="font-weight:400;opacity:0.6;font-size:10px;">' + f.nameCN + '</span>' : '') + '</div>' +
+            (detail.length ? '<div class="supp-manage-detail">' + detail.join(' · ') + ' /100mL</div>' : '') +
+          '</div>' +
+          '<div class="supp-manage-actions">' +
+            '<button class="supp-info-btn" onclick="openFormulaInfo(' + f.id + ')" title="Info"><i class="fas fa-info"></i></button>' +
+            '<button class="supp-info-btn" onclick="openFormulaModal(\'edit\',' + f.id + ')" title="Edit" style="background:rgba(255,149,0,0.1);color:var(--warning);"><i class="fas fa-pen"></i></button>' +
+            '<button class="supp-info-btn" onclick="deleteFormula(' + f.id + ')" title="Delete" style="background:rgba(255,59,48,0.1);color:var(--danger);"><i class="fas fa-trash"></i></button>' +
+          '</div>' +
+        '</div>';
+      });
+      list.innerHTML = html;
+    }
+
+    function openFormulaInfo(id) {
+      var f = formulaDatabase.find(function(x) { return x.id === id; });
+      if (!f) return;
+      document.getElementById('formula-info-title').textContent = f.name;
+      var html = '<table style="width:100%; font-size: 13px; border-collapse: collapse;">';
+      if (f.nameCN) html += '<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 6px 4px; color: var(--text-secondary);">Chinese Name</td><td style="padding: 6px 4px; text-align: right; font-weight: 600;">' + f.nameCN + '</td></tr>';
+      html += '<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 6px 4px; color: var(--text-secondary);">Category</td><td style="padding: 6px 4px; text-align: right; font-weight: 600;">' + (f.category || '--') + '</td></tr>';
+      html += '<tr style="border-bottom: 1px solid var(--border-color);"><td colspan="2" style="padding: 8px 4px; font-weight: 700; color: var(--pink);">Per 100 mL</td></tr>';
+      SUPP_FIELDS.forEach(function(key) {
+        if (f[key] != null) {
+          html += '<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 6px 4px; color: var(--text-secondary);">' + SUPP_LABELS[key] + '</td><td style="padding: 6px 4px; text-align: right; font-weight: 600;">' + f[key] + '</td></tr>';
+        }
+      });
+      html += '<tr style="border-bottom: 1px solid var(--border-color);"><td colspan="2" style="padding: 8px 4px; font-weight: 700; color: var(--accent);">Preparation</td></tr>';
+      html += '<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 6px 4px; color: var(--text-secondary);">Scoop Weight</td><td style="padding: 6px 4px; text-align: right; font-weight: 600;">' + (f.scoopWeight != null ? f.scoopWeight + ' g' : '--') + '</td></tr>';
+      html += '<tr><td style="padding: 6px 4px; color: var(--text-secondary);">Dilution</td><td style="padding: 6px 4px; text-align: right; font-weight: 600;">' + (f.dilution || '--') + '</td></tr>';
+      html += '</table>';
+      document.getElementById('formula-info-body').innerHTML = html;
+      document.getElementById('formula-info-modal').classList.add('active');
+    }
+
+    function closeFormulaInfoModal() { document.getElementById('formula-info-modal').classList.remove('active'); }
 
     function getFormulaById(id) {
       return formulaDatabase.find(f => f.id === id);
     }
 
-    function getSelectedFormula(n) {
-      const id = parseInt(document.getElementById(`formula-select-${n}`).value);
-      return formulaDatabase.find(f => f.id === id);
+    // === Ped Milk grid: build results HTML (always visible) ===
+    function buildFormulaResultsHTML(totals, totalVol, bw, hasAny) {
+      function fmtV(v, dp) { return (hasAny && v) ? v.toFixed(dp !== undefined ? dp : 1) : ''; }
+      function fmtPkg(v) { return (hasAny && bw && v) ? (v / bw).toFixed(1) : ''; }
+      function fmtMicro(v, dp) { return (hasAny && v) ? v.toFixed(dp !== undefined ? dp : 2) : ''; }
+
+      var kcal = totals.kcal || 0;
+      var pro = totals.protein || 0;
+      var carbs = totals.carbs || 0;
+      var fat = totals.fat || 0;
+      var pTE = kcal > 0 ? ((pro * 4) / kcal * 100) : 0;
+      var cTE = kcal > 0 ? ((carbs * 4) / kcal * 100) : 0;
+      var fTE = kcal > 0 ? ((fat * 9) / kcal * 100) : 0;
+
+      var html = '<table class="supp-result-table">';
+      // Section: Macronutrients
+      html += '<tr class="supp-section-row macro"><td colspan="4">Macronutrients</td></tr>';
+      html += '<tr><td>Energy (kcal)</td><td>' + (hasAny ? Math.round(kcal) : '') + '</td><td>Vol (mL)</td><td>' + (hasAny && totalVol ? Math.round(totalVol) : '') + '</td></tr>';
+      html += '<tr><td>kcal/kg</td><td>' + fmtPkg(kcal) + '</td><td>mL/kg</td><td>' + fmtPkg(totalVol) + '</td></tr>';
+      html += '<tr><td>Protein (g)</td><td>' + fmtV(pro) + '</td><td>%TE Pro</td><td>' + (hasAny && pTE > 0 ? pTE.toFixed(1) : '') + '</td></tr>';
+      html += '<tr><td>Pro g/kg</td><td>' + fmtPkg(pro) + '</td><td>%TE CHO</td><td>' + (hasAny && cTE > 0 ? cTE.toFixed(1) : '') + '</td></tr>';
+      html += '<tr><td>CHO (g)</td><td>' + fmtV(carbs) + '</td><td>%TE Fat</td><td>' + (hasAny && fTE > 0 ? fTE.toFixed(1) : '') + '</td></tr>';
+      html += '<tr><td>Fat (g)</td><td>' + fmtV(fat) + '</td><td>Fibre (g)</td><td>' + fmtV(totals.fibre) + '</td></tr>';
+      html += '<tr><td>Water (mL)</td><td>' + fmtV(totals.water, 0) + '</td><td>kcal/100mL</td><td>' + (hasAny && totalVol > 0 ? (kcal / totalVol * 100).toFixed(0) : '') + '</td></tr>';
+      // Section: Vitamins
+      html += '<tr class="supp-section-row vitamin"><td colspan="4">Vitamins</td></tr>';
+      html += '<tr><td>Vit A (mcg)</td><td>' + fmtMicro(totals.vitA) + '</td><td>Vit D (mcg)</td><td>' + fmtMicro(totals.vitD) + '</td></tr>';
+      html += '<tr><td>Vit E (mg)</td><td>' + fmtMicro(totals.vitE) + '</td><td>Vit K (mcg)</td><td>' + fmtMicro(totals.vitK) + '</td></tr>';
+      html += '<tr><td>Vit C (mg)</td><td>' + fmtMicro(totals.vitC) + '</td><td>Thiamin (mg)</td><td>' + fmtMicro(totals.thiamin) + '</td></tr>';
+      html += '<tr><td>Riboflavin (mg)</td><td>' + fmtMicro(totals.riboflavin) + '</td><td>Niacin (mg)</td><td>' + fmtMicro(totals.niacin) + '</td></tr>';
+      html += '<tr><td>Vit B6 (mg)</td><td>' + fmtMicro(totals.vitB6) + '</td><td>Folate (mcg)</td><td>' + fmtMicro(totals.folate, 0) + '</td></tr>';
+      html += '<tr><td>Vit B12 (mcg)</td><td>' + fmtMicro(totals.vitB12) + '</td><td>Panto. Acid (mg)</td><td>' + fmtMicro(totals.pantoAcid) + '</td></tr>';
+      html += '<tr><td>Biotin (mcg)</td><td>' + fmtMicro(totals.biotin) + '</td><td>Choline (mg)</td><td>' + fmtMicro(totals.choline) + '</td></tr>';
+      // Section: Minerals
+      html += '<tr class="supp-section-row mineral"><td colspan="4">Minerals</td></tr>';
+      html += '<tr><td>Na (mmol)</td><td>' + fmtV(totals.na) + '</td><td>K (mmol)</td><td>' + fmtV(totals.k) + '</td></tr>';
+      html += '<tr><td>P (mmol)</td><td>' + fmtV(totals.p) + '</td><td>Ca (mg)</td><td>' + fmtV(totals.ca, 0) + '</td></tr>';
+      html += '<tr><td>Iron (mg)</td><td>' + fmtMicro(totals.iron) + '</td><td>Zinc (mg)</td><td>' + fmtMicro(totals.zinc) + '</td></tr>';
+      html += '<tr><td>Iodine (mcg)</td><td>' + fmtMicro(totals.iodine) + '</td><td>Selenium (mcg)</td><td>' + fmtMicro(totals.selenium) + '</td></tr>';
+      html += '<tr><td>Copper (mg)</td><td>' + fmtMicro(totals.copper) + '</td><td>Manganese (mg)</td><td>' + fmtMicro(totals.manganese) + '</td></tr>';
+      html += '<tr><td>Chromium (mcg)</td><td>' + fmtMicro(totals.chromium) + '</td><td>Molybdenum (mcg)</td><td>' + fmtMicro(totals.molybdenum) + '</td></tr>';
+      html += '<tr><td>Magnesium (mg)</td><td>' + fmtMicro(totals.magnesium, 0) + '</td><td>Chloride (mg)</td><td>' + fmtMicro(totals.chloride, 0) + '</td></tr>';
+      html += '</table>';
+      return html;
     }
 
-    function updateFormulaInfo(n) {
-      const formula = getSelectedFormula(n);
-      const infoDiv = document.getElementById(`formula-info-${n}`);
-
-      if (!formula) {
-        infoDiv.style.display = 'none';
-        document.getElementById(`formula-kcal-result-${n}`).textContent = '--';
-        document.getElementById(`formula-protein-result-${n}`).textContent = '--';
-        document.getElementById(`formula-fat-result-${n}`).textContent = '--';
-        document.getElementById(`formula-carb-result-${n}`).textContent = '--';
-        calculateCombinedTotal();
-        return;
+    function calcFormulaTotals() {
+      var bw = parseFloat(document.getElementById('fm-bw').value);
+      var totals = {};
+      SUPP_FIELDS.forEach(function(f) { totals[f] = 0; });
+      var totalVol = 0;
+      var hasAny = false;
+      for (var i = 1; i <= 5; i++) {
+        var selEl = document.getElementById('fm-sel-' + i);
+        var strEl = document.getElementById('fm-str-' + i);
+        var volEl = document.getElementById('fm-vol-' + i);
+        var freqEl = document.getElementById('fm-freq-' + i);
+        if (!selEl || !volEl || !freqEl) continue;
+        var fId = parseInt(selEl.value);
+        var vol = parseFloat(volEl.value);
+        var freq = parseFloat(freqEl.value);
+        var str = parseFloat(strEl.value);
+        if (isNaN(freq)) freq = 0;
+        if (isNaN(str) || str === 0) str = 1;
+        if (!fId || !vol || freq <= 0) continue;
+        var fm = formulaDatabase.find(function(f) { return f.id === fId; });
+        if (!fm) continue;
+        var factor = (vol / 100) * freq * str;
+        SUPP_FIELDS.forEach(function(key) {
+          if (fm[key] != null) totals[key] += fm[key] * factor;
+        });
+        totalVol += vol * freq;
+        hasAny = true;
       }
-
-      document.getElementById(`formula-energy-${n}`).textContent = formula.kcal + ' kcal';
-      document.getElementById(`formula-protein-${n}`).textContent = formula.protein + ' g';
-      document.getElementById(`formula-fat-${n}`).textContent = formula.fat + ' g';
-      document.getElementById(`formula-dilution-${n}`).textContent = formula.dilution;
-      infoDiv.style.display = 'block';
-
-      calculateFormulaNutrition(n);
+      // Water
+      var wVol = parseFloat(document.getElementById('fm-water-vol').value) || 0;
+      var wFreq = parseFloat(document.getElementById('fm-water-freq').value) || 0;
+      var dailyWater = wVol * wFreq;
+      if (dailyWater > 0) { totalVol += dailyWater; totals.water += dailyWater; hasAny = true; }
+      document.getElementById('fm-results-container').innerHTML = buildFormulaResultsHTML(totals, totalVol, bw, hasAny);
     }
 
-    function calculateFormulaNutrition(n) {
-      const formula = getSelectedFormula(n);
-      const volume = parseFloat(document.getElementById(`formula-volume-${n}`).value);
-      const strength = parseFloat(document.getElementById(`formula-strength-${n}`).value) || 1.0;
-      const frequency = parseFloat(document.getElementById(`formula-freq-${n}`).value) || 1;
-
-      if (!formula || !volume) {
-        document.getElementById(`formula-kcal-result-${n}`).textContent = '--';
-        document.getElementById(`formula-protein-result-${n}`).textContent = '--';
-        document.getElementById(`formula-fat-result-${n}`).textContent = '--';
-        document.getElementById(`formula-carb-result-${n}`).textContent = '--';
-        calculateCombinedTotal();
-        return;
+    function clearAllFormulaRows() {
+      for (var i = 1; i <= 5; i++) {
+        var sel = document.getElementById('fm-sel-' + i);
+        var str = document.getElementById('fm-str-' + i);
+        var vol = document.getElementById('fm-vol-' + i);
+        var freq = document.getElementById('fm-freq-' + i);
+        if (sel) sel.selectedIndex = 0;
+        if (str) str.value = '';
+        if (vol) vol.value = '';
+        if (freq) freq.value = '0';
       }
-
-      const factor = (volume / 100) * strength * frequency;
-      document.getElementById(`formula-kcal-result-${n}`).textContent = Math.round(formula.kcal * factor);
-      document.getElementById(`formula-protein-result-${n}`).textContent = (formula.protein * factor).toFixed(1);
-      document.getElementById(`formula-fat-result-${n}`).textContent = (formula.fat * factor).toFixed(1);
-      document.getElementById(`formula-carb-result-${n}`).textContent = (formula.carbs * factor).toFixed(1);
-
-      calculateCombinedTotal();
+      var wv = document.getElementById('fm-water-vol');
+      var wf = document.getElementById('fm-water-freq');
+      if (wv) wv.value = '';
+      if (wf) wf.value = '0';
+      var bwEl = document.getElementById('fm-bw');
+      if (bwEl) bwEl.value = '';
+      var emptyTotals = {};
+      SUPP_FIELDS.forEach(function(f) { emptyTotals[f] = 0; });
+      document.getElementById('fm-results-container').innerHTML = buildFormulaResultsHTML(emptyTotals, 0, 0, false);
     }
 
-    function calculateCombinedTotal() {
-      let totalVolume = 0;
-      let totalKcal = 0;
-      let totalProtein = 0;
-      let totalCarbs = 0;
-      let totalFat = 0;
-
-      // Get values from Formula 1
-      const formula1 = getSelectedFormula(1);
-      const volume1 = parseFloat(document.getElementById('formula-volume-1').value) || 0;
-      const strength1 = parseFloat(document.getElementById('formula-strength-1').value) || 1.0;
-      const freq1 = parseFloat(document.getElementById('formula-freq-1').value) || 1;
-      if (formula1 && volume1) {
-        const factor1 = (volume1 / 100) * strength1 * freq1;
-        totalVolume += volume1 * freq1;
-        totalKcal += formula1.kcal * factor1;
-        totalProtein += formula1.protein * factor1;
-        totalCarbs += formula1.carbs * factor1;
-        totalFat += formula1.fat * factor1;
-      }
-
-      // Get values from Formula 2
-      const formula2 = getSelectedFormula(2);
-      const volume2 = parseFloat(document.getElementById('formula-volume-2').value) || 0;
-      const strength2 = parseFloat(document.getElementById('formula-strength-2').value) || 1.0;
-      const freq2 = parseFloat(document.getElementById('formula-freq-2').value) || 1;
-      if (formula2 && volume2) {
-        const factor2 = (volume2 / 100) * strength2 * freq2;
-        totalVolume += volume2 * freq2;
-        totalKcal += formula2.kcal * factor2;
-        totalProtein += formula2.protein * factor2;
-        totalCarbs += formula2.carbs * factor2;
-        totalFat += formula2.fat * factor2;
-      }
-
-      // Update combined display
-      document.getElementById('combined-volume').textContent = totalVolume > 0 ? Math.round(totalVolume) : '--';
-      document.getElementById('combined-kcal').textContent = totalKcal > 0 ? Math.round(totalKcal) : '--';
-      document.getElementById('combined-protein').textContent = totalProtein > 0 ? totalProtein.toFixed(1) : '--';
-      document.getElementById('combined-carbs').textContent = totalCarbs > 0 ? totalCarbs.toFixed(1) : '--';
-      document.getElementById('combined-fat').textContent = totalFat > 0 ? totalFat.toFixed(1) : '--';
-      document.getElementById('combined-kcal-per-100').textContent = totalVolume > 0 && totalKcal > 0
-        ? Math.round(totalKcal / totalVolume * 100)
-        : '--';
+    function initFormulaGrid() {
+      populateFormulaDropdown();
+      var emptyTotals = {};
+      SUPP_FIELDS.forEach(function(f) { emptyTotals[f] = 0; });
+      document.getElementById('fm-results-container').innerHTML = buildFormulaResultsHTML(emptyTotals, 0, 0, false);
     }
 
     function parseDilution(dilutionStr) {
@@ -2931,69 +3631,72 @@
       const preWeight = parseFloat(document.getElementById('preg-weight').value);
       const energyFactor = parseFloat(document.getElementById('preg-energy-factor').value);
       const proteinFactor = parseFloat(document.getElementById('preg-protein-factor').value);
-      const resultsDiv = document.getElementById('preg-req-results');
-      const emptyDiv = document.getElementById('preg-req-empty');
 
       updateAutoTrimesterDisplay();
 
       const trimester = getPregnancyTrimester();
 
-      if (!preWeight || !energyFactor || !proteinFactor || !trimester) {
-        resultsDiv.style.display = 'none';
-        emptyDiv.style.display = 'block';
-        return;
-      }
+      // === MACRONUTRIENTS (dynamic – need weight + factors + trimester) ===
 
-      emptyDiv.style.display = 'none';
+      if (preWeight && energyFactor && trimester) {
+        const baseEnergy = preWeight * energyFactor;
+        const [elnaExtra, whoExtra] = extraEnergy[trimester];
+        const totalELNA = Math.round(baseEnergy + elnaExtra);
+        const totalWHO = Math.round(baseEnergy + whoExtra);
+        const extraLow = Math.min(elnaExtra, whoExtra);
+        const extraHigh = Math.max(elnaExtra, whoExtra);
+        const totalLow = Math.min(totalELNA, totalWHO);
+        const totalHigh = Math.max(totalELNA, totalWHO);
 
-      // === MACRONUTRIENTS ===
+        if (extraLow === extraHigh) {
+          document.getElementById('res-preg-energy-range').textContent = totalLow + ' kcal';
+          document.getElementById('res-preg-extra').textContent = '+' + extraLow;
+        } else {
+          document.getElementById('res-preg-energy-range').textContent = totalLow + ' – ' + totalHigh + ' kcal';
+          document.getElementById('res-preg-extra').textContent = '+' + extraLow + ' – +' + extraHigh;
+        }
+        document.getElementById('res-preg-energy-base').textContent = Math.round(baseEnergy);
 
-      // Energy
-      const baseEnergy = preWeight * energyFactor;
-      const [elnaExtra, whoExtra] = extraEnergy[trimester];
-      const totalELNA = Math.round(baseEnergy + elnaExtra);
-      const totalWHO = Math.round(baseEnergy + whoExtra);
-      const extraLow = Math.min(elnaExtra, whoExtra);
-      const extraHigh = Math.max(elnaExtra, whoExtra);
-      const totalLow = Math.min(totalELNA, totalWHO);
-      const totalHigh = Math.max(totalELNA, totalWHO);
+        // Carbohydrate & Fat
+        const choLow = Math.round((totalLow * 0.45) / 4);
+        const choHigh = Math.round((totalHigh * 0.64) / 4);
+        document.getElementById('res-preg-cho').textContent = choLow + ' – ' + choHigh + ' g';
 
-      if (extraLow === extraHigh) {
-        document.getElementById('res-preg-energy-range').textContent = totalLow + ' kcal';
-        document.getElementById('res-preg-extra').textContent = '+' + extraLow;
+        const fatLow = Math.round((totalLow * 0.20) / 9);
+        const fatHigh = Math.round((totalHigh * 0.35) / 9);
+        document.getElementById('res-preg-fat').textContent = fatLow + ' – ' + fatHigh + ' g';
       } else {
-        document.getElementById('res-preg-energy-range').textContent = totalLow + ' – ' + totalHigh + ' kcal';
-        document.getElementById('res-preg-extra').textContent = '+' + extraLow + ' – +' + extraHigh;
+        document.getElementById('res-preg-energy-range').textContent = '--';
+        document.getElementById('res-preg-energy-base').textContent = '--';
+        document.getElementById('res-preg-extra').textContent = '--';
+        document.getElementById('res-preg-cho').textContent = '--';
+        document.getElementById('res-preg-fat').textContent = '--';
       }
-      document.getElementById('res-preg-energy-base').textContent = Math.round(baseEnergy);
 
-      // Protein
-      const protein = preWeight * proteinFactor;
-      document.getElementById('res-preg-protein').textContent = protein.toFixed(1);
-
-      // Carbohydrate & Fat
-      const choLow = Math.round((totalLow * 0.45) / 4);
-      const choHigh = Math.round((totalHigh * 0.64) / 4);
-      document.getElementById('res-preg-cho').textContent = choLow + ' – ' + choHigh + ' g';
-
-      const fatLow = Math.round((totalLow * 0.20) / 9);
-      const fatHigh = Math.round((totalHigh * 0.35) / 9);
-      document.getElementById('res-preg-fat').textContent = fatLow + ' – ' + fatHigh + ' g';
-
-      // Fluid
-      const baselineFluid = preWeight * 30;
-      const fluidLow = Math.round(baselineFluid * 1.1);
-      const fluidHigh = Math.round(baselineFluid + 1000);
-      if (trimester === 1) {
-        document.getElementById('res-preg-fluid').textContent = fluidLow + ' ml';
+      // Protein (needs weight + protein factor only)
+      if (preWeight && proteinFactor) {
+        document.getElementById('res-preg-protein').textContent = (preWeight * proteinFactor).toFixed(1);
       } else {
-        document.getElementById('res-preg-fluid').textContent = fluidLow + ' – ' + fluidHigh + ' ml';
+        document.getElementById('res-preg-protein').textContent = '--';
       }
 
-      // === VITAMINS ===
+      // Fluid (needs weight + trimester)
+      if (preWeight && trimester) {
+        const baselineFluid = preWeight * 30;
+        const fluidLow = Math.round(baselineFluid * 1.1);
+        const fluidHigh = Math.round(baselineFluid + 1000);
+        if (trimester === 1) {
+          document.getElementById('res-preg-fluid').textContent = fluidLow + ' ml';
+        } else {
+          document.getElementById('res-preg-fluid').textContent = fluidLow + ' – ' + fluidHigh + ' ml';
+        }
+      } else {
+        document.getElementById('res-preg-fluid').textContent = '--';
+      }
 
-      // Folate
-      document.getElementById('res-preg-folate').textContent = '400';
+      // === VITAMINS (trimester-dependent part) ===
+
+      // Folate high-risk warning (trimester-dependent)
       const highRiskDiv = document.getElementById('preg-folate-highrisk');
       if (trimester === 1) {
         highRiskDiv.style.display = 'block';
@@ -3002,16 +3705,15 @@
         highRiskDiv.style.display = 'none';
       }
 
-      // === MINERALS ===
-
-      // Iodine
-      document.getElementById('res-preg-iodine').textContent = '250 – 300';
+      // === MINERALS (trimester-dependent) ===
 
       // Iron by trimester
-      const ironData = { 1: '18.8', 2: '22 – 23', 3: '24 – 27' };
-      document.getElementById('res-preg-iron').textContent = ironData[trimester] + ' mg';
-
-      resultsDiv.style.display = 'block';
+      if (trimester) {
+        const ironData = { 1: '18.8', 2: '22 – 23', 3: '24 – 27' };
+        document.getElementById('res-preg-iron').textContent = ironData[trimester] + ' mg';
+      } else {
+        document.getElementById('res-preg-iron').textContent = '--';
+      }
     }
 
     // Register Service Worker for offline use
@@ -3024,12 +3726,17 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      populateSupplementDropdown();
-      populateFormulaDropdown();
+      initFirebase();
+
+      // Initialize UI with local/hardcoded data immediately
+      // (Firebase data will reload after Google sign-in via onAuthStateChanged)
+      initFormulaNextId();
+      initFormulaGrid();
+      initSuppDropdowns();
+
       // Set default pregnancy check date to today
       document.getElementById('preg-check-date').value = new Date().toISOString().split('T')[0];
     });
-    document.getElementById('edit-modal').addEventListener('click', e => { if (e.target === document.getElementById('edit-modal')) closeModal(); });
   </script>
 </body>
 </html>
