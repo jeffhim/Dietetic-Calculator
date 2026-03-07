@@ -649,7 +649,12 @@
       <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Preparation</div>
       <div class="input-group">
         <label class="input-label">Dilution (powder to water)</label>
-        <input type="text" class="input-field" id="ns-dilution" placeholder="e.g. 1 scoop (4.5g) per 30mL water">
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <input type="number" class="input-field" id="ns-dilution-scoops" placeholder="xx" step="any" style="width: 60px; text-align: center;">
+          <span style="font-size: 13px; font-weight: 600; color: var(--text-secondary); white-space: nowrap;">scoop :</span>
+          <input type="number" class="input-field" id="ns-dilution-water" placeholder="xx" step="any" style="width: 70px; text-align: center;">
+          <span style="font-size: 13px; font-weight: 600; color: var(--text-secondary); white-space: nowrap;">mL water</span>
+        </div>
       </div>
       <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Notes</div>
       <div class="input-group">
@@ -913,7 +918,15 @@
       <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Preparation</div>
       <div class="input-row">
         <div class="input-group"><label class="input-label">Scoop Weight (g)</label><input type="number" class="input-field" id="fm-scoopWeight" placeholder="e.g. 4.5" step="any"></div>
-        <div class="input-group"><label class="input-label">Dilution</label><input type="text" class="input-field" id="fm-dilution" placeholder="e.g. 1:30ml"></div>
+        <div class="input-group">
+          <label class="input-label">Dilution</label>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <input type="number" class="input-field" id="fm-dilution-scoops" placeholder="xx" step="any" style="width: 60px; text-align: center;">
+            <span style="font-size: 13px; font-weight: 600; color: var(--text-secondary); white-space: nowrap;">scoop :</span>
+            <input type="number" class="input-field" id="fm-dilution-water" placeholder="xx" step="any" style="width: 70px; text-align: center;">
+            <span style="font-size: 13px; font-weight: 600; color: var(--text-secondary); white-space: nowrap;">mL water</span>
+          </div>
+        </div>
       </div>
       <button class="btn btn-primary" style="width: 100%; margin-top: 14px;" onclick="saveFormula()"><i class="fas fa-save" style="margin-right: 6px;"></i> Save Formula</button>
     </div>
@@ -2390,6 +2403,36 @@
       });
     }
 
+    // === Dilution field helpers ===
+    function formatDilutionDisplay(dilutionStr) {
+      if (!dilutionStr) return '--';
+      var m = dilutionStr.match(/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)ml/i);
+      if (m) return m[1] + ' scoop : ' + m[2] + ' mL water';
+      return dilutionStr;
+    }
+
+    function buildDilutionString(prefix) {
+      var scoops = document.getElementById(prefix + 'dilution-scoops').value.trim();
+      var water = document.getElementById(prefix + 'dilution-water').value.trim();
+      if (!scoops && !water) return '';
+      var s = scoops || '1';
+      var w = water || '0';
+      return s + ':' + w + 'ml';
+    }
+
+    function fillDilutionFields(prefix, dilutionStr) {
+      var scoopsEl = document.getElementById(prefix + 'dilution-scoops');
+      var waterEl = document.getElementById(prefix + 'dilution-water');
+      if (!scoopsEl || !waterEl) return;
+      if (!dilutionStr || dilutionStr === 'RTF' || dilutionStr === '--') return;
+      // Match "X:Yml" or "X:Yml=Zml"
+      var m = dilutionStr.match(/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)ml/i);
+      if (m) {
+        scoopsEl.value = m[1];
+        waterEl.value = m[2];
+      }
+    }
+
     // === Modal for Add/Edit Supplement ===
     function openSuppModal(mode, id) {
       suppEditId = (mode === 'edit') ? id : null;
@@ -2404,7 +2447,8 @@
         ['na','k','p'].forEach(function(f) { var s = document.getElementById('ns-' + f + '-unit'); if (s) s.value = 'alt'; });
       }
       SUPP_FIELDS.forEach(function(f) { document.getElementById('ns-' + f).value = ''; });
-      document.getElementById('ns-dilution').value = '';
+      document.getElementById('ns-dilution-scoops').value = '';
+      document.getElementById('ns-dilution-water').value = '';
       document.getElementById('ns-notes').value = '';
       // fill if editing
       if (mode === 'edit') {
@@ -2421,7 +2465,7 @@
             if (!matched) { document.getElementById('ns-category-custom').value = s.category; }
           }
           SUPP_FIELDS.forEach(function(f) { if (s[f] != null && s[f] !== '') document.getElementById('ns-' + f).value = s[f]; });
-          document.getElementById('ns-dilution').value = s.dilution || '';
+          fillDilutionFields('ns-', s.dilution);
           document.getElementById('ns-notes').value = s.notes || '';
         }
       }
@@ -2432,7 +2476,7 @@
     function saveSupp() {
       var name = document.getElementById('ns-name').value.trim() || 'Unnamed Supplement';
       var category = document.getElementById('ns-category-custom').value.trim() || document.getElementById('ns-category').value || 'Other';
-      var obj = { name: name, category: category, dilution: document.getElementById('ns-dilution').value.trim(), notes: document.getElementById('ns-notes').value.trim() };
+      var obj = { name: name, category: category, dilution: buildDilutionString('ns-'), notes: document.getElementById('ns-notes').value.trim() };
       SUPP_FIELDS.forEach(function(f) {
         obj[f] = getConvertedNutrientValue('ns-', f);
       });
@@ -2480,7 +2524,7 @@
           html += '<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 6px 4px; color: var(--text-secondary);">' + SUPP_LABELS[f] + '</td><td style="padding: 6px 4px; text-align: right; font-weight: 600;">' + s[f] + '</td></tr>';
         }
       });
-      if (s.dilution) html += '<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 6px 4px; color: var(--text-secondary);">Dilution</td><td style="padding: 6px 4px; text-align: right;">' + s.dilution + '</td></tr>';
+      if (s.dilution) html += '<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 6px 4px; color: var(--text-secondary);">Dilution</td><td style="padding: 6px 4px; text-align: right;">' + formatDilutionDisplay(s.dilution) + '</td></tr>';
       if (s.notes) html += '<tr><td colspan="2" style="padding: 8px 4px; color: var(--text-secondary); font-style: italic;">' + s.notes + '</td></tr>';
       html += '</table>';
       document.getElementById('supp-info-body').innerHTML = html;
@@ -2865,7 +2909,8 @@
         if (el) el.value = '';
       });
       document.getElementById('fm-scoopWeight').value = '';
-      document.getElementById('fm-dilution').value = '';
+      document.getElementById('fm-dilution-scoops').value = '';
+      document.getElementById('fm-dilution-water').value = '';
       // fill if editing
       if (mode === 'edit') {
         var f = formulaDatabase.find(function(x) { return x.id === id; });
@@ -2886,7 +2931,7 @@
             }
           });
           if (f.scoopWeight != null) document.getElementById('fm-scoopWeight').value = f.scoopWeight;
-          document.getElementById('fm-dilution').value = f.dilution || '';
+          fillDilutionFields('fm-', f.dilution);
         }
       }
       document.getElementById('formula-modal').classList.add('active');
@@ -2905,7 +2950,7 @@
         nameCN: document.getElementById('fm-nameCN').value.trim(),
         category: category,
         scoopWeight: scoopVal !== '' ? parseFloat(scoopVal) : null,
-        dilution: document.getElementById('fm-dilution').value.trim() || ''
+        dilution: buildDilutionString('fm-')
       };
       SUPP_FIELDS.forEach(function(f) {
         obj[f] = getConvertedNutrientValue('fm-', f);
@@ -3004,7 +3049,7 @@
       });
       html += '<tr style="border-bottom: 1px solid var(--border-color);"><td colspan="2" style="padding: 8px 4px; font-weight: 700; color: var(--accent);">Preparation</td></tr>';
       html += '<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 6px 4px; color: var(--text-secondary);">Scoop Weight</td><td style="padding: 6px 4px; text-align: right; font-weight: 600;">' + (f.scoopWeight != null ? f.scoopWeight + ' g' : '--') + '</td></tr>';
-      html += '<tr><td style="padding: 6px 4px; color: var(--text-secondary);">Dilution</td><td style="padding: 6px 4px; text-align: right; font-weight: 600;">' + (f.dilution || '--') + '</td></tr>';
+      html += '<tr><td style="padding: 6px 4px; color: var(--text-secondary);">Dilution</td><td style="padding: 6px 4px; text-align: right; font-weight: 600;">' + formatDilutionDisplay(f.dilution) + '</td></tr>';
       html += '</table>';
       document.getElementById('formula-info-body').innerHTML = html;
       document.getElementById('formula-info-modal').classList.add('active');
@@ -3132,17 +3177,20 @@
       // "1:30ml" means 1 scoop powder + 30ml water (not final volume)
       if (!dilutionStr || dilutionStr === 'RTF' || dilutionStr === '--') return null;
 
-      // Handle "1:30ml" format - 1 scoop + 30ml water
-      const match1 = dilutionStr.match(/^1:(\d+)ml$/i);
-      if (match1) return parseFloat(match1[1]);
+      // Handle "X:Yml" format (e.g. "1:30ml", "3:90ml")
+      var match1 = dilutionStr.match(/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)ml$/i);
+      if (match1) {
+        var sc = parseFloat(match1[1]);
+        var wt = parseFloat(match1[2]);
+        return sc > 0 ? wt / sc : null;
+      }
 
-      // Handle "7:210ml=250ml" format - 7 scoops + 210ml water = 250ml final
-      // Return water per scoop: 210/7 = 30ml water per scoop
-      const match2 = dilutionStr.match(/^(\d+):(\d+)ml=(\d+)ml$/i);
+      // Handle "X:Yml=Zml" legacy format (e.g. "7:210ml=250ml")
+      var match2 = dilutionStr.match(/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)ml=(\d+(?:\.\d+)?)ml$/i);
       if (match2) {
-        const scoops = parseFloat(match2[1]);
-        const waterVol = parseFloat(match2[2]); // Water added, not final volume
-        return waterVol / scoops;
+        var sc2 = parseFloat(match2[1]);
+        var wv2 = parseFloat(match2[2]);
+        return sc2 > 0 ? wv2 / sc2 : null;
       }
 
       return null;
