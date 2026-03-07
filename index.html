@@ -199,6 +199,8 @@
     .supp-manage-actions { display: flex; gap: 3px; flex-shrink: 0; }
     .supp-icon-btn { width: 24px; height: 24px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; }
     .supp-info-btn { width: 26px; height: 26px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; background: var(--accent-light); color: var(--accent); }
+    .unit-sel { font-size: 10px; padding: 1px 4px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--accent-light); color: var(--accent); font-weight: 600; margin-left: 4px; cursor: pointer; vertical-align: middle; -webkit-appearance: none; appearance: none; }
+    .dark .unit-sel { background: rgba(16, 185, 129, 0.15); }
     .action-btn { width: 36px; height: 36px; border-radius: 10px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
     .action-btn.edit { background: var(--accent-light); color: var(--accent); }
     .action-btn.delete { background: rgba(255, 59, 48, 0.1); color: var(--danger); }
@@ -504,14 +506,27 @@
 
   <!-- Tab 3: Supplements -->
   <div id="tab-supplements" class="tab-content">
-    <div class="card" style="padding: 10px 8px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-        <span style="font-size: 14px; font-weight: 700;">Tube Feed Calculation</span>
-        <div style="display: flex; gap: 6px;">
-          <button class="supp-add-btn" onclick="toggleSuppManage()" style="background: var(--bg-tertiary); color: var(--text-primary);"><i class="fas fa-cog" style="font-size: 10px;"></i> Manage</button>
-          <button class="supp-add-btn" onclick="openSuppModal('add')"><i class="fas fa-plus" style="font-size: 10px;"></i> New</button>
-        </div>
+    <!-- Manage bar -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <span style="font-size: 16px; font-weight: 700;">Tube Feed Calculation</span>
+      <div style="display: flex; gap: 6px;">
+        <button class="supp-add-btn" onclick="toggleSuppManage()" style="background: var(--bg-tertiary); color: var(--text-primary);"><i class="fas fa-cog" style="font-size: 10px;"></i> Manage</button>
+        <button class="supp-add-btn" onclick="openSuppModal('add')"><i class="fas fa-plus" style="font-size: 10px;"></i> New</button>
       </div>
+    </div>
+    <!-- Supplement Manage Card -->
+    <div class="card" id="supp-manage-card" style="display: none; padding: 10px 8px; margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 13px; font-weight: 700;"><i class="fas fa-database" style="margin-right: 4px; color: var(--accent);"></i> My Supplements</span>
+        <button class="supp-icon-btn" onclick="toggleSuppManage()" style="background:var(--bg-tertiary);color:var(--text-secondary);"><i class="fas fa-times"></i></button>
+      </div>
+      <input type="text" class="input-field" id="supp-manage-search" placeholder="Search supplements..." oninput="renderSuppManageList()" style="margin-bottom: 8px; font-size: 13px; padding: 6px 10px;">
+      <div id="supp-manage-list" style="font-size: 12px; max-height: 400px; overflow-y: auto;">
+        <div style="text-align:center;padding:12px;color:var(--text-secondary);font-size:12px;">No supplements added yet. Tap "+ New" to create one.</div>
+      </div>
+    </div>
+    <!-- Grid card -->
+    <div class="card" style="padding: 10px 8px;">
       <div class="supp-grid-head">
         <span>Product</span><span>Str</span><span>Vol/feed</span><span></span><span>Fd/day</span>
       </div>
@@ -529,17 +544,6 @@
         <input type="number" id="supp-bw" step="0.1" oninput="calcSuppTotals()">
       </div>
       <div id="supp-results-container"></div>
-    </div>
-
-    <div class="card" id="supp-manage-card" style="display: none; padding: 10px 8px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <span style="font-size: 13px; font-weight: 700;"><i class="fas fa-database" style="margin-right: 4px; color: var(--accent);"></i> My Supplements</span>
-        <button class="supp-icon-btn" onclick="toggleSuppManage()" style="background:var(--bg-tertiary);color:var(--text-secondary);"><i class="fas fa-times"></i></button>
-      </div>
-      <input type="text" class="input-field" id="supp-manage-search" placeholder="Search supplements..." oninput="renderSuppManageList()" style="margin-bottom: 8px; font-size: 13px; padding: 6px 10px;">
-      <div id="supp-manage-list" style="font-size: 12px;">
-        <div style="text-align:center;padding:12px;color:var(--text-secondary);font-size:12px;">No supplements added yet. Tap "+ New" to create one.</div>
-      </div>
     </div>
   </div>
 
@@ -2302,14 +2306,103 @@
     const SUPP_FIELDS = ['kcal','protein','carbs','fat','fibre','na','k','p','ca','water','vitA','vitD','vitE','vitK','vitC','thiamin','riboflavin','niacin','vitB6','folate','vitB12','pantoAcid','biotin','choline','chromium','copper','iodine','iron','magnesium','manganese','molybdenum','selenium','zinc','chloride'];
     const SUPP_LABELS = { kcal:'Energy (kcal)', protein:'Protein (g)', carbs:'CHO (g)', fat:'Fat (g)', fibre:'Fibre (g)', na:'Na (mmol)', k:'K (mmol)', p:'P (mmol)', ca:'Ca (mg)', water:'Water (mL)', vitA:'Vit A (mcg RE)', vitD:'Vit D (mcg)', vitE:'Vit E (mg)', vitK:'Vit K (mcg)', vitC:'Vit C (mg)', thiamin:'Thiamin (mg)', riboflavin:'Riboflavin (mg)', niacin:'Niacin (mg NE)', vitB6:'Vit B6 (mg)', folate:'Folate (mcg DFE)', vitB12:'Vit B12 (mcg)', pantoAcid:'Panto. Acid (mg)', biotin:'Biotin (mcg)', choline:'Choline (mg)', chromium:'Chromium (mcg)', copper:'Copper (mg)', iodine:'Iodine (mcg)', iron:'Iron (mg)', magnesium:'Magnesium (mg)', manganese:'Manganese (mg)', molybdenum:'Molybdenum (mcg)', selenium:'Selenium (mcg)', zinc:'Zinc (mg)', chloride:'Chloride (mg)' };
 
+    // Unit conversion options: factor means altValue × factor = storedValue
+    const UNIT_OPTIONS = {
+      vitA:       { name: 'Vit A',       stored: 'mcg RE', alt: 'IU',   factor: 0.3 },
+      vitD:       { name: 'Vit D',       stored: 'mcg',    alt: 'IU',   factor: 0.025 },
+      vitE:       { name: 'Vit E',       stored: 'mg',     alt: 'IU',   factor: 0.45 },
+      na:         { name: 'Na',          stored: 'mmol',   alt: 'mg',   factor: 1/23 },
+      k:          { name: 'K',           stored: 'mmol',   alt: 'mg',   factor: 1/39.1 },
+      ca:         { name: 'Ca',          stored: 'mg',     alt: 'mmol', factor: 40 },
+      p:          { name: 'P',           stored: 'mmol',   alt: 'mg',   factor: 1/30.9 },
+      magnesium:  { name: 'Magnesium',   stored: 'mg',     alt: 'mmol', factor: 24.3 },
+      iron:       { name: 'Iron',        stored: 'mg',     alt: 'mmol', factor: 55.9 },
+      zinc:       { name: 'Zinc',        stored: 'mg',     alt: 'mmol', factor: 65.4 },
+      copper:     { name: 'Copper',      stored: 'mg',     alt: 'mmol', factor: 63.5 },
+      chromium:   { name: 'Chromium',    stored: 'mcg',    alt: 'nmol', factor: 0.052 },
+      molybdenum: { name: 'Molybdenum',  stored: 'mcg',    alt: 'nmol', factor: 0.0959 },
+      manganese:  { name: 'Manganese',   stored: 'mg',     alt: '\u00B5mol', factor: 0.055 },
+      selenium:   { name: 'Selenium',    stored: 'mcg',    alt: '\u00B5mol', factor: 79 },
+      chloride:   { name: 'Chloride',    stored: 'mg',     alt: 'mmol', factor: 35.5 },
+      iodine:     { name: 'Iodine',      stored: 'mcg',    alt: '\u00B5mol', factor: 127 }
+    };
+
+    // Inject unit selector dropdowns into modal inputs that have alt units
+    function injectUnitSelectors(prefix) {
+      Object.keys(UNIT_OPTIONS).forEach(function(field) {
+        var input = document.getElementById(prefix + field);
+        if (!input) return;
+        var label = input.parentElement.querySelector('.input-label');
+        if (!label) return;
+        var opt = UNIT_OPTIONS[field];
+        // Build select element
+        var sel = document.createElement('select');
+        sel.className = 'unit-sel';
+        sel.id = prefix + field + '-unit';
+        var o1 = document.createElement('option');
+        o1.value = 'stored'; o1.textContent = opt.stored;
+        var o2 = document.createElement('option');
+        o2.value = 'alt'; o2.textContent = opt.alt;
+        sel.appendChild(o1);
+        sel.appendChild(o2);
+        // Replace label text with name + selector
+        label.textContent = opt.name + ' ';
+        label.appendChild(sel);
+        // Live conversion when user switches unit
+        sel.addEventListener('change', function() {
+          if (input.value === '') return;
+          var v = parseFloat(input.value);
+          if (isNaN(v)) return;
+          if (this.value === 'alt') {
+            // stored → alt: divide by factor
+            input.value = parseFloat((v / opt.factor).toPrecision(6));
+          } else {
+            // alt → stored: multiply by factor
+            input.value = parseFloat((v * opt.factor).toPrecision(6));
+          }
+        });
+      });
+    }
+
+    // Read input value and convert to stored unit
+    function getConvertedNutrientValue(prefix, field) {
+      var el = document.getElementById(prefix + field);
+      if (!el) return null;
+      var v = el.value;
+      if (v === '') return null;
+      v = parseFloat(v);
+      if (isNaN(v)) return null;
+      var unitOpt = UNIT_OPTIONS[field];
+      if (unitOpt) {
+        var unitSel = document.getElementById(prefix + field + '-unit');
+        if (unitSel && unitSel.value === 'alt') {
+          v = v * unitOpt.factor;
+        }
+      }
+      return v;
+    }
+
+    // Reset all unit selectors to stored (default) unit
+    function resetUnitSelectors(prefix) {
+      Object.keys(UNIT_OPTIONS).forEach(function(f) {
+        var sel = document.getElementById(prefix + f + '-unit');
+        if (sel) sel.value = 'stored';
+      });
+    }
+
     // === Modal for Add/Edit Supplement ===
     function openSuppModal(mode, id) {
       suppEditId = (mode === 'edit') ? id : null;
       document.getElementById('supp-modal-title').textContent = (mode === 'edit') ? 'Edit Supplement' : 'Add Supplement';
-      // clear fields
+      // clear fields and reset unit selectors
       document.getElementById('ns-name').value = '';
       document.getElementById('ns-category').value = '';
       document.getElementById('ns-category-custom').value = '';
+      resetUnitSelectors('ns-');
+      // Default Na, K, P to mg for new entries
+      if (mode !== 'edit') {
+        ['na','k','p'].forEach(function(f) { var s = document.getElementById('ns-' + f + '-unit'); if (s) s.value = 'alt'; });
+      }
       SUPP_FIELDS.forEach(function(f) { document.getElementById('ns-' + f).value = ''; });
       document.getElementById('ns-dilution').value = '';
       document.getElementById('ns-notes').value = '';
@@ -2341,8 +2434,7 @@
       var category = document.getElementById('ns-category-custom').value.trim() || document.getElementById('ns-category').value || 'Other';
       var obj = { name: name, category: category, dilution: document.getElementById('ns-dilution').value.trim(), notes: document.getElementById('ns-notes').value.trim() };
       SUPP_FIELDS.forEach(function(f) {
-        var v = document.getElementById('ns-' + f).value;
-        obj[f] = v !== '' ? parseFloat(v) : null;
+        obj[f] = getConvertedNutrientValue('ns-', f);
       });
       if (suppEditId !== null) {
         // update existing
@@ -2763,6 +2855,11 @@
       document.getElementById('fm-nameCN').value = '';
       document.getElementById('fm-category').value = '';
       document.getElementById('fm-category-custom').value = '';
+      resetUnitSelectors('fm-');
+      // Default Na, K, P to mg for new entries
+      if (mode !== 'edit') {
+        ['na','k','p'].forEach(function(f) { var s = document.getElementById('fm-' + f + '-unit'); if (s) s.value = 'alt'; });
+      }
       SUPP_FIELDS.forEach(function(f) {
         var el = document.getElementById('fm-' + f);
         if (el) el.value = '';
@@ -2811,9 +2908,7 @@
         dilution: document.getElementById('fm-dilution').value.trim() || ''
       };
       SUPP_FIELDS.forEach(function(f) {
-        var el = document.getElementById('fm-' + f);
-        var v = el ? el.value : '';
-        obj[f] = v !== '' ? parseFloat(v) : null;
+        obj[f] = getConvertedNutrientValue('fm-', f);
       });
       if (formulaEditId !== null) {
         var idx = formulaDatabase.findIndex(function(x) { return x.id === formulaEditId; });
@@ -3727,6 +3822,10 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       initFirebase();
+
+      // Inject unit selectors into both modals
+      injectUnitSelectors('ns-');
+      injectUnitSelectors('fm-');
 
       // Initialize UI with local/hardcoded data immediately
       // (Firebase data will reload after Google sign-in via onAuthStateChanged)
