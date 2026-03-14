@@ -14,6 +14,8 @@
   <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700&family=SF+Pro+Text:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <!-- SheetJS for Excel import/export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <!-- Firebase SDK (compat for simpler API) -->
   <script src="https://cdn.jsdelivr.net/npm/firebase@11.7.1/firebase-app-compat.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/firebase@11.7.1/firebase-auth-compat.min.js"></script>
@@ -199,8 +201,14 @@
     .supp-manage-actions { display: flex; gap: 3px; flex-shrink: 0; }
     .supp-icon-btn { width: 24px; height: 24px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; }
     .supp-info-btn { width: 26px; height: 26px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; background: var(--accent-light); color: var(--accent); }
-    .unit-sel { font-size: 10px; padding: 1px 4px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--accent-light); color: var(--accent); font-weight: 600; margin-left: 4px; cursor: pointer; vertical-align: middle; -webkit-appearance: none; appearance: none; }
-    .dark .unit-sel { background: rgba(16, 185, 129, 0.15); }
+    .unit-btn { font-size: 9px; padding: 2px 6px; border: 1px solid var(--accent); border-radius: 4px; background: var(--accent-light); color: var(--accent); font-weight: 700; margin-left: 4px; cursor: pointer; vertical-align: middle; line-height: 1.2; display: inline-block; -webkit-tap-highlight-color: transparent; user-select: none; transition: all 0.15s; }
+    .unit-btn:active { transform: scale(0.92); }
+    .unit-btn.alt-active { background: var(--accent); color: #fff; }
+    .dark .unit-btn { background: rgba(16, 185, 129, 0.15); }
+    .dark .unit-btn.alt-active { background: var(--accent); color: #fff; }
+    .output-unit-toggle { font-size: 9px; padding: 2px 5px; border: 1px solid var(--border-color); border-radius: 3px; background: var(--bg-tertiary); color: var(--text-secondary); font-weight: 600; cursor: pointer; vertical-align: middle; -webkit-tap-highlight-color: transparent; user-select: none; transition: all 0.15s; }
+    .output-unit-toggle:active { transform: scale(0.92); }
+    .output-unit-toggle.toggled { background: var(--accent); color: #fff; border-color: var(--accent); }
     .action-btn { width: 36px; height: 36px; border-radius: 10px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
     .action-btn.edit { background: var(--accent-light); color: var(--accent); }
     .action-btn.delete { background: rgba(255, 59, 48, 0.1); color: var(--danger); }
@@ -521,6 +529,11 @@
         <button class="supp-icon-btn" onclick="toggleSuppManage()" style="background:var(--bg-tertiary);color:var(--text-secondary);"><i class="fas fa-times"></i></button>
       </div>
       <input type="text" class="input-field" id="supp-manage-search" placeholder="Search supplements..." oninput="renderSuppManageList()" style="margin-bottom: 8px; font-size: 13px; padding: 6px 10px;">
+      <div style="display:flex;gap:6px;margin-bottom:8px;">
+        <button class="supp-add-btn" onclick="downloadImportTemplate('supp')" style="flex:1;background:var(--accent-light);color:var(--accent);font-size:11px;"><i class="fas fa-download" style="font-size:9px;"></i> Template</button>
+        <button class="supp-add-btn" onclick="document.getElementById('supp-import-file').click()" style="flex:1;background:var(--pink-light, rgba(255,45,85,0.1));color:var(--pink);font-size:11px;"><i class="fas fa-file-import" style="font-size:9px;"></i> Import Excel</button>
+        <input type="file" id="supp-import-file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleImportFile(this,'supp')">
+      </div>
       <div id="supp-manage-list" style="font-size: 12px; max-height: 400px; overflow-y: auto;">
         <div style="text-align:center;padding:12px;color:var(--text-secondary);font-size:12px;">No supplements added yet. Tap "+ New" to create one.</div>
       </div>
@@ -562,16 +575,16 @@
         <label class="input-label">Category</label>
         <select class="input-field" id="ns-category">
           <option value="">-- Select Category --</option>
-          <option value="Standard Oral Supplement">Standard Oral Supplement</option>
-          <option value="High Energy Oral Supplement">High Energy Oral Supplement</option>
-          <option value="High Protein Oral Supplement">High Protein Oral Supplement</option>
-          <option value="Fibre-enriched Supplement">Fibre-enriched Supplement</option>
-          <option value="Renal Supplement">Renal Supplement</option>
-          <option value="Diabetic Supplement">Diabetic Supplement</option>
-          <option value="Wound Healing Supplement">Wound Healing Supplement</option>
-          <option value="Modular Supplement">Modular Supplement</option>
-          <option value="Tube Feed">Tube Feed</option>
-          <option value="Other">Other</option>
+          <option value="Standard Formula">Standard Formula</option>
+          <option value="Higher Energy Formula">Higher Energy Formula</option>
+          <option value="DM Formula">DM Formula</option>
+          <option value="Renal Formula">Renal Formula</option>
+          <option value="Wound Healing Formula">Wound Healing Formula</option>
+          <option value="Cancer Formula">Cancer Formula</option>
+          <option value="Hepatic Formula">Hepatic Formula</option>
+          <option value="Modular">Modular</option>
+          <option value="Medications">Medications</option>
+          <option value="Others">Others</option>
         </select>
         <input type="text" class="input-field" id="ns-category-custom" placeholder="Or type custom category..." style="margin-top: 6px; font-size: 13px;">
       </div>
@@ -693,6 +706,11 @@
       </div>
       <div class="input-group" style="margin-bottom: 8px;">
         <input type="text" class="input-field" id="formula-manage-search" placeholder="Search formula..." oninput="renderFormulaManageList()" style="font-size: 13px; padding: 8px 12px;">
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;">
+        <button class="supp-add-btn" onclick="downloadImportTemplate('formula')" style="flex:1;background:var(--accent-light);color:var(--accent);font-size:11px;"><i class="fas fa-download" style="font-size:9px;"></i> Template</button>
+        <button class="supp-add-btn" onclick="document.getElementById('fm-import-file').click()" style="flex:1;background:var(--pink-light, rgba(255,45,85,0.1));color:var(--pink);font-size:11px;"><i class="fas fa-file-import" style="font-size:9px;"></i> Import Excel</button>
+        <input type="file" id="fm-import-file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleImportFile(this,'formula')">
       </div>
       <div id="formula-manage-list" style="font-size: 12px; max-height: 400px; overflow-y: auto;">
         <div style="text-align:center;padding:12px;color:var(--text-secondary);font-size:12px;">No formulas added yet.</div>
@@ -2340,7 +2358,7 @@
       iodine:     { name: 'Iodine',      stored: 'mcg',    alt: '\u00B5mol', factor: 127 }
     };
 
-    // Inject unit selector dropdowns into modal inputs that have alt units
+    // Inject single-click toggle buttons for unit switching in modal inputs
     function injectUnitSelectors(prefix) {
       Object.keys(UNIT_OPTIONS).forEach(function(field) {
         var input = document.getElementById(prefix + field);
@@ -2348,30 +2366,41 @@
         var label = input.parentElement.querySelector('.input-label');
         if (!label) return;
         var opt = UNIT_OPTIONS[field];
-        // Build select element
-        var sel = document.createElement('select');
-        sel.className = 'unit-sel';
-        sel.id = prefix + field + '-unit';
-        var o1 = document.createElement('option');
-        o1.value = 'stored'; o1.textContent = opt.stored;
-        var o2 = document.createElement('option');
-        o2.value = 'alt'; o2.textContent = opt.alt;
-        sel.appendChild(o1);
-        sel.appendChild(o2);
-        // Replace label text with name + selector
+        // Build toggle button (shows current unit, click to switch)
+        var btn = document.createElement('span');
+        btn.className = 'unit-btn';
+        btn.id = prefix + field + '-unit';
+        btn.dataset.state = 'stored';
+        btn.textContent = opt.stored;
+        btn.setAttribute('role', 'button');
+        btn.setAttribute('tabindex', '0');
+        // Replace label text with name + toggle
         label.textContent = opt.name + ' ';
-        label.appendChild(sel);
-        // Live conversion when user switches unit
-        sel.addEventListener('change', function() {
-          if (input.value === '') return;
-          var v = parseFloat(input.value);
-          if (isNaN(v)) return;
-          if (this.value === 'alt') {
-            // stored → alt: divide by factor
-            input.value = parseFloat((v / opt.factor).toPrecision(6));
+        label.appendChild(btn);
+        // Single click toggles between stored and alt unit
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          var isStored = this.dataset.state === 'stored';
+          // Convert displayed value
+          if (input.value !== '') {
+            var v = parseFloat(input.value);
+            if (!isNaN(v)) {
+              if (isStored) {
+                input.value = parseFloat((v / opt.factor).toPrecision(6));
+              } else {
+                input.value = parseFloat((v * opt.factor).toPrecision(6));
+              }
+            }
+          }
+          // Toggle state
+          if (isStored) {
+            this.dataset.state = 'alt';
+            this.textContent = opt.alt;
+            this.classList.add('alt-active');
           } else {
-            // alt → stored: multiply by factor
-            input.value = parseFloat((v * opt.factor).toPrecision(6));
+            this.dataset.state = 'stored';
+            this.textContent = opt.stored;
+            this.classList.remove('alt-active');
           }
         });
       });
@@ -2387,20 +2416,76 @@
       if (isNaN(v)) return null;
       var unitOpt = UNIT_OPTIONS[field];
       if (unitOpt) {
-        var unitSel = document.getElementById(prefix + field + '-unit');
-        if (unitSel && unitSel.value === 'alt') {
+        var btn = document.getElementById(prefix + field + '-unit');
+        if (btn && btn.dataset.state === 'alt') {
           v = v * unitOpt.factor;
         }
       }
       return v;
     }
 
-    // Reset all unit selectors to stored (default) unit
+    // Reset all unit toggles to stored (default) unit
     function resetUnitSelectors(prefix) {
       Object.keys(UNIT_OPTIONS).forEach(function(f) {
-        var sel = document.getElementById(prefix + f + '-unit');
-        if (sel) sel.value = 'stored';
+        var btn = document.getElementById(prefix + f + '-unit');
+        if (btn) {
+          btn.dataset.state = 'stored';
+          btn.textContent = UNIT_OPTIONS[f].stored;
+          btn.classList.remove('alt-active');
+        }
       });
+    }
+
+    // Set specific fields to alt unit
+    function setUnitToAlt(prefix, fields) {
+      fields.forEach(function(f) {
+        var btn = document.getElementById(prefix + f + '-unit');
+        if (btn) {
+          btn.dataset.state = 'alt';
+          btn.textContent = UNIT_OPTIONS[f].alt;
+          btn.classList.add('alt-active');
+        }
+      });
+    }
+
+    // === Output unit toggle ===
+    var outputUnitAlt = {}; // tracks which output fields are showing alt units
+
+    function toggleOutputUnit(containerId, field) {
+      var opt = UNIT_OPTIONS[field];
+      if (!opt) return;
+      var key = containerId + '-' + field;
+      var isAlt = outputUnitAlt[key];
+      outputUnitAlt[key] = !isAlt;
+      // Re-render the relevant results table
+      if (containerId === 'supp') {
+        calcSuppTotals();
+      } else if (containerId === 'fm') {
+        calcFormulaTotals();
+      }
+    }
+
+    function getOutputLabel(containerId, field, storedLabel) {
+      var opt = UNIT_OPTIONS[field];
+      if (!opt) return storedLabel;
+      var key = containerId + '-' + field;
+      var isAlt = outputUnitAlt[key];
+      var unitText = isAlt ? opt.alt : opt.stored;
+      var toggledClass = isAlt ? ' toggled' : '';
+      return opt.name + ' <span class="output-unit-toggle' + toggledClass + '" onclick="toggleOutputUnit(\'' + containerId + '\',\'' + field + '\')">' + unitText + '</span>';
+    }
+
+    function fmtOutputVal(containerId, field, storedVal, hasAny, dp) {
+      if (!hasAny || !storedVal) return '';
+      var opt = UNIT_OPTIONS[field];
+      if (opt) {
+        var key = containerId + '-' + field;
+        if (outputUnitAlt[key]) {
+          // Convert stored → alt: divide by factor
+          return parseFloat((storedVal / opt.factor).toPrecision(6)).toFixed(dp !== undefined ? dp : 2);
+        }
+      }
+      return storedVal.toFixed(dp !== undefined ? dp : 2);
     }
 
     // === Dilution field helpers ===
@@ -2444,7 +2529,7 @@
       resetUnitSelectors('ns-');
       // Default Na, K, P to mg for new entries
       if (mode !== 'edit') {
-        ['na','k','p'].forEach(function(f) { var s = document.getElementById('ns-' + f + '-unit'); if (s) s.value = 'alt'; });
+        setUnitToAlt('ns-', ['na','k','p']);
       }
       SUPP_FIELDS.forEach(function(f) { document.getElementById('ns-' + f).value = ''; });
       document.getElementById('ns-dilution-scoops').value = '';
@@ -2631,9 +2716,11 @@
 
     // === Build results table HTML (always visible) ===
     function buildSuppResultsHTML(totals, totalVol, bw, hasAny) {
+      var cid = 'supp';
       function fmtV(v, dp) { return (hasAny && v) ? v.toFixed(dp !== undefined ? dp : 1) : ''; }
       function fmtPkg(v) { return (hasAny && bw && v) ? (v / bw).toFixed(1) : ''; }
-      function fmtMicro(v, dp) { return (hasAny && v) ? v.toFixed(dp !== undefined ? dp : 2) : ''; }
+      function oL(field, fallback) { return getOutputLabel(cid, field, fallback); }
+      function oV(field, dp) { return fmtOutputVal(cid, field, totals[field], hasAny, dp); }
 
       var kcal = totals.kcal;
       var pro = totals.protein;
@@ -2644,7 +2731,6 @@
       var fTE = kcal > 0 ? ((fat * 9) / kcal * 100) : 0;
 
       var html = '<table class="supp-result-table">';
-      // Section: Macronutrients
       html += '<tr class="supp-section-row macro"><td colspan="4">Macronutrients</td></tr>';
       html += '<tr><td>Energy (kcal)</td><td>' + (hasAny ? Math.round(kcal) : '') + '</td><td>Vol (mL)</td><td>' + (hasAny && totalVol ? Math.round(totalVol) : '') + '</td></tr>';
       html += '<tr><td>kcal/kg</td><td>' + fmtPkg(kcal) + '</td><td>mL/kg</td><td>' + fmtPkg(totalVol) + '</td></tr>';
@@ -2653,24 +2739,22 @@
       html += '<tr><td>CHO (g)</td><td>' + fmtV(carbs) + '</td><td>%TE Fat</td><td>' + (hasAny && fTE > 0 ? fTE.toFixed(1) : '') + '</td></tr>';
       html += '<tr><td>Fat (g)</td><td>' + fmtV(fat) + '</td><td>Fibre (g)</td><td>' + fmtV(totals.fibre) + '</td></tr>';
       html += '<tr><td>Water (mL)</td><td>' + fmtV(totals.water, 0) + '</td><td>kcal/100mL</td><td>' + (hasAny && totalVol > 0 ? (kcal / totalVol * 100).toFixed(0) : '') + '</td></tr>';
-      // Section: Vitamins
       html += '<tr class="supp-section-row vitamin"><td colspan="4">Vitamins</td></tr>';
-      html += '<tr><td>Vit A (mcg)</td><td>' + fmtMicro(totals.vitA) + '</td><td>Vit D (mcg)</td><td>' + fmtMicro(totals.vitD) + '</td></tr>';
-      html += '<tr><td>Vit E (mg)</td><td>' + fmtMicro(totals.vitE) + '</td><td>Vit K (mcg)</td><td>' + fmtMicro(totals.vitK) + '</td></tr>';
-      html += '<tr><td>Vit C (mg)</td><td>' + fmtMicro(totals.vitC) + '</td><td>Thiamin (mg)</td><td>' + fmtMicro(totals.thiamin) + '</td></tr>';
-      html += '<tr><td>Riboflavin (mg)</td><td>' + fmtMicro(totals.riboflavin) + '</td><td>Niacin (mg)</td><td>' + fmtMicro(totals.niacin) + '</td></tr>';
-      html += '<tr><td>Vit B6 (mg)</td><td>' + fmtMicro(totals.vitB6) + '</td><td>Folate (mcg)</td><td>' + fmtMicro(totals.folate, 0) + '</td></tr>';
-      html += '<tr><td>Vit B12 (mcg)</td><td>' + fmtMicro(totals.vitB12) + '</td><td>Panto. Acid (mg)</td><td>' + fmtMicro(totals.pantoAcid) + '</td></tr>';
-      html += '<tr><td>Biotin (mcg)</td><td>' + fmtMicro(totals.biotin) + '</td><td>Choline (mg)</td><td>' + fmtMicro(totals.choline) + '</td></tr>';
-      // Section: Minerals
+      html += '<tr><td>' + oL('vitA','Vit A (mcg)') + '</td><td>' + oV('vitA') + '</td><td>' + oL('vitD','Vit D (mcg)') + '</td><td>' + oV('vitD') + '</td></tr>';
+      html += '<tr><td>' + oL('vitE','Vit E (mg)') + '</td><td>' + oV('vitE') + '</td><td>Vit K (mcg)</td><td>' + fmtV(totals.vitK) + '</td></tr>';
+      html += '<tr><td>Vit C (mg)</td><td>' + fmtV(totals.vitC) + '</td><td>Thiamin (mg)</td><td>' + oV('thiamin',3) + '</td></tr>';
+      html += '<tr><td>Riboflavin (mg)</td><td>' + fmtV(totals.riboflavin) + '</td><td>Niacin (mg)</td><td>' + fmtV(totals.niacin) + '</td></tr>';
+      html += '<tr><td>Vit B6 (mg)</td><td>' + fmtV(totals.vitB6) + '</td><td>Folate (mcg)</td><td>' + fmtV(totals.folate, 0) + '</td></tr>';
+      html += '<tr><td>Vit B12 (mcg)</td><td>' + fmtV(totals.vitB12) + '</td><td>Panto. Acid (mg)</td><td>' + fmtV(totals.pantoAcid) + '</td></tr>';
+      html += '<tr><td>Biotin (mcg)</td><td>' + fmtV(totals.biotin) + '</td><td>Choline (mg)</td><td>' + fmtV(totals.choline) + '</td></tr>';
       html += '<tr class="supp-section-row mineral"><td colspan="4">Minerals</td></tr>';
-      html += '<tr><td>Na (mmol)</td><td>' + fmtV(totals.na) + '</td><td>K (mmol)</td><td>' + fmtV(totals.k) + '</td></tr>';
-      html += '<tr><td>P (mmol)</td><td>' + fmtV(totals.p) + '</td><td>Ca (mg)</td><td>' + fmtV(totals.ca, 0) + '</td></tr>';
-      html += '<tr><td>Iron (mg)</td><td>' + fmtMicro(totals.iron) + '</td><td>Zinc (mg)</td><td>' + fmtMicro(totals.zinc) + '</td></tr>';
-      html += '<tr><td>Iodine (mcg)</td><td>' + fmtMicro(totals.iodine) + '</td><td>Selenium (mcg)</td><td>' + fmtMicro(totals.selenium) + '</td></tr>';
-      html += '<tr><td>Copper (mg)</td><td>' + fmtMicro(totals.copper) + '</td><td>Manganese (mg)</td><td>' + fmtMicro(totals.manganese) + '</td></tr>';
-      html += '<tr><td>Chromium (mcg)</td><td>' + fmtMicro(totals.chromium) + '</td><td>Molybdenum (mcg)</td><td>' + fmtMicro(totals.molybdenum) + '</td></tr>';
-      html += '<tr><td>Magnesium (mg)</td><td>' + fmtMicro(totals.magnesium, 0) + '</td><td>Chloride (mg)</td><td>' + fmtMicro(totals.chloride, 0) + '</td></tr>';
+      html += '<tr><td>' + oL('na','Na (mmol)') + '</td><td>' + oV('na',1) + '</td><td>' + oL('k','K (mmol)') + '</td><td>' + oV('k',1) + '</td></tr>';
+      html += '<tr><td>' + oL('p','P (mmol)') + '</td><td>' + oV('p',1) + '</td><td>' + oL('ca','Ca (mg)') + '</td><td>' + oV('ca',0) + '</td></tr>';
+      html += '<tr><td>' + oL('iron','Iron (mg)') + '</td><td>' + oV('iron') + '</td><td>' + oL('zinc','Zinc (mg)') + '</td><td>' + oV('zinc') + '</td></tr>';
+      html += '<tr><td>' + oL('iodine','Iodine (mcg)') + '</td><td>' + oV('iodine') + '</td><td>' + oL('selenium','Selenium (mcg)') + '</td><td>' + oV('selenium') + '</td></tr>';
+      html += '<tr><td>' + oL('copper','Copper (mg)') + '</td><td>' + oV('copper') + '</td><td>' + oL('manganese','Manganese (mg)') + '</td><td>' + oV('manganese') + '</td></tr>';
+      html += '<tr><td>' + oL('chromium','Chromium (mcg)') + '</td><td>' + oV('chromium') + '</td><td>' + oL('molybdenum','Molybdenum (mcg)') + '</td><td>' + oV('molybdenum') + '</td></tr>';
+      html += '<tr><td>' + oL('magnesium','Magnesium (mg)') + '</td><td>' + oV('magnesium',0) + '</td><td>' + oL('chloride','Chloride (mg)') + '</td><td>' + oV('chloride',0) + '</td></tr>';
       html += '</table>';
       return html;
     }
@@ -2902,7 +2986,7 @@
       resetUnitSelectors('fm-');
       // Default Na, K, P to mg for new entries
       if (mode !== 'edit') {
-        ['na','k','p'].forEach(function(f) { var s = document.getElementById('fm-' + f + '-unit'); if (s) s.value = 'alt'; });
+        setUnitToAlt('fm-', ['na','k','p']);
       }
       SUPP_FIELDS.forEach(function(f) {
         var el = document.getElementById('fm-' + f);
@@ -3063,9 +3147,11 @@
 
     // === Ped Milk grid: build results HTML (always visible) ===
     function buildFormulaResultsHTML(totals, totalVol, bw, hasAny) {
+      var cid = 'fm';
       function fmtV(v, dp) { return (hasAny && v) ? v.toFixed(dp !== undefined ? dp : 1) : ''; }
       function fmtPkg(v) { return (hasAny && bw && v) ? (v / bw).toFixed(1) : ''; }
-      function fmtMicro(v, dp) { return (hasAny && v) ? v.toFixed(dp !== undefined ? dp : 2) : ''; }
+      function oL(field, fallback) { return getOutputLabel(cid, field, fallback); }
+      function oV(field, dp) { return fmtOutputVal(cid, field, totals[field], hasAny, dp); }
 
       var kcal = totals.kcal || 0;
       var pro = totals.protein || 0;
@@ -3076,7 +3162,6 @@
       var fTE = kcal > 0 ? ((fat * 9) / kcal * 100) : 0;
 
       var html = '<table class="supp-result-table">';
-      // Section: Macronutrients
       html += '<tr class="supp-section-row macro"><td colspan="4">Macronutrients</td></tr>';
       html += '<tr><td>Energy (kcal)</td><td>' + (hasAny ? Math.round(kcal) : '') + '</td><td>Vol (mL)</td><td>' + (hasAny && totalVol ? Math.round(totalVol) : '') + '</td></tr>';
       html += '<tr><td>kcal/kg</td><td>' + fmtPkg(kcal) + '</td><td>mL/kg</td><td>' + fmtPkg(totalVol) + '</td></tr>';
@@ -3085,24 +3170,23 @@
       html += '<tr><td>CHO (g)</td><td>' + fmtV(carbs) + '</td><td>%TE Fat</td><td>' + (hasAny && fTE > 0 ? fTE.toFixed(1) : '') + '</td></tr>';
       html += '<tr><td>Fat (g)</td><td>' + fmtV(fat) + '</td><td>Fibre (g)</td><td>' + fmtV(totals.fibre) + '</td></tr>';
       html += '<tr><td>Water (mL)</td><td>' + fmtV(totals.water, 0) + '</td><td>kcal/100mL</td><td>' + (hasAny && totalVol > 0 ? (kcal / totalVol * 100).toFixed(0) : '') + '</td></tr>';
-      // Section: Vitamins
       html += '<tr class="supp-section-row vitamin"><td colspan="4">Vitamins</td></tr>';
-      html += '<tr><td>Vit A (mcg)</td><td>' + fmtMicro(totals.vitA) + '</td><td>Vit D (mcg)</td><td>' + fmtMicro(totals.vitD) + '</td></tr>';
-      html += '<tr><td>Vit E (mg)</td><td>' + fmtMicro(totals.vitE) + '</td><td>Vit K (mcg)</td><td>' + fmtMicro(totals.vitK) + '</td></tr>';
-      html += '<tr><td>Vit C (mg)</td><td>' + fmtMicro(totals.vitC) + '</td><td>Thiamin (mg)</td><td>' + fmtMicro(totals.thiamin) + '</td></tr>';
-      html += '<tr><td>Riboflavin (mg)</td><td>' + fmtMicro(totals.riboflavin) + '</td><td>Niacin (mg)</td><td>' + fmtMicro(totals.niacin) + '</td></tr>';
-      html += '<tr><td>Vit B6 (mg)</td><td>' + fmtMicro(totals.vitB6) + '</td><td>Folate (mcg)</td><td>' + fmtMicro(totals.folate, 0) + '</td></tr>';
-      html += '<tr><td>Vit B12 (mcg)</td><td>' + fmtMicro(totals.vitB12) + '</td><td>Panto. Acid (mg)</td><td>' + fmtMicro(totals.pantoAcid) + '</td></tr>';
-      html += '<tr><td>Biotin (mcg)</td><td>' + fmtMicro(totals.biotin) + '</td><td>Choline (mg)</td><td>' + fmtMicro(totals.choline) + '</td></tr>';
+      html += '<tr><td>' + oL('vitA','Vit A (mcg)') + '</td><td>' + oV('vitA') + '</td><td>' + oL('vitD','Vit D (mcg)') + '</td><td>' + oV('vitD') + '</td></tr>';
+      html += '<tr><td>' + oL('vitE','Vit E (mg)') + '</td><td>' + oV('vitE') + '</td><td>Vit K (mcg)</td><td>' + fmtV(totals.vitK) + '</td></tr>';
+      html += '<tr><td>Vit C (mg)</td><td>' + fmtV(totals.vitC) + '</td><td>Thiamin (mg)</td><td>' + oV('thiamin',3) + '</td></tr>';
+      html += '<tr><td>Riboflavin (mg)</td><td>' + fmtV(totals.riboflavin) + '</td><td>Niacin (mg)</td><td>' + fmtV(totals.niacin) + '</td></tr>';
+      html += '<tr><td>Vit B6 (mg)</td><td>' + fmtV(totals.vitB6) + '</td><td>Folate (mcg)</td><td>' + fmtV(totals.folate, 0) + '</td></tr>';
+      html += '<tr><td>Vit B12 (mcg)</td><td>' + fmtV(totals.vitB12) + '</td><td>Panto. Acid (mg)</td><td>' + fmtV(totals.pantoAcid) + '</td></tr>';
+      html += '<tr><td>Biotin (mcg)</td><td>' + fmtV(totals.biotin) + '</td><td>Choline (mg)</td><td>' + fmtV(totals.choline) + '</td></tr>';
       // Section: Minerals
       html += '<tr class="supp-section-row mineral"><td colspan="4">Minerals</td></tr>';
-      html += '<tr><td>Na (mmol)</td><td>' + fmtV(totals.na) + '</td><td>K (mmol)</td><td>' + fmtV(totals.k) + '</td></tr>';
-      html += '<tr><td>P (mmol)</td><td>' + fmtV(totals.p) + '</td><td>Ca (mg)</td><td>' + fmtV(totals.ca, 0) + '</td></tr>';
-      html += '<tr><td>Iron (mg)</td><td>' + fmtMicro(totals.iron) + '</td><td>Zinc (mg)</td><td>' + fmtMicro(totals.zinc) + '</td></tr>';
-      html += '<tr><td>Iodine (mcg)</td><td>' + fmtMicro(totals.iodine) + '</td><td>Selenium (mcg)</td><td>' + fmtMicro(totals.selenium) + '</td></tr>';
-      html += '<tr><td>Copper (mg)</td><td>' + fmtMicro(totals.copper) + '</td><td>Manganese (mg)</td><td>' + fmtMicro(totals.manganese) + '</td></tr>';
-      html += '<tr><td>Chromium (mcg)</td><td>' + fmtMicro(totals.chromium) + '</td><td>Molybdenum (mcg)</td><td>' + fmtMicro(totals.molybdenum) + '</td></tr>';
-      html += '<tr><td>Magnesium (mg)</td><td>' + fmtMicro(totals.magnesium, 0) + '</td><td>Chloride (mg)</td><td>' + fmtMicro(totals.chloride, 0) + '</td></tr>';
+      html += '<tr><td>' + oL('na','Na (mmol)') + '</td><td>' + oV('na',1) + '</td><td>' + oL('k','K (mmol)') + '</td><td>' + oV('k',1) + '</td></tr>';
+      html += '<tr><td>' + oL('p','P (mmol)') + '</td><td>' + oV('p',1) + '</td><td>' + oL('ca','Ca (mg)') + '</td><td>' + oV('ca',0) + '</td></tr>';
+      html += '<tr><td>' + oL('iron','Iron (mg)') + '</td><td>' + oV('iron') + '</td><td>' + oL('zinc','Zinc (mg)') + '</td><td>' + oV('zinc') + '</td></tr>';
+      html += '<tr><td>' + oL('iodine','Iodine (mcg)') + '</td><td>' + oV('iodine') + '</td><td>' + oL('selenium','Selenium (mcg)') + '</td><td>' + oV('selenium') + '</td></tr>';
+      html += '<tr><td>' + oL('copper','Copper (mg)') + '</td><td>' + oV('copper') + '</td><td>' + oL('manganese','Manganese (mg)') + '</td><td>' + oV('manganese') + '</td></tr>';
+      html += '<tr><td>' + oL('chromium','Chromium (mcg)') + '</td><td>' + oV('chromium') + '</td><td>' + oL('molybdenum','Molybdenum (mcg)') + '</td><td>' + oV('molybdenum') + '</td></tr>';
+      html += '<tr><td>' + oL('magnesium','Magnesium (mg)') + '</td><td>' + oV('magnesium',0) + '</td><td>' + oL('chloride','Chloride (mg)') + '</td><td>' + oV('chloride',0) + '</td></tr>';
       html += '</table>';
       return html;
     }
@@ -3170,6 +3254,256 @@
       var emptyTotals = {};
       SUPP_FIELDS.forEach(function(f) { emptyTotals[f] = 0; });
       document.getElementById('fm-results-container').innerHTML = buildFormulaResultsHTML(emptyTotals, 0, 0, false);
+    }
+
+    // =============================================
+    // Excel Import / Export Template Functions
+    // =============================================
+
+    // Column header mapping for Excel: field -> display header
+    var IMPORT_HEADERS = (function() {
+      var h = { name: 'Product Name' };
+      SUPP_FIELDS.forEach(function(f) { h[f] = SUPP_LABELS[f] || f; });
+      h.dilutionScoops = 'Dilution Scoops';
+      h.dilutionWater = 'Dilution Water (mL)';
+      h.category = 'Category';
+      h.notes = 'Notes';
+      return h;
+    })();
+
+    // Ordered columns for template
+    var IMPORT_COLS = ['name'].concat(SUPP_FIELDS).concat(['dilutionScoops', 'dilutionWater', 'category', 'notes']);
+
+    function downloadImportTemplate(type) {
+      var wb = XLSX.utils.book_new();
+      // Header row
+      var headers = IMPORT_COLS.map(function(c) { return IMPORT_HEADERS[c]; });
+      // Unit hint row
+      var unitHints = IMPORT_COLS.map(function(c) {
+        if (c === 'name') return '(Required)';
+        if (c === 'category') return '(Optional)';
+        if (c === 'notes') return '(Optional)';
+        if (c === 'dilutionScoops') return 'e.g. 1';
+        if (c === 'dilutionWater') return 'e.g. 30';
+        // Show stored unit for nutrient fields
+        var opt = UNIT_OPTIONS[c];
+        if (opt) return 'per 100mL, in ' + opt.stored;
+        return 'per 100mL';
+      });
+      // Example row
+      var exampleRow = IMPORT_COLS.map(function(c) {
+        if (c === 'name') return 'Example Product';
+        if (c === 'kcal') return 100;
+        if (c === 'protein') return 4;
+        if (c === 'carbs') return 12.3;
+        if (c === 'fat') return 3.5;
+        if (c === 'na') return 2.8;
+        if (c === 'k') return 3.5;
+        if (c === 'dilutionScoops') return 1;
+        if (c === 'dilutionWater') return 30;
+        if (c === 'category') return '';
+        if (c === 'notes') return '';
+        return '';
+      });
+
+      var wsData = [headers, unitHints, exampleRow];
+      var ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      // Set column widths
+      ws['!cols'] = IMPORT_COLS.map(function(c) {
+        if (c === 'name') return { wch: 22 };
+        if (c === 'category') return { wch: 20 };
+        if (c === 'notes') return { wch: 18 };
+        return { wch: 14 };
+      });
+
+      var sheetName = type === 'formula' ? 'Ped Milk Template' : 'Supplement Template';
+      var fileName = type === 'formula' ? 'PedMilk_Import_Template.xlsx' : 'Supplement_Import_Template.xlsx';
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      XLSX.writeFile(wb, fileName);
+    }
+
+    function handleImportFile(input, type) {
+      var file = input.files[0];
+      if (!file) return;
+      input.value = ''; // reset for re-import
+
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          var data = new Uint8Array(e.target.result);
+          var wb = XLSX.read(data, { type: 'array' });
+          var ws = wb.Sheets[wb.SheetNames[0]];
+          var rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+          if (!rows || rows.length === 0) {
+            showImportResult('No data found in the file.', 'error');
+            return;
+          }
+
+          // Map headers back to field names (reverse lookup)
+          var headerToField = {};
+          Object.keys(IMPORT_HEADERS).forEach(function(f) {
+            headerToField[IMPORT_HEADERS[f].toLowerCase().trim()] = f;
+          });
+          // Also allow direct field names as headers
+          IMPORT_COLS.forEach(function(f) {
+            headerToField[f.toLowerCase()] = f;
+          });
+
+          var imported = 0;
+          var skipped = 0;
+
+          // Skip the unit hints row (row 2 in template, row 1 in JSON since row 1 = headers)
+          // sheet_to_json uses row 1 as keys; row 2 becomes rows[0]
+          if (rows.length > 0) {
+            var firstRow = rows[0];
+            var firstKeys = Object.keys(firstRow);
+            var firstVal = firstKeys.length > 0 ? String(firstRow[firstKeys[0]] || '').trim().toLowerCase() : '';
+            if (firstVal === '(required)' || firstVal.indexOf('per 100ml') >= 0) {
+              rows = rows.slice(1);
+            }
+          }
+          // Skip the example row if present
+          if (rows.length > 0) {
+            var nameKey = '';
+            Object.keys(rows[0]).forEach(function(k) {
+              if (headerToField[k.toLowerCase().trim()] === 'name') nameKey = k;
+            });
+            if (nameKey && String(rows[0][nameKey] || '').trim().toLowerCase() === 'example product') {
+              rows = rows.slice(1);
+            }
+          }
+
+          rows.forEach(function(row) {
+            // Map row to data object
+            var obj = {};
+            var hasName = false;
+
+            Object.keys(row).forEach(function(header) {
+              var field = headerToField[header.toLowerCase().trim()];
+              if (!field) return;
+              var val = row[header];
+              if (field === 'name') {
+                obj.name = String(val || '').trim();
+                if (obj.name && obj.name !== '') hasName = true;
+              } else if (field === 'category') {
+                obj.category = String(val || '').trim();
+              } else if (field === 'notes') {
+                obj.notes = String(val || '').trim();
+              } else if (field === 'dilutionScoops') {
+                obj._scoops = parseFloat(val) || 0;
+              } else if (field === 'dilutionWater') {
+                obj._water = parseFloat(val) || 0;
+              } else {
+                // Nutrient field
+                var numVal = parseFloat(val);
+                obj[field] = isNaN(numVal) ? 0 : numVal;
+              }
+            });
+
+            if (!hasName) {
+              skipped++;
+              return;
+            }
+
+            // Build dilution string
+            if (obj._scoops > 0 && obj._water > 0) {
+              obj.dilution = obj._scoops + ':' + obj._water + 'ml';
+            } else {
+              obj.dilution = '';
+            }
+            delete obj._scoops;
+            delete obj._water;
+
+            // Ensure all SUPP_FIELDS exist
+            SUPP_FIELDS.forEach(function(f) {
+              if (obj[f] === undefined) obj[f] = 0;
+            });
+            if (!obj.category) obj.category = '';
+            if (!obj.notes) obj.notes = '';
+
+            // Add to appropriate database
+            if (type === 'formula') {
+              obj.id = formulaNextId++;
+              formulaDatabase.push(obj);
+            } else {
+              obj.id = suppNextId++;
+              suppDB.push(obj);
+            }
+            imported++;
+          });
+
+          // Sort and refresh
+          if (type === 'formula') {
+            formulaDatabase.sort(function(a, b) { return a.name.localeCompare(b.name); });
+            populateFormulaDropdown();
+            renderFormulaManageList();
+            calcFormulaTotals();
+            fbSaveFormulaDB();
+          } else {
+            suppDB.sort(function(a, b) {
+              var catA = (a.category || 'Other').toLowerCase();
+              var catB = (b.category || 'Other').toLowerCase();
+              if (catA < catB) return -1;
+              if (catA > catB) return 1;
+              return a.name.localeCompare(b.name);
+            });
+            refreshAllSuppDropdowns();
+            renderSuppManageList();
+            calcSuppTotals();
+            fbSaveSuppDB();
+          }
+
+          var msg = 'Successfully imported ' + imported + ' item' + (imported !== 1 ? 's' : '') + '.';
+          if (skipped > 0) msg += ' (' + skipped + ' row' + (skipped !== 1 ? 's' : '') + ' skipped — no product name)';
+          showImportResult(msg, 'success');
+
+        } catch (err) {
+          showImportResult('Error reading file: ' + err.message, 'error');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function showImportResult(message, type) {
+      // Find the appropriate manage card that's currently visible
+      var container = document.querySelector('#supp-manage-card[style*="block"], #formula-manage-card[style*="block"]');
+      if (!container) container = document.body;
+
+      // Remove any existing toast
+      var existing = document.getElementById('import-toast');
+      if (existing) existing.remove();
+
+      var toast = document.createElement('div');
+      toast.id = 'import-toast';
+      toast.style.cssText = 'padding:10px 14px;border-radius:8px;font-size:12px;font-weight:600;margin-bottom:8px;animation:fadeIn 0.3s ease;display:flex;align-items:center;gap:8px;';
+      if (type === 'success') {
+        toast.style.background = 'var(--accent-light, rgba(52,199,89,0.12))';
+        toast.style.color = 'var(--accent, #34c759)';
+        toast.innerHTML = '<i class="fas fa-check-circle"></i> ' + message;
+      } else {
+        toast.style.background = 'rgba(255,59,48,0.1)';
+        toast.style.color = 'var(--danger, #ff3b30)';
+        toast.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + message;
+      }
+
+      // Insert before the manage list
+      var list = container.querySelector('[id$="-manage-list"]');
+      if (list) {
+        container.insertBefore(toast, list);
+      } else {
+        container.appendChild(toast);
+      }
+
+      // Auto-remove after 5 seconds
+      setTimeout(function() {
+        if (toast.parentElement) {
+          toast.style.opacity = '0';
+          toast.style.transition = 'opacity 0.3s ease';
+          setTimeout(function() { if (toast.parentElement) toast.remove(); }, 300);
+        }
+      }, 5000);
     }
 
     function parseDilution(dilutionStr) {
