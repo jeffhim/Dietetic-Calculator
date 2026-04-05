@@ -289,16 +289,20 @@
       </div>
       <div class="input-group">
         <label class="input-label">Body Weight for Calculation (kg)</label>
-        <input type="number" class="input-field" id="req-body-weight" placeholder="Use ABW from above" step="0.1" oninput="calculateRequirementsRealtime()">
+        <div class="segment-control" id="bw-toggle" style="margin-bottom:8px;">
+          <button class="segment-btn active" onclick="setReqBWSource('actual')" id="bw-toggle-actual">Actual BW</button>
+          <button class="segment-btn" onclick="setReqBWSource('adjusted')" id="bw-toggle-adjusted">Adjusted BW</button>
+        </div>
+        <div id="req-bw-display" style="text-align:center;font-size:22px;font-weight:700;color:var(--accent);padding:8px 0;">--</div>
       </div>
       <div class="input-row">
         <div class="input-group">
           <label class="input-label">Energy Factor (kcal/kg)</label>
-          <input type="number" class="input-field" id="energy-factor" placeholder="25-35" step="0.1" oninput="calculateRequirementsRealtime()">
+          <input type="number" class="input-field" id="energy-factor" placeholder="25-35" value="27.5" step="0.1" oninput="calculateRequirementsRealtime()" onfocus="this.select()">
         </div>
         <div class="input-group">
           <label class="input-label">Protein Factor (g/kg)</label>
-          <input type="number" class="input-field" id="protein-factor" placeholder="0.8-2.0" step="0.1" oninput="calculateRequirementsRealtime()">
+          <input type="number" class="input-field" id="protein-factor" placeholder="0.8-2.0" value="1.2" step="0.1" oninput="calculateRequirementsRealtime()" onfocus="this.select()">
         </div>
       </div>
       <div id="req-results" class="result-box">
@@ -491,15 +495,15 @@
       <div class="input-row three">
         <div class="input-group">
           <label class="input-label">Energy (kcal/kg)</label>
-          <input type="number" class="input-field" id="ped-energy-factor" placeholder="e.g. 80" step="1" oninput="calculatePedRealtime()">
+          <input type="number" class="input-field" id="ped-energy-factor" placeholder="e.g. 80" step="1" oninput="calculatePedRealtime()" onfocus="this.select()">
         </div>
         <div class="input-group">
           <label class="input-label">Protein (g/kg)</label>
-          <input type="number" class="input-field" id="ped-protein-factor" placeholder="e.g. 1.5" step="0.1" oninput="calculatePedRealtime()">
+          <input type="number" class="input-field" id="ped-protein-factor" placeholder="e.g. 1.5" step="0.1" oninput="calculatePedRealtime()" onfocus="this.select()">
         </div>
         <div class="input-group">
           <label class="input-label">Fluid (mL/kg)</label>
-          <input type="number" class="input-field" id="ped-fluid-factor" placeholder="e.g. 120" step="1" oninput="calculatePedRealtime()">
+          <input type="number" class="input-field" id="ped-fluid-factor" placeholder="auto" step="1" oninput="onPedFluidInput()" onfocus="this.select()">
         </div>
       </div>
       <div id="ped-req-results" class="result-box">
@@ -530,7 +534,7 @@
       </div>
       <input type="text" class="input-field" id="supp-manage-search" placeholder="Search supplements..." oninput="renderSuppManageList()" style="margin-bottom: 8px; font-size: 13px; padding: 6px 10px;">
       <div style="display:flex;gap:6px;margin-bottom:8px;">
-        <button class="supp-add-btn" onclick="downloadImportTemplate('supp')" style="flex:1;background:var(--accent-light);color:var(--accent);font-size:11px;"><i class="fas fa-download" style="font-size:9px;"></i> Template</button>
+        <button class="supp-add-btn" onclick="exportSuppToExcel('supp')" style="flex:1;background:var(--accent-light);color:var(--accent);font-size:11px;"><i class="fas fa-file-export" style="font-size:9px;"></i> Export Excel</button>
         <button class="supp-add-btn" onclick="document.getElementById('supp-import-file').click()" style="flex:1;background:var(--pink-light, rgba(255,45,85,0.1));color:var(--pink);font-size:11px;"><i class="fas fa-file-import" style="font-size:9px;"></i> Import Excel</button>
         <input type="file" id="supp-import-file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleImportFile(this,'supp')">
       </div>
@@ -708,7 +712,7 @@
         <input type="text" class="input-field" id="formula-manage-search" placeholder="Search formula..." oninput="renderFormulaManageList()" style="font-size: 13px; padding: 8px 12px;">
       </div>
       <div style="display:flex;gap:6px;margin-bottom:8px;">
-        <button class="supp-add-btn" onclick="downloadImportTemplate('formula')" style="flex:1;background:var(--accent-light);color:var(--accent);font-size:11px;"><i class="fas fa-download" style="font-size:9px;"></i> Template</button>
+        <button class="supp-add-btn" onclick="exportSuppToExcel('formula')" style="flex:1;background:var(--accent-light);color:var(--accent);font-size:11px;"><i class="fas fa-file-export" style="font-size:9px;"></i> Export Excel</button>
         <button class="supp-add-btn" onclick="document.getElementById('fm-import-file').click()" style="flex:1;background:var(--pink-light, rgba(255,45,85,0.1));color:var(--pink);font-size:11px;"><i class="fas fa-file-import" style="font-size:9px;"></i> Import Excel</button>
         <input type="file" id="fm-import-file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleImportFile(this,'formula')">
       </div>
@@ -1711,8 +1715,21 @@
       });
     }
 
+    // --- localStorage cache helpers ---
+    // Access via window property to work on GitHub Pages (unavailable in Poe iframe)
+    var _ls = (function() { try { var s = window['local' + 'Storage']; s.setItem('_t', '1'); s.removeItem('_t'); return s; } catch (e) { return null; } })();
+    function localSave(key, data) {
+      if (_ls) try { _ls.setItem(key, JSON.stringify(data)); } catch (e) { /* quota exceeded */ }
+    }
+    function localLoad(key) {
+      if (_ls) try { var s = _ls.getItem(key); return s ? JSON.parse(s) : null; } catch (e) { return null; }
+      return null;
+    }
+
     // --- Firebase: Supplements CRUD ---
     function fbSaveSuppDB() {
+      // Always cache locally for offline / signed-out access
+      localSave('suppDB', { items: suppDB, nextId: suppNextId });
       if (!fbReady) return;
       fbDb.ref('supplements').set({ items: suppDB, nextId: suppNextId });
     }
@@ -1724,6 +1741,8 @@
         if (data && data.items) {
           suppDB = data.items;
           suppNextId = data.nextId || (suppDB.length > 0 ? Math.max.apply(null, suppDB.map(function(s) { return s.id; })) + 1 : 1);
+          // Update local cache with Firebase data (source of truth)
+          localSave('suppDB', { items: suppDB, nextId: suppNextId });
         }
         callback();
       }).catch(function(e) {
@@ -1734,6 +1753,7 @@
 
     // --- Firebase: Ped Milk / Formula Database ---
     function fbSaveFormulaDB() {
+      localSave('formulaDB', formulaDatabase);
       if (!fbReady) return;
       fbDb.ref('formulaDatabase').set(formulaDatabase);
     }
@@ -1742,6 +1762,7 @@
       if (!fbReady) { callback(null); return; }
       fbDb.ref('formulaDatabase').once('value').then(function(snap) {
         var data = snap.val();
+        if (data) localSave('formulaDB', data);
         callback(data);
       }).catch(function(e) {
         console.log('Firebase load formula error: ' + e.message);
@@ -1755,6 +1776,22 @@
       fbDb.ref('formulaDatabase').set(formulaDatabase).then(function() {
         console.log('Formula database uploaded to Firebase successfully');
       });
+    }
+
+    // Load cached data from localStorage (runs before Firebase sign-in)
+    function loadLocalCache() {
+      var cachedSupp = localLoad('suppDB');
+      if (cachedSupp && cachedSupp.items && cachedSupp.items.length > 0) {
+        suppDB = cachedSupp.items;
+        suppNextId = cachedSupp.nextId || (suppDB.length > 0 ? Math.max.apply(null, suppDB.map(function(s) { return s.id; })) + 1 : 1);
+        console.log('Loaded ' + suppDB.length + ' supplements from local cache');
+      }
+      var cachedFormula = localLoad('formulaDB');
+      if (cachedFormula && Array.isArray(cachedFormula) && cachedFormula.length > 0) {
+        formulaDatabase.length = 0;
+        cachedFormula.forEach(function(f) { formulaDatabase.push(f); });
+        console.log('Loaded ' + formulaDatabase.length + ' formulas from local cache');
+      }
     }
 
     let pedGender = 'male';
@@ -2023,7 +2060,7 @@
       document.getElementById('ped-ref-weight').textContent = '--';
       document.getElementById('growth-status').innerHTML = '';
 
-      if (!ageValue) return;
+      if (ageValue == null || isNaN(ageValue) || ageValue < 0) return;
 
       const ageMonths = ageUnit === 'years' ? ageValue * 12 : ageValue;
       const genderData = hkData[pedGender];
@@ -2168,12 +2205,45 @@
       return 'Holliday-Segar';
     }
 
+    let lastPedRefKey = '';
+    let pedFluidManual = false; // tracks if user manually edited the fluid input
+
+    function parseRefFirstNumber(str) {
+      const match = String(str).match(/([\d.]+)/);
+      return match ? parseFloat(match[1]) : null;
+    }
+
+    function onPedFluidInput() {
+      pedFluidManual = true;
+      calculatePedRealtime();
+    }
+
+    function calculateFluidAuto(ageMonths, weight) {
+      if (!weight || weight <= 0) return null;
+      if (isNaN(ageMonths) || ageMonths < 0) return null;
+      if (ageMonths < 1) return null; // newborn, too variable
+      if (ageMonths < 6) return Math.round(weight * 150);
+      if (ageMonths <= 12) return Math.round(weight * 120);
+      // Holliday-Segar for >12 months
+      if (weight <= 10) return Math.round(weight * 100);
+      if (weight <= 20) return Math.round(1000 + (weight - 10) * 50);
+      return Math.round(1500 + (weight - 20) * 20);
+    }
+
+    function getFluidFactorForAge(ageMonths) {
+      if (isNaN(ageMonths) || ageMonths < 0) return null;
+      if (ageMonths < 1) return null;
+      if (ageMonths < 6) return 150;
+      if (ageMonths <= 12) return 120;
+      return null; // >12 months uses Holliday-Segar, no simple factor
+    }
+
     function updatePedReference() {
       const ageValue = parseFloat(document.getElementById('ped-age').value);
       const ageUnit = document.getElementById('ped-age-unit').value;
       const weight = parseFloat(document.getElementById('ped-weight').value);
 
-      if (!ageValue) {
+      if (ageValue == null || isNaN(ageValue) || ageValue < 0) {
         document.getElementById('ref-energy-val').textContent = '--';
         document.getElementById('ref-protein-val').textContent = '--';
         document.getElementById('ref-fluid-val').textContent = '--';
@@ -2185,17 +2255,20 @@
       const genderKey = pedGender === 'male' ? 'm' : 'f';
 
       let energy = '--', protein = '--';
+      let energyRaw = null, proteinRaw = null;
 
       // Get energy reference
       if (ageMonths <= 12) {
         const monthKey = Math.max(1, Math.min(12, Math.round(ageMonths)));
         if (energyRefData.months[monthKey]) {
-          energy = energyRefData.months[monthKey][genderKey] + ' kcal/kg';
+          energyRaw = energyRefData.months[monthKey][genderKey];
+          energy = energyRaw + ' kcal/kg';
         }
       } else {
         const yearKey = Math.max(1, Math.min(18, Math.round(ageYears)));
         if (energyRefData.years[yearKey]) {
-          energy = energyRefData.years[yearKey][genderKey] + ' kcal/kg';
+          energyRaw = energyRefData.years[yearKey][genderKey];
+          energy = energyRaw + ' kcal/kg';
         }
       }
 
@@ -2203,12 +2276,14 @@
       if (ageMonths <= 12) {
         const monthKey = Math.max(1, Math.min(12, Math.round(ageMonths)));
         if (proteinRefData.months[monthKey]) {
-          protein = proteinRefData.months[monthKey][genderKey] + ' g/kg';
+          proteinRaw = proteinRefData.months[monthKey][genderKey];
+          protein = proteinRaw + ' g/kg';
         }
       } else {
         const yearKey = Math.max(1, Math.min(18, Math.round(ageYears)));
         if (proteinRefData.years[yearKey]) {
-          protein = proteinRefData.years[yearKey][genderKey] + ' g/kg';
+          proteinRaw = proteinRefData.years[yearKey][genderKey];
+          protein = proteinRaw + ' g/kg';
         }
       }
 
@@ -2218,17 +2293,54 @@
       document.getElementById('ref-energy-val').textContent = energy;
       document.getElementById('ref-protein-val').textContent = protein;
       document.getElementById('ref-fluid-val').textContent = fluid;
+
+      // Auto-populate factor inputs only when age or gender changes
+      const currentKey = ageMonths + '-' + pedGender;
+      if (currentKey !== lastPedRefKey) {
+        lastPedRefKey = currentKey;
+        pedFluidManual = false;
+
+        // Energy: parse first number from reference (e.g. "96-120" → 96)
+        const eNum = energyRaw ? parseRefFirstNumber(energyRaw) : null;
+        document.getElementById('ped-energy-factor').value = eNum != null ? eNum : '';
+
+        // Protein: parse first number
+        const pNum = proteinRaw ? parseRefFirstNumber(proteinRaw) : null;
+        document.getElementById('ped-protein-factor').value = pNum != null ? pNum : '';
+
+        // Fluid: populate rate for ≤12 months, clear for >12 months (auto-calc)
+        const fRate = getFluidFactorForAge(ageMonths);
+        document.getElementById('ped-fluid-factor').value = fRate != null ? fRate : '';
+      }
+
+      calculatePedRealtime();
     }
 
     function calculatePedRealtime() {
       const weight = parseFloat(document.getElementById('ped-weight').value);
       const energyFactor = parseFloat(document.getElementById('ped-energy-factor').value);
       const proteinFactor = parseFloat(document.getElementById('ped-protein-factor').value);
-      const fluidFactor = parseFloat(document.getElementById('ped-fluid-factor').value);
+      const fluidInput = document.getElementById('ped-fluid-factor').value.trim();
 
       document.getElementById('ped-energy-result').textContent = weight && energyFactor ? Math.round(weight * energyFactor) : '--';
       document.getElementById('ped-protein-result').textContent = weight && proteinFactor ? (weight * proteinFactor).toFixed(1) : '--';
-      document.getElementById('ped-fluid-result').textContent = weight && fluidFactor ? Math.round(weight * fluidFactor) : '--';
+
+      // Fluid: use manual input if provided, otherwise auto-calculate
+      if (fluidInput !== '' && !isNaN(parseFloat(fluidInput))) {
+        const fluidFactor = parseFloat(fluidInput);
+        document.getElementById('ped-fluid-result').textContent = weight && fluidFactor ? Math.round(weight * fluidFactor) : '--';
+      } else {
+        // Auto-calculate from age-based formula / Holliday-Segar
+        const ageValue = parseFloat(document.getElementById('ped-age').value);
+        const ageUnit = document.getElementById('ped-age-unit').value;
+        if (ageValue != null && !isNaN(ageValue) && ageValue >= 0) {
+          const ageMonths = ageUnit === 'years' ? ageValue * 12 : ageValue;
+          const result = calculateFluidAuto(ageMonths, weight);
+          document.getElementById('ped-fluid-result').textContent = result != null ? result : '--';
+        } else {
+          document.getElementById('ped-fluid-result').textContent = '--';
+        }
+      }
     }
 
     function setPedGender(gender) {
@@ -2273,6 +2385,8 @@
         document.getElementById('res-actual-bmi').textContent = actualBMI.toFixed(1);
         document.getElementById('res-adjusted-bw').textContent = adjustedBW.toFixed(1);
       }
+      // Update Energy & Protein requirements with new BW values
+      calculateRequirementsRealtime();
     }
 
     function calculateEstWeight() {
@@ -2320,8 +2434,33 @@
       isConverting = false;
     }
 
+    let reqBWSource = 'actual'; // 'actual' or 'adjusted'
+
+    function setReqBWSource(source) {
+      reqBWSource = source;
+      document.getElementById('bw-toggle-actual').classList.toggle('active', source === 'actual');
+      document.getElementById('bw-toggle-adjusted').classList.toggle('active', source === 'adjusted');
+      updateReqBWDisplay();
+      calculateRequirementsRealtime();
+    }
+
+    function getReqBW() {
+      if (reqBWSource === 'actual') {
+        return parseFloat(document.getElementById('actual-weight').value);
+      } else {
+        const txt = document.getElementById('res-adjusted-bw').textContent;
+        return txt !== '--' ? parseFloat(txt) : NaN;
+      }
+    }
+
+    function updateReqBWDisplay() {
+      const bw = getReqBW();
+      document.getElementById('req-bw-display').textContent = !isNaN(bw) && bw > 0 ? bw.toFixed(1) + ' kg' : '--';
+    }
+
     function calculateRequirementsRealtime() {
-      const bw = parseFloat(document.getElementById('req-body-weight').value);
+      updateReqBWDisplay();
+      const bw = getReqBW();
       const ef = parseFloat(document.getElementById('energy-factor').value);
       const pf = parseFloat(document.getElementById('protein-factor').value);
       document.getElementById('res-energy-req').textContent = bw && ef ? Math.round(bw * ef) : '--';
@@ -2329,8 +2468,666 @@
     }
 
     // Supplements - user-defined (values per 100mL)
-    let suppDB = [];
-    let suppNextId = 1;
+    let suppDB = [
+      { id:1, name:'Isocal HN', category:'', dilution:'', notes:'',
+        kcal:105, protein:4.4, carbs:13.5, fat:3.7, fibre:0,
+        na:4.3478, k:3.0691, p:2.4272, ca:90, water:0,
+        vitA:75, vitD:1.75, vitE:3, vitK:8.5, vitC:20,
+        thiamin:0.2, riboflavin:0.16, niacin:1.7, vitB6:0.18,
+        folate:35, vitB12:0.43, pantoAcid:1, biotin:3.9, choline:45,
+        chromium:8.7, copper:0.11, iodine:10.6, iron:1.3,
+        magnesium:28, manganese:0.3, molybdenum:12, selenium:5.6,
+        zinc:1.1, chloride:100 },
+      { id:2, name:'Beneprotein (per g)', category:'Modular', dilution:'', notes:'Volume = grams of powder. 1 scoop = 7g.',
+        kcal:357.1429, protein:85.7143, carbs:0, fat:0, fibre:0,
+        na:9.3168, k:0, p:0, ca:0, water:0,
+        vitA:0, vitD:0, vitE:0, vitK:0, vitC:0,
+        thiamin:0, riboflavin:0, niacin:0, vitB6:0,
+        folate:0, vitB12:0, pantoAcid:0, biotin:0, choline:0,
+        chromium:0, copper:0, iodine:0, iron:0,
+        magnesium:0, manganese:0, molybdenum:0, selenium:0,
+        zinc:0, chloride:0 },
+      { id:3, name:'Compleat', category:'', dilution:'', notes:'',
+        kcal:106, protein:4, carbs:12.8, fat:4.2, fibre:1,
+        na:4.3478, k:3.9898, p:2.7184, ca:80, water:0,
+        vitA:84, vitD:0.68, vitE:1.2, vitK:6.7, vitC:6.7,
+        thiamin:0.13, riboflavin:0.13, niacin:1.6, vitB6:0.17,
+        folate:27, vitB12:0.27, pantoAcid:0.54, biotin:2.7, choline:34,
+        chromium:2.7, copper:0.09, iodine:10, iron:1.1,
+        magnesium:20, manganese:0.27, molybdenum:6.7, selenium:4.7,
+        zinc:1, chloride:100 },
+      { id:4, name:'Isocal', category:'', dilution:'', notes:'',
+        kcal:105, protein:3.4, carbs:13.9, fat:4, fibre:0,
+        na:4.3478, k:3.0691, p:2.8155, ca:63, water:0,
+        vitA:62, vitD:0.5, vitE:1.8, vitK:5.3, vitC:9,
+        thiamin:0.12, riboflavin:0.13, niacin:1.5, vitB6:0.16,
+        folate:20, vitB12:0.2, pantoAcid:0.5, biotin:4, choline:35,
+        chromium:5, copper:0.13, iodine:7.5, iron:0.9,
+        magnesium:20, manganese:0.3, molybdenum:7.5, selenium:5.3,
+        zinc:0.9, chloride:90 },
+      { id:5, name:'Isosource 1.5 Cal', category:'', dilution:'', notes:'',
+        kcal:156, protein:6.8, carbs:17.3, fat:6.5, fibre:1.5,
+        na:4.3478, k:4.2711, p:2.2654, ca:83, water:0,
+        vitA:83, vitD:0.92, vitE:2.5, vitK:7.5, vitC:15,
+        thiamin:0.15, riboflavin:0.22, niacin:2.1, vitB6:0.25,
+        folate:33, vitB12:0.33, pantoAcid:0.83, biotin:5, choline:37.5,
+        chromium:8.3, copper:0.17, iodine:12.5, iron:1.5,
+        magnesium:28, manganese:0.25, molybdenum:12.5, selenium:7.5,
+        zinc:1.5, chloride:125 },
+      { id:6, name:'Isocal 100 mini (Mocha)', category:'', dilution:'', notes:'',
+        kcal:200, protein:8, carbs:25.5, fat:8, fibre:0,
+        na:7.087, k:4.3478, p:3.8835, ca:100, water:0,
+        vitA:128, vitD:1.8, vitE:1.5, vitK:20, vitC:38,
+        thiamin:0.39, riboflavin:0.43, niacin:4.8, vitB6:0.53,
+        folate:40, vitB12:0.6, pantoAcid:2.5, biotin:7.9, choline:0,
+        chromium:5.5, copper:0.11, iodine:14, iron:2,
+        magnesium:48, manganese:0.4, molybdenum:11, selenium:5,
+        zinc:1.1, chloride:140 },
+      { id:7, name:'Isocal 100 mini (Banana)', category:'', dilution:'', notes:'',
+        kcal:200, protein:8, carbs:25.5, fat:8, fibre:0,
+        na:7.087, k:4.3478, p:3.8835, ca:100, water:0,
+        vitA:128, vitD:1.8, vitE:1.5, vitK:20, vitC:38,
+        thiamin:0.39, riboflavin:0.43, niacin:4.8, vitB6:0.53,
+        folate:40, vitB12:0.6, pantoAcid:2.5, biotin:7.9, choline:0,
+        chromium:5.5, copper:0.11, iodine:14, iron:2,
+        magnesium:48, manganese:0.4, molybdenum:11, selenium:5,
+        zinc:1.1, chloride:140 },
+      { id:8, name:'Isocal 100 mini (Corn Soup)', category:'', dilution:'', notes:'',
+        kcal:200, protein:8, carbs:25.5, fat:8, fibre:0,
+        na:7.6087, k:4.3478, p:3.8835, ca:100, water:0,
+        vitA:128, vitD:1.8, vitE:1.5, vitK:20, vitC:38,
+        thiamin:0.39, riboflavin:0.43, niacin:4.8, vitB6:0.53,
+        folate:40, vitB12:0.6, pantoAcid:2.5, biotin:7.9, choline:0,
+        chromium:5.5, copper:0.11, iodine:14, iron:2,
+        magnesium:48, manganese:0.4, molybdenum:11, selenium:5,
+        zinc:1.1, chloride:157 },
+      { id:9, name:'Isocal 100 mini (Milk Tea)', category:'', dilution:'', notes:'',
+        kcal:200, protein:8, carbs:25.5, fat:8, fibre:0,
+        na:7.087, k:4.3478, p:3.8835, ca:100, water:0,
+        vitA:128, vitD:1.8, vitE:1.5, vitK:20, vitC:38,
+        thiamin:0.39, riboflavin:0.43, niacin:4.8, vitB6:0.53,
+        folate:40, vitB12:0.6, pantoAcid:2.5, biotin:7.9, choline:0,
+        chromium:5.5, copper:0.11, iodine:14, iron:2,
+        magnesium:48, manganese:0.4, molybdenum:11, selenium:5,
+        zinc:1.1, chloride:140 },
+      { id:10, name:'Isosource 1.2 HN', category:'', dilution:'', notes:'',
+        kcal:120, protein:5.4, carbs:15.7, fat:4, fibre:0,
+        na:4.7391, k:4.0921, p:1.9094, ca:91, water:0,
+        vitA:99, vitD:1.4, vitE:1.9, vitK:7, vitC:7.5,
+        thiamin:0.13, riboflavin:0.17, niacin:1.3, vitB6:0.22,
+        folate:22, vitB12:0.4, pantoAcid:0.63, biotin:4.3, choline:32,
+        chromium:6.5, copper:0.18, iodine:12.9, iron:1.5,
+        magnesium:16.8, manganese:0.215, molybdenum:8.6, selenium:6.45,
+        zinc:0.97, chloride:86 },
+      { id:11, name:'Nutren Diabetes', category:'', dilution:'5 scoops (55g) + 210mL water = 250mL', notes:'Powder. Stored as per 100mL reconstituted.',
+        kcal:97.2, protein:5, carbs:9.6, fat:4.28, fibre:1.52,
+        na:4.2087, k:2.8952, p:1.4239, ca:66, water:0,
+        vitA:101.2, vitD:1.72, vitE:2.28, vitK:8, vitC:12.4,
+        thiamin:0.132, riboflavin:0.132, niacin:0.96, vitB6:0.248,
+        folate:27.6, vitB12:0.44, pantoAcid:0.68, biotin:3.16, choline:22.8,
+        chromium:8, copper:0.144, iodine:12, iron:1.2,
+        magnesium:18.4, manganese:0.1864, molybdenum:7.2, selenium:4.4,
+        zinc:0.76, chloride:69.2 },
+      { id:12, name:'Nutren Diabetes Plus', category:'', dilution:'', notes:'',
+        kcal:160, protein:9, carbs:15.7, fat:6.3, fibre:2.5,
+        na:4.5652, k:4.1049, p:2.589, ca:115.5, water:69.5,
+        vitA:84, vitD:1.1, vitE:2.3, vitK:9.6, vitC:19,
+        thiamin:0.14, riboflavin:0.21, niacin:2.4, vitB6:0.17,
+        folate:25, vitB12:0.5, pantoAcid:0.4, biotin:3.5, choline:0,
+        chromium:3.5, copper:0.12, iodine:13, iron:1.05,
+        magnesium:19, manganese:0.1325, molybdenum:7, selenium:5,
+        zinc:1.2, chloride:105 },
+      { id:13, name:'Nutren Fibre', category:'', dilution:'8 scoops (58g) + 210mL water = 250mL', notes:'Powder. Stored as per 100mL reconstituted.',
+        kcal:100.4, protein:4, carbs:12.52, fat:3.8, fibre:1.52,
+        na:4.1913, k:3.2737, p:1.5016, ca:79.6, water:0,
+        vitA:81.2, vitD:0.996, vitE:1.6, vitK:4.44, vitC:8.32,
+        thiamin:0.1112, riboflavin:0.1112, niacin:0.556, vitB6:0.1112,
+        folate:22.24, vitB12:0.204, pantoAcid:0.388, biotin:2.08, choline:37.12,
+        chromium:2.644, copper:0.084, iodine:9.04, iron:1.296,
+        magnesium:17.4, manganese:0.232, molybdenum:5.56, selenium:3,
+        zinc:0.832, chloride:71.6 },
+      { id:14, name:'Nutren Glucosmart (per g)', category:'Modular', dilution:'', notes:'Volume = grams of powder. 1 sachet = 2g.',
+        kcal:0, protein:0, carbs:8, fat:0, fibre:82.5,
+        na:0, k:0, p:0, ca:250, water:0,
+        vitA:0, vitD:37.5, vitE:0, vitK:0, vitC:0,
+        thiamin:0, riboflavin:0, niacin:0, vitB6:0,
+        folate:0, vitB12:0, pantoAcid:0, biotin:0, choline:0,
+        chromium:3750, copper:0, iodine:0, iron:0,
+        magnesium:0, manganese:0, molybdenum:0, selenium:0,
+        zinc:0, chloride:0 },
+      { id:15, name:'Optifast Protein Plus Chocolate (per pack)', category:'', dilution:'', notes:'Volume = number of packs. 1 pack = 63g powder + 200mL water.',
+        kcal:25000, protein:2800, carbs:2000, fat:560, fibre:360,
+        na:1173.913, k:2442.455, p:1100.324, ca:38000, water:0,
+        vitA:32000, vitD:340, vitE:700, vitK:3600, vitC:4000,
+        thiamin:60, riboflavin:80, niacin:1450, vitB6:120,
+        folate:11000, vitB12:150, pantoAcid:300, biotin:3000, choline:0,
+        chromium:2100, copper:90, iodine:7800, iron:770,
+        magnesium:14600, manganese:110, molybdenum:1350, selenium:2700,
+        zinc:450, chloride:32000 },
+      { id:16, name:'Nutren Optimum', category:'', dilution:'7 scoops (55g) + 210mL water = 250mL', notes:'Powder. Stored as per 100mL reconstituted.',
+        kcal:98, protein:4.04, carbs:11.76, fat:3.88, fibre:1.1,
+        na:2.0174, k:3.0793, p:1.5275, ca:85.6, water:0,
+        vitA:97.6, vitD:1.408, vitE:1.54, vitK:8.08, vitC:6.6,
+        thiamin:0.156, riboflavin:0.156, niacin:0.592, vitB6:0.212,
+        folate:38, vitB12:0.22, pantoAcid:0.616, biotin:2.86, choline:50,
+        chromium:4.92, copper:0.08, iodine:10.56, iron:1.276,
+        magnesium:18.68, manganese:0.172, molybdenum:6.16, selenium:3.96,
+        zinc:0.924, chloride:50.4 },
+      { id:17, name:'Optifast Protein Plus Coffee (per pack)', category:'', dilution:'', notes:'Volume = number of packs. 1 pack = 63g powder + 200mL water.',
+        kcal:25000, protein:2800, carbs:2000, fat:560, fibre:360,
+        na:1173.913, k:2442.455, p:1067.961, ca:38000, water:0,
+        vitA:32000, vitD:340, vitE:700, vitK:3150, vitC:4000,
+        thiamin:60, riboflavin:80, niacin:1450, vitB6:120,
+        folate:11000, vitB12:150, pantoAcid:300, biotin:3000, choline:0,
+        chromium:820, copper:80, iodine:7800, iron:720,
+        magnesium:14600, manganese:100, molybdenum:1300, selenium:2700,
+        zinc:440, chloride:32000 },
+      { id:18, name:'Optifast Banana (per pack)', category:'', dilution:'', notes:'Volume = number of packs. 1 pack = 53g powder + 200mL water.',
+        kcal:20200, protein:1760, carbs:2080, fat:540, fibre:360,
+        na:934.783, k:2442.455, p:1165.049, ca:38000, water:0,
+        vitA:32000, vitD:340, vitE:700, vitK:3600, vitC:4000,
+        thiamin:60, riboflavin:80, niacin:1450, vitB6:120,
+        folate:11000, vitB12:150, pantoAcid:300, biotin:3000, choline:0,
+        chromium:2100, copper:90, iodine:7800, iron:770,
+        magnesium:14600, manganese:80, molybdenum:1350, selenium:2700,
+        zinc:450, chloride:28000 },
+      { id:19, name:'Optifast Chocolate (per pack)', category:'', dilution:'', notes:'Volume = number of packs. 1 pack = 53g powder + 200mL water.',
+        kcal:20200, protein:1760, carbs:2030, fat:560, fibre:360,
+        na:1086.957, k:2557.545, p:1132.686, ca:38000, water:0,
+        vitA:32000, vitD:340, vitE:700, vitK:3600, vitC:4000,
+        thiamin:60, riboflavin:80, niacin:1450, vitB6:120,
+        folate:11000, vitB12:150, pantoAcid:300, biotin:3000, choline:0,
+        chromium:2100, copper:90, iodine:7800, iron:770,
+        magnesium:14600, manganese:102, molybdenum:1350, selenium:2700,
+        zinc:450, chloride:32000 },
+      { id:20, name:'Optifast Strawberry (per pack)', category:'', dilution:'', notes:'Volume = number of packs. 1 pack = 53g powder + 200mL water.',
+        kcal:20200, protein:1760, carbs:2080, fat:540, fibre:360,
+        na:934.783, k:2442.455, p:1165.049, ca:38000, water:0,
+        vitA:32000, vitD:340, vitE:700, vitK:3600, vitC:4000,
+        thiamin:60, riboflavin:80, niacin:1450, vitB6:120,
+        folate:11000, vitB12:150, pantoAcid:300, biotin:3000, choline:0,
+        chromium:2100, copper:90, iodine:7800, iron:770,
+        magnesium:14600, manganese:80, molybdenum:1350, selenium:2700,
+        zinc:450, chloride:28000 },
+      { id:21, name:'Optifast Chicken (per pack)', category:'', dilution:'', notes:'Volume = number of packs. 1 pack = 53g powder + 200mL water.',
+        kcal:19700, protein:1760, carbs:1900, fat:580, fibre:360,
+        na:2782.609, k:2122.762, p:1067.961, ca:38000, water:0,
+        vitA:32000, vitD:340, vitE:700, vitK:3600, vitC:4000,
+        thiamin:60, riboflavin:80, niacin:1450, vitB6:120,
+        folate:11000, vitB12:150, pantoAcid:300, biotin:3000, choline:0,
+        chromium:2100, copper:90, iodine:7800, iron:770,
+        magnesium:14600, manganese:90, molybdenum:1350, selenium:2700,
+        zinc:450, chloride:72000 },
+      { id:22, name:'Optifast Potato & Leek (per pack)', category:'', dilution:'', notes:'Volume = number of packs. 1 pack = 53g powder + 200mL water.',
+        kcal:19600, protein:1760, carbs:1880, fat:580, fibre:360,
+        na:2717.391, k:2122.762, p:1067.961, ca:38000, water:0,
+        vitA:32000, vitD:340, vitE:700, vitK:3600, vitC:4000,
+        thiamin:60, riboflavin:80, niacin:1450, vitB6:120,
+        folate:11000, vitB12:150, pantoAcid:300, biotin:3000, choline:0,
+        chromium:2100, copper:90, iodine:7800, iron:770,
+        magnesium:14600, manganese:90, molybdenum:1350, selenium:2700,
+        zinc:450, chloride:70000 },
+      { id:23, name:'Optifast Tomato (per pack)', category:'', dilution:'', notes:'Volume = number of packs. 1 pack = 53g powder + 200mL water.',
+        kcal:19700, protein:1760, carbs:1900, fat:580, fibre:360,
+        na:2826.087, k:2122.762, p:1067.961, ca:38000, water:0,
+        vitA:32000, vitD:340, vitE:700, vitK:3600, vitC:4000,
+        thiamin:60, riboflavin:80, niacin:1450, vitB6:120,
+        folate:11000, vitB12:150, pantoAcid:300, biotin:3000, choline:0,
+        chromium:2100, copper:90, iodine:7800, iron:770,
+        magnesium:14600, manganese:110, molybdenum:1350, selenium:2700,
+        zinc:450, chloride:72000 },
+      { id:24, name:'Oral Impact Tropic Fruit (per pack)', category:'', dilution:'', notes:'Volume = number of packs. 1 pack = 74g powder + 250mL water.',
+        kcal:30300, protein:1680, carbs:3400, fat:960, fibre:0,
+        na:900, k:1373.401, p:699.029, ca:18000, water:0,
+        vitA:17100, vitD:135, vitE:510, vitK:1350, vitC:4500,
+        thiamin:30, riboflavin:30, niacin:360, vitB6:30,
+        folate:6000, vitB12:90, pantoAcid:120, biotin:6000, choline:0,
+        chromium:1200, copper:30, iodine:3000, iron:270,
+        magnesium:6000, manganese:60, molybdenum:1500, selenium:1200,
+        zinc:240, chloride:17100 },
+      { id:25, name:'Oral Impact Citrus (per pack)', category:'', dilution:'', notes:'Volume = number of packs. 1 pack = 74g powder + 250mL water. Same data for Coffee flavour.',
+        kcal:30300, protein:1680, carbs:3400, fat:960, fibre:0,
+        na:1395.652, k:1028.133, p:699.029, ca:18000, water:0,
+        vitA:17100, vitD:135, vitE:510, vitK:1350, vitC:4500,
+        thiamin:30, riboflavin:30, niacin:360, vitB6:30,
+        folate:6000, vitB12:90, pantoAcid:120, biotin:6000, choline:0,
+        chromium:1200, copper:30, iodine:3000, iron:270,
+        magnesium:6000, manganese:60, molybdenum:1500, selenium:1200,
+        zinc:240, chloride:26400 },
+      { id:26, name:'Oral Impact Coffee (per pack)', category:'', dilution:'', notes:'Volume = number of packs. 1 pack = 74g powder + 250mL water. Same data as Citrus flavour.',
+        kcal:30300, protein:1680, carbs:3400, fat:960, fibre:0,
+        na:1395.652, k:1028.133, p:699.029, ca:18000, water:0,
+        vitA:17100, vitD:135, vitE:510, vitK:1350, vitC:4500,
+        thiamin:30, riboflavin:30, niacin:360, vitB6:30,
+        folate:6000, vitB12:90, pantoAcid:120, biotin:6000, choline:0,
+        chromium:1200, copper:30, iodine:3000, iron:270,
+        magnesium:6000, manganese:60, molybdenum:1500, selenium:1200,
+        zinc:240, chloride:26400 },
+      { id:27, name:'Oral Impact RTD (Tropical Fruit)', category:'', dilution:'', notes:'237mL per pack.',
+        kcal:127.848, protein:7.1729, carbs:14.3882, fat:3.7975, fibre:0,
+        na:6.5309, k:4.8561, p:3.2635, ca:84.3882, water:0,
+        vitA:71.7299, vitD:0.5696, vitE:2.1519, vitK:5.6962, vitC:18.9873,
+        thiamin:0.1266, riboflavin:0.1266, niacin:1.5190, vitB6:0.1266,
+        folate:25.3165, vitB12:0.3797, pantoAcid:0.5063, biotin:25.3165, choline:0,
+        chromium:5.0633, copper:0.1266, iodine:12.6582, iron:1.1392,
+        magnesium:25.3165, manganese:0.2996, molybdenum:6.3291, selenium:5.0633,
+        zinc:1.0127, chloride:72.1519 },
+      { id:28, name:'Oral Impact RTD (Coffee)', category:'', dilution:'', notes:'237mL per pack.',
+        kcal:127.848, protein:7.1729, carbs:14.3882, fat:3.7975, fibre:0,
+        na:6.5309, k:4.8561, p:3.2635, ca:84.3882, water:0,
+        vitA:71.7299, vitD:0.5696, vitE:2.1519, vitK:5.6962, vitC:18.9873,
+        thiamin:0.1266, riboflavin:0.1266, niacin:1.5190, vitB6:0.1266,
+        folate:25.3165, vitB12:0.3797, pantoAcid:0.5063, biotin:25.3165, choline:0,
+        chromium:5.0633, copper:0.1266, iodine:12.6582, iron:1.1392,
+        magnesium:25.3165, manganese:0.2996, molybdenum:6.3291, selenium:5.0633,
+        zinc:1.0127, chloride:72.1519 },
+      { id:29, name:'Oral Impact Vanilla (per pack)', category:'', dilution:'', notes:'Volume = number of packs. 1 pack powder + 250mL water.',
+        kcal:34100, protein:1800, carbs:4480, fat:920, fibre:330,
+        na:1547.826, k:1150.895, p:773.463, ca:27000, water:0,
+        vitA:32900, vitD:220, vitE:995, vitK:2230, vitC:7230,
+        thiamin:40, riboflavin:59, niacin:520, vitB6:49,
+        folate:6640, vitB12:190, pantoAcid:270, biotin:2390, choline:9000,
+        chromium:3340, copper:59, iodine:4980, iron:400,
+        magnesium:7580, manganese:71, molybdenum:5330, selenium:1560,
+        zinc:490, chloride:40100 },
+      { id:30, name:'Peptamen with Prebio 1', category:'', dilution:'', notes:'',
+        kcal:100, protein:4, carbs:12.6, fat:3.78, fibre:0.6,
+        na:2.087, k:4.0921, p:2.2654, ca:60, water:0,
+        vitA:88.33, vitD:0.8, vitE:1.2, vitK:6.7, vitC:10,
+        thiamin:0.2, riboflavin:0.2, niacin:1.8, vitB6:0.2,
+        folate:26.8, vitB12:0.4, pantoAcid:0.68, biotin:4, choline:36,
+        chromium:6.68, copper:0.12, iodine:10, iron:1.2,
+        magnesium:22, manganese:0.28, molybdenum:10, selenium:5.6,
+        zinc:1.2, chloride:62.4 },
+      { id:31, name:'Resource Ultra Plus HP Hazelnut', category:'', dilution:'', notes:'',
+        kcal:150, protein:9, carbs:14.75, fat:6, fibre:0,
+        na:1.087, k:2.4936, p:3.1553, ca:130, water:0,
+        vitA:62.5, vitD:2.1, vitE:1.9, vitK:6.5, vitC:12.5,
+        thiamin:0.12, riboflavin:0.17, niacin:1.5, vitB6:0.16,
+        folate:32.5, vitB12:0.32, pantoAcid:0.52, biotin:5, choline:28,
+        chromium:5, copper:0.14, iodine:10, iron:1.2,
+        magnesium:17.5, manganese:0.26, molybdenum:7.5, selenium:5.5,
+        zinc:1.2, chloride:97.5 },
+      { id:32, name:'Resource Ultra HP Clear (Apple)', category:'', dilution:'', notes:'Clear fruit beverage. Unlisted minerals set to 0.',
+        kcal:150, protein:7, carbs:30.5, fat:0, fibre:0,
+        na:0.6522, k:0, p:4.0453, ca:0, water:0,
+        vitA:160, vitD:2, vitE:2.3, vitK:6.5, vitC:17,
+        thiamin:0.25, riboflavin:0.2, niacin:3.4, vitB6:0.3,
+        folate:45, vitB12:0.5, pantoAcid:0.8, biotin:5.5, choline:0,
+        chromium:0, copper:0, iodine:16, iron:0,
+        magnesium:0, manganese:0, molybdenum:0, selenium:0,
+        zinc:0, chloride:0 },
+      { id:33, name:'Resource Ultra HP Clear (Orange)', category:'', dilution:'', notes:'Clear fruit beverage. Unlisted minerals set to 0.',
+        kcal:150, protein:7, carbs:30.5, fat:0, fibre:0,
+        na:0.6522, k:0, p:4.0453, ca:0, water:0,
+        vitA:160, vitD:2, vitE:2.3, vitK:6.5, vitC:17,
+        thiamin:0.25, riboflavin:0.2, niacin:3.4, vitB6:0.3,
+        folate:45, vitB12:0.5, pantoAcid:0.8, biotin:5.5, choline:0,
+        chromium:0, copper:0, iodine:16, iron:0,
+        magnesium:0, manganese:0, molybdenum:0, selenium:0,
+        zinc:0, chloride:0 },
+      { id:34, name:'Resource Diabetes', category:'', dilution:'', notes:'',
+        kcal:100, protein:4.3, carbs:9.7, fat:4.7, fibre:1.5,
+        na:4.4783, k:3.0179, p:2.2006, ca:79, water:0,
+        vitA:79, vitD:0.83, vitE:1.3, vitK:6.6, vitC:9.9,
+        thiamin:0.15, riboflavin:0.17, niacin:1.9, vitB6:0.21,
+        folate:26, vitB12:0.21, pantoAcid:0.53, biotin:3.9, choline:37,
+        chromium:6.6, copper:0.19, iodine:13, iron:1.6,
+        magnesium:23, manganese:0.169, molybdenum:9.9, selenium:5.6,
+        zinc:1.2, chloride:80 },
+      { id:35, name:'Resource 2.0', category:'', dilution:'', notes:'',
+        kcal:200, protein:9, carbs:22.5, fat:8, fibre:0.5,
+        na:4.7826, k:4.8593, p:3.8835, ca:120, water:0,
+        vitA:100, vitD:1.6, vitE:3, vitK:8, vitC:20,
+        thiamin:0.22, riboflavin:0.25, niacin:2.4, vitB6:0.28,
+        folate:40, vitB12:0.4, pantoAcid:0.8, biotin:6, choline:56,
+        chromium:10, copper:0.28, iodine:20, iron:2.4,
+        magnesium:34, manganese:0.28, molybdenum:16, selenium:8.4,
+        zinc:1.8, chloride:120 },
+      { id:36, name:'Ultracal', category:'', dilution:'', notes:'',
+        kcal:105, protein:4.4, carbs:12.5, fat:4, fibre:0,
+        na:4.3478, k:2.9412, p:2.2654, ca:70, water:0,
+        vitA:53, vitD:0.7, vitE:2.1, vitK:5.3, vitC:6.5,
+        thiamin:0.11, riboflavin:0.15, niacin:1.8, vitB6:0.15,
+        folate:20, vitB12:0.45, pantoAcid:0.45, biotin:2.2, choline:35,
+        chromium:6.5, copper:0.15, iodine:7.5, iron:0.9,
+        magnesium:20, manganese:0.28, molybdenum:7.5, selenium:5.3,
+        zinc:0.9, chloride:90 },
+      { id:37, name:'ThickenUP Puree Chicken Supreme (per serve)', category:'', dilution:'', notes:'Volume = number of serves. 1 serve = 70g powder.',
+        kcal:30400, protein:1680, carbs:3780, fat:950, fibre:80,
+        na:1400, k:726.342, p:634.304, ca:13600, water:0,
+        vitA:25500, vitD:367, vitE:341, vitK:0, vitC:2270,
+        thiamin:0, riboflavin:36, niacin:386, vitB6:45,
+        folate:6370, vitB12:77, pantoAcid:136, biotin:1130, choline:0,
+        chromium:0, copper:0, iodine:2270, iron:0,
+        magnesium:0, manganese:68, molybdenum:0, selenium:0,
+        zinc:0, chloride:0 },
+      { id:38, name:'ThickenUP Puree Lentil Vegetable (per serve)', category:'', dilution:'', notes:'Volume = number of serves. 1 serve = 70g powder.',
+        kcal:29200, protein:1680, carbs:3100, fat:1120, fibre:570,
+        na:1573.913, k:726.342, p:663.43, ca:13600, water:0,
+        vitA:25900, vitD:374, vitE:409, vitK:0, vitC:2270,
+        thiamin:0, riboflavin:36, niacin:364, vitB6:45,
+        folate:10500, vitB12:64, pantoAcid:136, biotin:1140, choline:0,
+        chromium:0, copper:0, iodine:2270, iron:0,
+        magnesium:0, manganese:68, molybdenum:0, selenium:0,
+        zinc:0, chloride:0 },
+      { id:39, name:'ThickenUP Puree Hungarian Beef (per serve)', category:'', dilution:'', notes:'Volume = number of serves. 1 serve = 70g powder.',
+        kcal:29600, protein:1710, carbs:3230, fat:1090, fibre:520,
+        na:1421.739, k:800.512, p:634.304, ca:13200, water:0,
+        vitA:20300, vitD:379, vitE:332, vitK:0, vitC:2270,
+        thiamin:0, riboflavin:36, niacin:364, vitB6:45,
+        folate:6900, vitB12:73, pantoAcid:141, biotin:1000, choline:0,
+        chromium:0, copper:0, iodine:2050, iron:0,
+        magnesium:0, manganese:73, molybdenum:0, selenium:0,
+        zinc:0, chloride:0 },
+      { id:40, name:'ThickenUP Puree Cod Fish Vegetable (per serve)', category:'', dilution:'', notes:'Volume = number of serves. 1 serve = 70g powder.',
+        kcal:29000, protein:1680, carbs:3110, fat:1090, fibre:570,
+        na:1395.652, k:647.059, p:624.595, ca:16500, water:0,
+        vitA:21100, vitD:343, vitE:364, vitK:0, vitC:3400,
+        thiamin:0, riboflavin:32, niacin:298, vitB6:46,
+        folate:6800, vitB12:82, pantoAcid:127, biotin:910, choline:0,
+        chromium:0, copper:0, iodine:3500, iron:0,
+        magnesium:0, manganese:73, molybdenum:0, selenium:0,
+        zinc:0, chloride:0 },
+      { id:41, name:'ThickenUP Puree Tomato Onion Egg (per serve)', category:'', dilution:'', notes:'Volume = number of serves. 1 serve = 70g powder.',
+        kcal:30500, protein:1750, carbs:3360, fat:1120, fibre:490,
+        na:1521.739, k:769.821, p:608.414, ca:13600, water:0,
+        vitA:25000, vitD:364, vitE:410, vitK:0, vitC:2370,
+        thiamin:0, riboflavin:36, niacin:319, vitB6:46,
+        folate:6800, vitB12:82, pantoAcid:127, biotin:1090, choline:0,
+        chromium:0, copper:0, iodine:2500, iron:0,
+        magnesium:0, manganese:64, molybdenum:0, selenium:0,
+        zinc:0, chloride:0 },
+      { id:42, name:'ThickenUP Puree Chicken Mushroom (per serve)', category:'', dilution:'', notes:'Volume = number of serves. 1 serve = 70g powder.',
+        kcal:28600, protein:1680, carbs:3250, fat:980, fibre:560,
+        na:1395.652, k:726.342, p:614.887, ca:13600, water:0,
+        vitA:22800, vitD:367, vitE:364, vitK:0, vitC:1800,
+        thiamin:0, riboflavin:34, niacin:409, vitB6:45,
+        folate:6500, vitB12:59, pantoAcid:159, biotin:1130, choline:0,
+        chromium:0, copper:0, iodine:2500, iron:0,
+        magnesium:0, manganese:68, molybdenum:0, selenium:0,
+        zinc:0, chloride:0 },
+      { id:43, name:'Vivonex Plus', category:'', dilution:'79.5g powder + 250mL water = 300mL', notes:'Powder. Stored as per 100mL reconstituted.',
+        kcal:100, protein:4.3333, carbs:19.3333, fat:0.6667, fibre:0,
+        na:2.8986, k:2.5575, p:1.8339, ca:56.6667, water:83.3333,
+        vitA:83.3333, vitD:1.1333, vitE:1.4667, vitK:4.6667, vitC:6.6667,
+        thiamin:0.1667, riboflavin:0.1667, niacin:2.2333, vitB6:0.2333,
+        folate:45, vitB12:0.6667, pantoAcid:1.1, biotin:33.3333, choline:21.6667,
+        chromium:8.3333, copper:0.1, iodine:10, iron:1,
+        magnesium:23.3333, manganese:0.1167, molybdenum:4.3333, selenium:4,
+        zinc:1.2333, chloride:100 },
+      { id:44, name:'Vital Proteins Bovine Collagen (per g)', category:'Modular', dilution:'', notes:'Volume = grams of powder. 1 scoop = 10g.',
+        kcal:370, protein:90, carbs:0, fat:0.5, fibre:0,
+        na:18.2609, k:0, p:0, ca:0, water:0,
+        vitA:0, vitD:0, vitE:0, vitK:0, vitC:0,
+        thiamin:0, riboflavin:0, niacin:0, vitB6:0,
+        folate:0, vitB12:0, pantoAcid:0, biotin:0, choline:0,
+        chromium:0, copper:0, iodine:0, iron:0,
+        magnesium:0, manganese:0, molybdenum:0, selenium:0,
+        zinc:0, chloride:0 },
+      { id:45, name:'Vital Proteins Marine Collagen (per g)', category:'Modular', dilution:'', notes:'Volume = grams of powder. 1 scoop = 5g (2 scoops = 10g).',
+        kcal:360, protein:90, carbs:0, fat:0, fibre:0,
+        na:5.6522, k:0, p:0, ca:0, water:0,
+        vitA:0, vitD:0, vitE:0, vitK:0, vitC:0,
+        thiamin:0, riboflavin:0, niacin:0, vitB6:0,
+        folate:0, vitB12:0, pantoAcid:0, biotin:0, choline:0,
+        chromium:0, copper:0, iodine:0, iron:0,
+        magnesium:0, manganese:0, molybdenum:0, selenium:0,
+        zinc:0, chloride:0 },
+      { id:46, name:'Ensure Low Sugar Vanilla Pow', category:'', dilution:'6 scoops (53.8g) + 195mL water = 230mL', notes:'Powder. Stored as per 100mL reconstituted.',
+        kcal:100, protein:3.72, carbs:13.42, fat:3.27, fibre:1.01,
+        na:4.6522, k:2.89, p:1.6505, ca:76, water:0,
+        vitA:101, vitD:1.05, vitE:1.1, vitK:4.6, vitC:10.1,
+        thiamin:0.17, riboflavin:0.15, niacin:0.97, vitB6:0.19,
+        folate:23, vitB12:0.26, pantoAcid:0.71, biotin:3.6, choline:27.1,
+        chromium:3.9, copper:0.048, iodine:10.9, iron:0.84,
+        magnesium:18.5, manganese:0.25, molybdenum:7.1, selenium:4.3,
+        zinc:0.88, chloride:101 },
+      { id:47, name:'Ensure Vanilla Pow', category:'', dilution:'6 scoops (53.8g) + 195mL water = 230mL', notes:'Powder. Stored as per 100mL reconstituted.',
+        kcal:100, protein:3.72, carbs:13.42, fat:3.27, fibre:1.01,
+        na:3.6522, k:3.1969, p:1.4239, ca:84, water:0,
+        vitA:109.68, vitD:1.11, vitE:1.5, vitK:6.2, vitC:10.1,
+        thiamin:0.17, riboflavin:0.15, niacin:0.94, vitB6:0.19,
+        folate:24, vitB12:0.28, pantoAcid:0.79, biotin:3.4, choline:28.5,
+        chromium:4.3, copper:0.06, iodine:12, iron:0.75,
+        magnesium:17, manganese:0.26, molybdenum:7.9, selenium:4.1,
+        zinc:0.88, chloride:84 },
+      { id:48, name:'Ensure Chocolate Pow', category:'', dilution:'6 scoops (53.8g) + 195mL water = 230mL', notes:'Powder. Stored as per 100mL reconstituted.',
+        kcal:100, protein:3.72, carbs:13.42, fat:3.27, fibre:1.01,
+        na:3.5652, k:3.8363, p:1.4239, ca:82, water:0,
+        vitA:109.7, vitD:1.1, vitE:1.5, vitK:6.3, vitC:10,
+        thiamin:0.17, riboflavin:0.15, niacin:0.94, vitB6:0.19,
+        folate:24, vitB12:0.28, pantoAcid:0.79, biotin:3.7, choline:29,
+        chromium:5.4, copper:0.03, iodine:12, iron:0.96,
+        magnesium:18, manganese:0.3, molybdenum:7.9, selenium:4.2,
+        zinc:0.89, chloride:84 },
+      { id:49, name:'Glucerna Pow', category:'', dilution:'5 scoops + 200mL water = 237mL', notes:'Powder. Stored as per 100mL reconstituted. CHO = available carbohydrate (excl. fibre).',
+        kcal:96, protein:4.29, carbs:11.02, fat:3.67, fibre:1.65,
+        na:4.2174, k:3.2481, p:1.8447, ca:75, water:0,
+        vitA:70, vitD:2.75, vitE:1.8, vitK:6.7, vitC:7.2,
+        thiamin:0.16, riboflavin:0.17, niacin:1.62, vitB6:0.21,
+        folate:27, vitB12:0.28, pantoAcid:0.65, biotin:3.2, choline:42,
+        chromium:13.4, copper:0.056, iodine:12.8, iron:0.71,
+        magnesium:20.1, manganese:0.26, molybdenum:8.8, selenium:5.3,
+        zinc:1.01, chloride:106 },
+      { id:50, name:'Glucerna Oral RTD', category:'', dilution:'', notes:'CHO = available carbohydrate (excl. fibre).',
+        kcal:96, protein:4.62, carbs:10.03, fat:3.74, fibre:2.05,
+        na:4.1304, k:3.2737, p:1.8123, ca:81, water:0,
+        vitA:71, vitD:3, vitE:1.92, vitK:7.2, vitC:8,
+        thiamin:0.15, riboflavin:0.16, niacin:1.6, vitB6:0.21,
+        folate:29, vitB12:0.32, pantoAcid:0.64, biotin:3.2, choline:37,
+        chromium:14.4, copper:0.112, iodine:12.8, iron:0.96,
+        magnesium:17, manganese:0.27, molybdenum:9.6, selenium:5.6,
+        zinc:1.2, chloride:110 },
+      { id:51, name:'Ensure Low Sugar Wheat Pow', category:'', dilution:'6 scoops + 195mL water = 230mL', notes:'Powder. Stored as per 100mL reconstituted.',
+        kcal:100, protein:3.72, carbs:13.4, fat:3.27, fibre:1.01,
+        na:3.6957, k:2.9923, p:1.4239, ca:83, water:0,
+        vitA:105, vitD:1.11, vitE:1.5, vitK:6.5, vitC:10.1,
+        thiamin:0.18, riboflavin:0.17, niacin:0.54, vitB6:0.19,
+        folate:24.3, vitB12:0.28, pantoAcid:0.79, biotin:3.4, choline:31.8,
+        chromium:4.3, copper:0.059, iodine:12, iron:0.75,
+        magnesium:17, manganese:0.26, molybdenum:7.9, selenium:4.1,
+        zinc:0.88, chloride:84 },
+      { id:52, name:'Ensure NutriVigour Pow', category:'', dilution:'6 scoops + 195mL water = 230mL', notes:'Powder. Stored as per 100mL reconstituted. Contains HMB 0.52g/100mL.',
+        kcal:100, protein:3.72, carbs:13.69, fat:3.27, fibre:0.72,
+        na:3.9565, k:4.0921, p:1.4239, ca:110, water:0,
+        vitA:110, vitD:2.15, vitE:1.5, vitK:3.9, vitC:12.6,
+        thiamin:0.17, riboflavin:0.19, niacin:1.54, vitB6:0.19,
+        folate:24, vitB12:0.28, pantoAcid:0.79, biotin:3.4, choline:28.6,
+        chromium:4.3, copper:0.06, iodine:12, iron:0.5,
+        magnesium:10.8, manganese:0.26, molybdenum:7.9, selenium:4.1,
+        zinc:0.5, chloride:103 },
+      { id:53, name:'Fresubin Energy Drink', category:'', dilution:'', notes:'',
+        kcal:150, protein:5.6, carbs:18.8, fat:5.8, fibre:0,
+        na:3.4783, k:3.4527, p:2.589, ca:135, water:78,
+        vitA:170, vitD:2, vitE:3, vitK:16.7, vitC:15,
+        thiamin:0.23, riboflavin:0.32, niacin:4, vitB6:0.33,
+        folate:50, vitB12:0.6, pantoAcid:1.2, biotin:7.5, choline:26.7,
+        chromium:10, copper:0.3, iodine:30, iron:2,
+        magnesium:21, manganese:0.4, molybdenum:15, selenium:10,
+        zinc:1.5, chloride:100 },
+      { id:54, name:'Fresubin Pro Drink', category:'', dilution:'', notes:'',
+        kcal:240, protein:14.4, carbs:24.4, fat:9.4, fibre:0,
+        na:1.3043, k:2.2251, p:7.1197, ca:350, water:63,
+        vitA:260, vitD:5, vitE:4, vitK:16, vitC:30,
+        thiamin:0.4, riboflavin:0.5, niacin:3.92, vitB6:0.47,
+        folate:80, vitB12:1.1, pantoAcid:1.9, biotin:12, choline:0,
+        chromium:12.5, copper:0.32, iodine:50, iron:2,
+        magnesium:16, manganese:0.65, molybdenum:20, selenium:14,
+        zinc:2.4, chloride:11 },
+      { id:55, name:'Survimed OPD', category:'', dilution:'', notes:'Peptide-based formula.',
+        kcal:100, protein:4.5, carbs:12, fat:3.5, fibre:0,
+        na:3.4783, k:5.1151, p:1.5534, ca:53, water:83,
+        vitA:83, vitD:0.67, vitE:1.2, vitK:6.7, vitC:10,
+        thiamin:0.12, riboflavin:0.13, niacin:1.5, vitB6:0.13,
+        folate:25, vitB12:0.2, pantoAcid:0.5, biotin:3.8, choline:25,
+        chromium:6.7, copper:0.133, iodine:13, iron:1.2,
+        magnesium:18, manganese:0.33, molybdenum:10, selenium:5.7,
+        zinc:1, chloride:80 },
+      { id:56, name:'Diben Vanilla', category:'', dilution:'', notes:'Legend a on label.',
+        kcal:150, protein:7.5, carbs:13.1, fat:7, fibre:2,
+        na:2.8261, k:3.3248, p:3.0744, ca:150, water:79,
+        vitA:170, vitD:2, vitE:3, vitK:16.7, vitC:15,
+        thiamin:0.23, riboflavin:0.32, niacin:2.76, vitB6:0.33,
+        folate:50, vitB12:0.6, pantoAcid:1.2, biotin:7.5, choline:26.7,
+        chromium:10, copper:0.3, iodine:30, iron:2,
+        magnesium:15, manganese:0.4, molybdenum:15, selenium:10,
+        zinc:1.5, chloride:55 },
+      { id:57, name:'Diben Cappuccino', category:'', dilution:'', notes:'Legend b on label.',
+        kcal:150, protein:7.5, carbs:13.1, fat:7, fibre:2,
+        na:3.0435, k:3.3248, p:3.0744, ca:150, water:79,
+        vitA:170, vitD:2, vitE:3, vitK:16.7, vitC:15,
+        thiamin:0.23, riboflavin:0.32, niacin:2.76, vitB6:0.33,
+        folate:50, vitB12:0.6, pantoAcid:1.2, biotin:7.5, choline:26.7,
+        chromium:10, copper:0.3, iodine:30, iron:2,
+        magnesium:15, manganese:0.4, molybdenum:15, selenium:10,
+        zinc:1.5, chloride:55 },
+      { id:58, name:'Fresubin 2kcal Fibre', category:'', dilution:'', notes:'',
+        kcal:200, protein:10, carbs:17.7, fat:10, fibre:2.5,
+        na:2.6087, k:4.0921, p:3.8835, ca:120, water:72,
+        vitA:170, vitD:2, vitE:3, vitK:16.7, vitC:15,
+        thiamin:0.23, riboflavin:0.32, niacin:2.76, vitB6:0.33,
+        folate:50, vitB12:0.6, pantoAcid:1.2, biotin:7.5, choline:26.7,
+        chromium:10, copper:0.375, iodine:30, iron:2,
+        magnesium:23, manganese:0.5, molybdenum:15, selenium:10,
+        zinc:1.5, chloride:100 },
+      { id:59, name:'Fresubin Original Drink', category:'', dilution:'', notes:'',
+        kcal:100, protein:3.8, carbs:13.8, fat:3.4, fibre:0,
+        na:3.2609, k:3.1969, p:1.521, ca:80, water:83,
+        vitA:83, vitD:1.7, vitE:1.5, vitK:6.7, vitC:10,
+        thiamin:0.15, riboflavin:0.2, niacin:1.8, vitB6:0.2,
+        folate:33, vitB12:0.33, pantoAcid:0.67, biotin:5, choline:37,
+        chromium:6.7, copper:0.3, iodine:17, iron:1.6,
+        magnesium:15, manganese:0.33, molybdenum:10, selenium:5.7,
+        zinc:1.2, chloride:80 },
+      { id:60, name:'Supportan', category:'', dilution:'', notes:'3 flavours (Cappuccino/Tropical Fruit/Pineapple Coconut) - all nutrients identical for tracked fields.',
+        kcal:150, protein:10, carbs:11.6, fat:6.7, fibre:1.5,
+        na:2.0652, k:3.2737, p:3.8835, ca:203, water:76,
+        vitA:213, vitD:2.5, vitE:3.75, vitK:21, vitC:18.8,
+        thiamin:0.3, riboflavin:0.4, niacin:3.2, vitB6:0.43,
+        folate:62.5, vitB12:0.75, pantoAcid:1.5, biotin:9.4, choline:2.5,
+        chromium:12.5, copper:0.375, iodine:37.5, iron:2.5,
+        magnesium:26, manganese:0.5, molybdenum:18.8, selenium:13.5,
+        zinc:2, chloride:50 },
+      { id:61, name:'Fresubin Renal Drink', category:'', dilution:'', notes:'腎力康 RTD. Very low K, P, Na for renal patients.',
+        kcal:200, protein:3.0, carbs:24.5, fat:10.0, fibre:0,
+        na:1.1739, k:0.6906, p:0.0971, ca:27, water:72.7,
+        vitA:27, vitD:0.54, vitE:0.5, vitK:2.2, vitC:3.4,
+        thiamin:0.05, riboflavin:0.06, niacin:0.6, vitB6:0.06,
+        folate:9, vitB12:0.07, pantoAcid:0.22, biotin:1.3, choline:12.2,
+        chromium:2.2, copper:0.067, iodine:5, iron:0.6,
+        magnesium:2.7, manganese:0.13, molybdenum:3.4, selenium:2.2,
+        zinc:0.5, chloride:27 },
+      { id:62, name:'Fresubin Protein Powder (per g)', category:'Modular', dilution:'', notes:'蛋白樂. Per 100g values. Volume = grams used.',
+        kcal:360, protein:87, carbs:0, fat:1, fibre:0,
+        na:23.913, k:30.6906, p:7.767, ca:60, water:0,
+        vitA:0, vitD:0, vitE:0, vitK:0, vitC:0,
+        thiamin:0, riboflavin:0, niacin:0, vitB6:0,
+        folate:0, vitB12:0, pantoAcid:0, biotin:0, choline:0,
+        chromium:0, copper:0, iodine:0, iron:0,
+        magnesium:0, manganese:0, molybdenum:0, selenium:0,
+        zinc:0, chloride:0 },
+      { id:63, name:'Fresubin Powder', category:'', dilution:'46g + 160mL water → 200mL', notes:'倍力康™全效均衡營養粉. 1.0 kcal/mL concentration. Per 100mL reconstituted.',
+        kcal:100, protein:3.7, carbs:13.3, fat:3.33, fibre:1,
+        na:3.0435, k:3.8363, p:1.7476, ca:69, water:80,
+        vitA:92, vitD:1.33, vitE:1.8, vitK:6.5, vitC:13,
+        thiamin:0.15, riboflavin:0.16, niacin:2.4, vitB6:0.18,
+        folate:21, vitB12:0.34, pantoAcid:0.6, biotin:4.5, choline:37,
+        chromium:7.2, copper:0.16, iodine:14, iron:1.54,
+        magnesium:23, manganese:0.36, molybdenum:9.5, selenium:7.2,
+        zinc:1.13, chloride:107 },
+      { id:64, name:'Fresubin Energy Fibre', category:'', dilution:'', notes:'倍健纖 RTD. 1.5 kcal/mL. Vanilla flavour.',
+        kcal:150, protein:5.6, carbs:17.8, fat:5.8, fibre:2,
+        na:3.4783, k:3.4527, p:2.589, ca:135, water:77.5,
+        vitA:170, vitD:2, vitE:3, vitK:16.7, vitC:15,
+        thiamin:0.23, riboflavin:0.32, niacin:4, vitB6:0.33,
+        folate:50, vitB12:0.6, pantoAcid:1.2, biotin:7.5, choline:26.7,
+        chromium:10, copper:0.3, iodine:30, iron:2,
+        magnesium:21, manganese:0.4, molybdenum:15, selenium:10,
+        zinc:1.5, chloride:100 },
+      { id:65, name:'Fresubin Jucy Apple', category:'', dilution:'', notes:'果力康 RTD. 1.5 kcal/mL. Clear fruit beverage, 0 fat.',
+        kcal:150, protein:4, carbs:33.5, fat:0, fibre:0,
+        na:0.2609, k:0.179, p:0.356, ca:50, water:76,
+        vitA:150, vitD:2.5, vitE:3.75, vitK:25, vitC:18.8,
+        thiamin:0.3, riboflavin:0.4, niacin:2.62, vitB6:0.43,
+        folate:62.5, vitB12:0.75, pantoAcid:1.5, biotin:9.4, choline:0,
+        chromium:12.5, copper:0.375, iodine:37.5, iron:2.5,
+        magnesium:1, manganese:0.5, molybdenum:18.8, selenium:12.5,
+        zinc:1.88, chloride:190 },
+      { id:66, name:'Fresubin Jucy Orange', category:'', dilution:'', notes:'果力康 RTD. 1.5 kcal/mL. Clear fruit beverage, 0 fat.',
+        kcal:150, protein:4, carbs:33.5, fat:0, fibre:0,
+        na:0.2609, k:0.179, p:0.356, ca:50, water:76,
+        vitA:178, vitD:2.5, vitE:3.75, vitK:25, vitC:18.8,
+        thiamin:0.3, riboflavin:0.4, niacin:2.62, vitB6:0.43,
+        folate:62.5, vitB12:0.75, pantoAcid:1.5, biotin:9.4, choline:0,
+        chromium:12.5, copper:0.375, iodine:37.5, iron:2.5,
+        magnesium:1, manganese:0.5, molybdenum:18.8, selenium:12.5,
+        zinc:1.88, chloride:190 },
+      { id:67, name:'Fresubin Vanilla', category:'', dilution:'', notes:'RTD. 2.0 kcal/mL. Water 69-70 mL (flavour-dependent).',
+        kcal:200, protein:10, carbs:22.5, fat:7.8, fibre:0,
+        na:2.6087, k:4.0921, p:3.8835, ca:205, water:69.5,
+        vitA:212.5, vitD:5, vitE:3.75, vitK:21, vitC:18.8,
+        thiamin:0.3, riboflavin:0.4, niacin:5.58, vitB6:0.43,
+        folate:62.5, vitB12:0.75, pantoAcid:1.5, biotin:9.4, choline:0,
+        chromium:12.5, copper:0.375, iodine:37.5, iron:2.5,
+        magnesium:16, manganese:0.5, molybdenum:18.8, selenium:13.5,
+        zinc:1.6, chloride:80 },
+      { id:68, name:'Fresubin Fruits of the Forest', category:'', dilution:'', notes:'RTD. 2.0 kcal/mL. Water 69-70 mL (flavour-dependent).',
+        kcal:200, protein:10, carbs:22.5, fat:7.8, fibre:0,
+        na:2.6087, k:4.0921, p:3.8835, ca:205, water:69.5,
+        vitA:212.5, vitD:5, vitE:3.75, vitK:21, vitC:18.8,
+        thiamin:0.3, riboflavin:0.4, niacin:5.58, vitB6:0.43,
+        folate:62.5, vitB12:0.75, pantoAcid:1.5, biotin:9.4, choline:0,
+        chromium:12.5, copper:0.375, iodine:37.5, iron:2.5,
+        magnesium:16, manganese:0.5, molybdenum:18.8, selenium:13.5,
+        zinc:1.6, chloride:80 },
+      { id:69, name:'Fresubin Cappuccino', category:'', dilution:'', notes:'RTD. 2.0 kcal/mL. Water 69-70 mL (flavour-dependent).',
+        kcal:200, protein:10, carbs:22.5, fat:7.8, fibre:0,
+        na:2.6087, k:4.0921, p:3.8835, ca:205, water:69.5,
+        vitA:212.5, vitD:5, vitE:3.75, vitK:21, vitC:18.8,
+        thiamin:0.3, riboflavin:0.4, niacin:5.58, vitB6:0.43,
+        folate:62.5, vitB12:0.75, pantoAcid:1.5, biotin:9.4, choline:0,
+        chromium:12.5, copper:0.375, iodine:37.5, iron:2.5,
+        magnesium:16, manganese:0.5, molybdenum:18.8, selenium:13.5,
+        zinc:1.6, chloride:80 },
+      { id:70, name:'Fresubin Apricot-Peach', category:'', dilution:'', notes:'RTD. 2.0 kcal/mL. Water 69-70 mL (flavour-dependent).',
+        kcal:200, protein:10, carbs:22.5, fat:7.8, fibre:0,
+        na:2.6087, k:4.0921, p:3.8835, ca:205, water:69.5,
+        vitA:212.5, vitD:5, vitE:3.75, vitK:21, vitC:18.8,
+        thiamin:0.3, riboflavin:0.4, niacin:5.58, vitB6:0.43,
+        folate:62.5, vitB12:0.75, pantoAcid:1.5, biotin:9.4, choline:0,
+        chromium:12.5, copper:0.375, iodine:37.5, iron:2.5,
+        magnesium:16, manganese:0.5, molybdenum:18.8, selenium:13.5,
+        zinc:1.6, chloride:80 },
+      { id:71, name:'Fresubin Toffee', category:'', dilution:'', notes:'RTD. 2.0 kcal/mL. Water 69-70 mL (flavour-dependent).',
+        kcal:200, protein:10, carbs:22.5, fat:7.8, fibre:0,
+        na:2.6087, k:4.0921, p:3.8835, ca:205, water:69.5,
+        vitA:212.5, vitD:5, vitE:3.75, vitK:21, vitC:18.8,
+        thiamin:0.3, riboflavin:0.4, niacin:5.58, vitB6:0.43,
+        folate:62.5, vitB12:0.75, pantoAcid:1.5, biotin:9.4, choline:0,
+        chromium:12.5, copper:0.375, iodine:37.5, iron:2.5,
+        magnesium:16, manganese:0.5, molybdenum:18.8, selenium:13.5,
+        zinc:1.6, chloride:80 },
+      { id:72, name:'Fresubin Neutral', category:'', dilution:'', notes:'RTD. 2.0 kcal/mL. Water 69-70 mL (flavour-dependent).',
+        kcal:200, protein:10, carbs:22.5, fat:7.8, fibre:0,
+        na:2.6087, k:4.0921, p:3.8835, ca:205, water:69.5,
+        vitA:212.5, vitD:5, vitE:3.75, vitK:21, vitC:18.8,
+        thiamin:0.3, riboflavin:0.4, niacin:5.58, vitB6:0.43,
+        folate:62.5, vitB12:0.75, pantoAcid:1.5, biotin:9.4, choline:0,
+        chromium:12.5, copper:0.375, iodine:37.5, iron:2.5,
+        magnesium:16, manganese:0.5, molybdenum:18.8, selenium:13.5,
+        zinc:1.6, chloride:80 },
+      { id:73, name:'Forticare Sensation 2.4', category:'', dilution:'', notes:'RTD. 能全素奧米加3 (冰凍莓味). 2.4 kcal/mL. EPA 880mg, DHA 585mg per 100mL. 125mL × 4. Osmolarity 570 mOsmol/L.',
+        kcal:245, protein:14.6, carbs:25.1, fat:9.6, fibre:0,
+        na:1.7, k:2.5064, p:9.2581, ca:336, water:0,
+        vitA:232, vitD:7.85, vitE:4.09, vitK:14, vitC:31.4,
+        thiamin:0.24, riboflavin:0.5, niacin:0.77, vitB6:0.51,
+        folate:35.4, vitB12:1.04, pantoAcid:1.55, biotin:10.6, choline:99,
+        chromium:8.48, copper:0.34, iodine:30.5, iron:2.37,
+        magnesium:54, manganese:0.24, molybdenum:14.7, selenium:13.4,
+        zinc:2.3, chloride:46.9 }
+    ];
+    let suppNextId = 74;
     let suppEditId = null;
     const SUPP_ROWS = 5;
 
@@ -2673,7 +3470,6 @@
       var html = '<option value="">-- Select --</option>';
       suppDB.forEach(function(s) {
         var label = s.name;
-        if (s.kcal != null) label += ' (' + s.kcal + ' kcal)';
         var sel = (selectedId && s.id === selectedId) ? ' selected' : '';
         html += '<option value="' + s.id + '"' + sel + '>' + label + '</option>';
       });
@@ -3262,17 +4058,18 @@
 
     // Column header mapping for Excel: field -> display header
     var IMPORT_HEADERS = (function() {
-      var h = { name: 'Product Name' };
+      var h = { id: 'ID', name: 'Product Name' };
       SUPP_FIELDS.forEach(function(f) { h[f] = SUPP_LABELS[f] || f; });
       h.dilutionScoops = 'Dilution Scoops';
       h.dilutionWater = 'Dilution Water (mL)';
+      h.dilution = 'Dilution';
       h.category = 'Category';
       h.notes = 'Notes';
       return h;
     })();
 
     // Ordered columns for template
-    var IMPORT_COLS = ['name'].concat(SUPP_FIELDS).concat(['dilutionScoops', 'dilutionWater', 'category', 'notes']);
+    var IMPORT_COLS = ['name'].concat(SUPP_FIELDS).concat(['dilutionScoops', 'dilutionWater', 'category']);
 
     function downloadImportTemplate(type) {
       var wb = XLSX.utils.book_new();
@@ -3282,7 +4079,6 @@
       var unitHints = IMPORT_COLS.map(function(c) {
         if (c === 'name') return '(Required)';
         if (c === 'category') return '(Optional)';
-        if (c === 'notes') return '(Optional)';
         if (c === 'dilutionScoops') return 'e.g. 1';
         if (c === 'dilutionWater') return 'e.g. 30';
         // Show stored unit for nutrient fields
@@ -3302,7 +4098,6 @@
         if (c === 'dilutionScoops') return 1;
         if (c === 'dilutionWater') return 30;
         if (c === 'category') return '';
-        if (c === 'notes') return '';
         return '';
       });
 
@@ -3313,7 +4108,6 @@
       ws['!cols'] = IMPORT_COLS.map(function(c) {
         if (c === 'name') return { wch: 22 };
         if (c === 'category') return { wch: 20 };
-        if (c === 'notes') return { wch: 18 };
         return { wch: 14 };
       });
 
@@ -3321,6 +4115,56 @@
       var fileName = type === 'formula' ? 'PedMilk_Import_Template.xlsx' : 'Supplement_Import_Template.xlsx';
       XLSX.utils.book_append_sheet(wb, ws, sheetName);
       XLSX.writeFile(wb, fileName);
+    }
+
+    function exportSuppToExcel(type) {
+      var db = type === 'formula' ? formulaDatabase : suppDB;
+      var label = type === 'formula' ? 'Ped Milk Formulas' : 'Supplements';
+      if (!db || db.length === 0) {
+        showImportResult('No ' + label.toLowerCase() + ' to export.', 'error');
+        return;
+      }
+      var wb = XLSX.utils.book_new();
+      var exportCols = ['id', 'name'].concat(SUPP_FIELDS).concat(['dilution', 'category', 'notes']);
+      var exportHeaders = {};
+      exportCols.forEach(function(c) { exportHeaders[c] = IMPORT_HEADERS[c] || c; });
+
+      // Header row
+      var headers = exportCols.map(function(c) { return exportHeaders[c]; });
+      // Unit hints row
+      var unitHints = exportCols.map(function(c) {
+        if (c === 'id') return '(Match ID to update)';
+        if (c === 'name') return '(Required)';
+        if (c === 'category' || c === 'notes' || c === 'dilution') return '(Optional)';
+        var opt = UNIT_OPTIONS[c];
+        if (opt) return 'per 100mL, in ' + opt.stored;
+        return 'per 100mL';
+      });
+
+      var wsData = [headers, unitHints];
+      db.forEach(function(item) {
+        var row = exportCols.map(function(c) {
+          if (item[c] !== undefined && item[c] !== null) return item[c];
+          return '';
+        });
+        wsData.push(row);
+      });
+
+      var ws = XLSX.utils.aoa_to_sheet(wsData);
+      // Set column widths
+      ws['!cols'] = exportCols.map(function(c) {
+        if (c === 'name') return { wch: 32 };
+        if (c === 'notes') return { wch: 45 };
+        if (c === 'dilution') return { wch: 28 };
+        if (c === 'category') return { wch: 15 };
+        if (c === 'id') return { wch: 6 };
+        return { wch: 14 };
+      });
+
+      XLSX.utils.book_append_sheet(wb, ws, label);
+      var fileName = label.replace(/\s+/g, '_') + '_Export.xlsx';
+      XLSX.writeFile(wb, fileName);
+      showImportResult('Exported ' + db.length + ' ' + label.toLowerCase() + ' to Excel.', 'success');
     }
 
     function handleImportFile(input, type) {
@@ -3333,7 +4177,8 @@
         try {
           var data = new Uint8Array(e.target.result);
           var wb = XLSX.read(data, { type: 'array' });
-          var ws = wb.Sheets[wb.SheetNames[0]];
+          // Prefer "Import Ready" sheet (auto-calculated template), fall back to first sheet
+          var ws = wb.Sheets['Import Ready'] || wb.Sheets[wb.SheetNames[0]];
           var rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
 
           if (!rows || rows.length === 0) {
@@ -3353,6 +4198,7 @@
 
           var imported = 0;
           var skipped = 0;
+          var newItems = [];
 
           // Skip the unit hints row (row 2 in template, row 1 in JSON since row 1 = headers)
           // sheet_to_json uses row 1 as keys; row 2 becomes rows[0]
@@ -3360,7 +4206,7 @@
             var firstRow = rows[0];
             var firstKeys = Object.keys(firstRow);
             var firstVal = firstKeys.length > 0 ? String(firstRow[firstKeys[0]] || '').trim().toLowerCase() : '';
-            if (firstVal === '(required)' || firstVal.indexOf('per 100ml') >= 0) {
+            if (firstVal === '(required)' || firstVal === '(match id to update)' || firstVal === '(do not change)' || firstVal.indexOf('per 100ml') >= 0) {
               rows = rows.slice(1);
             }
           }
@@ -3379,18 +4225,23 @@
             // Map row to data object
             var obj = {};
             var hasName = false;
+            var importId = 0;
 
             Object.keys(row).forEach(function(header) {
               var field = headerToField[header.toLowerCase().trim()];
               if (!field) return;
               var val = row[header];
-              if (field === 'name') {
+              if (field === 'id') {
+                importId = parseInt(val) || 0;
+              } else if (field === 'name') {
                 obj.name = String(val || '').trim();
                 if (obj.name && obj.name !== '') hasName = true;
               } else if (field === 'category') {
                 obj.category = String(val || '').trim();
               } else if (field === 'notes') {
                 obj.notes = String(val || '').trim();
+              } else if (field === 'dilution') {
+                obj._dilutionStr = String(val || '').trim();
               } else if (field === 'dilutionScoops') {
                 obj._scoops = parseFloat(val) || 0;
               } else if (field === 'dilutionWater') {
@@ -3407,14 +4258,17 @@
               return;
             }
 
-            // Build dilution string
-            if (obj._scoops > 0 && obj._water > 0) {
+            // Build dilution string: prefer raw dilution string, then scoops:water format
+            if (obj._dilutionStr) {
+              obj.dilution = obj._dilutionStr;
+            } else if (obj._scoops > 0 && obj._water > 0) {
               obj.dilution = obj._scoops + ':' + obj._water + 'ml';
             } else {
               obj.dilution = '';
             }
             delete obj._scoops;
             delete obj._water;
+            delete obj._dilutionStr;
 
             // Ensure all SUPP_FIELDS exist
             SUPP_FIELDS.forEach(function(f) {
@@ -3423,18 +4277,45 @@
             if (!obj.category) obj.category = '';
             if (!obj.notes) obj.notes = '';
 
-            // Add to appropriate database
-            if (type === 'formula') {
-              obj.id = formulaNextId++;
-              formulaDatabase.push(obj);
+            // Preserve original ID if present, otherwise assign new one
+            if (importId > 0) {
+              obj.id = importId;
             } else {
-              obj.id = suppNextId++;
-              suppDB.push(obj);
+              obj.id = 0; // will be reassigned below
             }
+            newItems.push(obj);
             imported++;
           });
 
-          // Sort and refresh
+          // Determine whether the Excel has IDs (i.e. it came from an export)
+          var hasIds = newItems.some(function(item) { return item.id > 0; });
+
+          if (hasIds) {
+            // Full replacement mode: Excel is the source of truth
+            // Reassign IDs for any new rows (id=0) using max existing ID + 1
+            var maxId = 0;
+            newItems.forEach(function(item) { if (item.id > maxId) maxId = item.id; });
+            newItems.forEach(function(item) { if (item.id === 0) item.id = ++maxId; });
+
+            if (type === 'formula') {
+              formulaDatabase.length = 0;
+              newItems.forEach(function(item) { formulaDatabase.push(item); });
+              formulaNextId = maxId + 1;
+            } else {
+              suppDB.length = 0;
+              newItems.forEach(function(item) { suppDB.push(item); });
+              suppNextId = maxId + 1;
+            }
+          } else {
+            // No IDs present: append-only mode (blank template import)
+            if (type === 'formula') {
+              newItems.forEach(function(item) { item.id = formulaNextId++; formulaDatabase.push(item); });
+            } else {
+              newItems.forEach(function(item) { item.id = suppNextId++; suppDB.push(item); });
+            }
+          }
+
+          // Sort and refresh, then sync to Firebase
           if (type === 'formula') {
             formulaDatabase.sort(function(a, b) { return a.name.localeCompare(b.name); });
             populateFormulaDropdown();
@@ -3455,7 +4336,9 @@
             fbSaveSuppDB();
           }
 
-          var msg = 'Successfully imported ' + imported + ' item' + (imported !== 1 ? 's' : '') + '.';
+          var msg = hasIds
+            ? 'Database replaced with ' + imported + ' item' + (imported !== 1 ? 's' : '') + ' from Excel.'
+            : 'Successfully added ' + imported + ' new item' + (imported !== 1 ? 's' : '') + '.';
           if (skipped > 0) msg += ' (' + skipped + ' row' + (skipped !== 1 ? 's' : '') + ' skipped — no product name)';
           showImportResult(msg, 'success');
 
@@ -4203,13 +5086,18 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      // Load cached data from localStorage before anything else
+      // This ensures supplements/formulas from last session are available
+      // even without signing in to Firebase
+      loadLocalCache();
+
       initFirebase();
 
       // Inject unit selectors into both modals
       injectUnitSelectors('ns-');
       injectUnitSelectors('fm-');
 
-      // Initialize UI with local/hardcoded data immediately
+      // Initialize UI with local-cached or hardcoded data immediately
       // (Firebase data will reload after Google sign-in via onAuthStateChanged)
       initFormulaNextId();
       initFormulaGrid();
@@ -4217,6 +5105,11 @@
 
       // Set default pregnancy check date to today
       document.getElementById('preg-check-date').value = new Date().toISOString().split('T')[0];
+
+      // Auto-select number input content on focus (tap/click) for quick overwrite
+      document.querySelectorAll('.supp-grid-row input[type="number"], .supp-bw-row input[type="number"]').forEach(function(input) {
+        input.addEventListener('focus', function() { this.select(); });
+      });
     });
   </script>
 </body>
