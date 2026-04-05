@@ -397,12 +397,22 @@
       </div>
       <div class="input-row">
         <div class="input-group">
-          <label class="input-label">Age</label>
-          <input type="number" class="input-field" id="ped-age" placeholder="5" step="0.1" oninput="calculateGrowthPercentiles()">
+          <label class="input-label">Birth Date</label>
+          <input type="date" class="input-field" id="ped-birth-date" oninput="calcAgeFromDates()">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Measurement Date</label>
+          <input type="date" class="input-field" id="ped-meas-date" oninput="calcAgeFromDates()">
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label">Age <span id="ped-age-detail" style="font-weight:400; color:var(--accent);"></span></label>
+          <input type="number" class="input-field" id="ped-age" placeholder="auto or manual" step="0.01" oninput="onPedAgeManualInput()">
         </div>
         <div class="input-group">
           <label class="input-label">Age Unit</label>
-          <select class="input-field" id="ped-age-unit" onchange="calculateGrowthPercentiles()">
+          <select class="input-field" id="ped-age-unit" onchange="onPedAgeUnitChange()">
             <option value="months">Months</option>
             <option value="years">Years</option>
           </select>
@@ -1795,6 +1805,62 @@
     }
 
     let pedGender = 'male';
+    let pedAgeFromDates = false; // true when age was auto-calculated from dates
+
+    // Accurate age calculation from birth date and measurement date
+    function calcAgeFromDates() {
+      const birthStr = document.getElementById('ped-birth-date').value;
+      const measStr = document.getElementById('ped-meas-date').value;
+      const detailEl = document.getElementById('ped-age-detail');
+      if (!birthStr || !measStr) { detailEl.textContent = ''; return; }
+
+      const birth = new Date(birthStr);
+      const meas = new Date(measStr);
+      if (meas < birth) { detailEl.textContent = '(invalid: meas < birth)'; return; }
+
+      // Calculate exact years, months, days
+      let years = meas.getFullYear() - birth.getFullYear();
+      let months = meas.getMonth() - birth.getMonth();
+      let days = meas.getDate() - birth.getDate();
+      if (days < 0) {
+        months--;
+        // Days in previous month of measurement date
+        const prevMonth = new Date(meas.getFullYear(), meas.getMonth(), 0);
+        days += prevMonth.getDate();
+      }
+      if (months < 0) { years--; months += 12; }
+
+      const totalMonths = years * 12 + months + days / 30.4375;
+      const ageUnit = document.getElementById('ped-age-unit').value;
+
+      // Show detailed breakdown
+      var detail = '(' + years + 'y ' + months + 'm ' + days + 'd)';
+      detailEl.textContent = detail;
+
+      // Set the age field
+      pedAgeFromDates = true;
+      if (ageUnit === 'months') {
+        document.getElementById('ped-age').value = totalMonths.toFixed(1);
+      } else {
+        document.getElementById('ped-age').value = (totalMonths / 12).toFixed(2);
+      }
+      calculateGrowthPercentiles();
+    }
+
+    function onPedAgeManualInput() {
+      pedAgeFromDates = false;
+      document.getElementById('ped-age-detail').textContent = '';
+      calculateGrowthPercentiles();
+    }
+
+    function onPedAgeUnitChange() {
+      if (pedAgeFromDates) {
+        // Recalculate from dates in the new unit
+        calcAgeFromDates();
+      } else {
+        calculateGrowthPercentiles();
+      }
+    }
 
     // HK Growth Study 2020 centile lines
     const centiles = [0.4, 2, 9, 25, 50, 75, 91, 98, 99.6];
@@ -5103,8 +5169,10 @@
       initFormulaGrid();
       initSuppDropdowns();
 
-      // Set default pregnancy check date to today
-      document.getElementById('preg-check-date').value = new Date().toISOString().split('T')[0];
+      // Set default dates to today
+      var todayStr = new Date().toISOString().split('T')[0];
+      document.getElementById('preg-check-date').value = todayStr;
+      document.getElementById('ped-meas-date').value = todayStr;
 
       // Auto-select number input content on focus (tap/click) for quick overwrite
       document.querySelectorAll('.supp-grid-row input[type="number"], .supp-bw-row input[type="number"]').forEach(function(input) {
