@@ -103,7 +103,7 @@
       font-weight: 500;
       cursor: pointer;
       transition: all 0.25s;
-      padding: 5px 12px;
+      padding: 5px 8px;
       border-radius: 10px;
       position: relative;
     }
@@ -255,7 +255,7 @@
           <div class="card-subtitle">Calculate from actual measurements</div>
         </div>
       </div>
-      <div class="input-row three">
+      <div class="input-row">
         <div class="input-group">
           <label class="input-label">Weight (kg)</label>
           <input type="number" class="input-field" id="actual-weight" placeholder="70 (optional)" step="0.1" oninput="calculateBMIAndABW()">
@@ -264,10 +264,16 @@
           <label class="input-label">Height (cm)</label>
           <input type="number" class="input-field" id="actual-height" placeholder="170" step="0.1" oninput="calculateBMIAndABW()">
         </div>
-        <div class="input-group">
-          <label class="input-label">Ideal BMI</label>
-          <input type="number" class="input-field" id="ideal-bmi" placeholder="20.7" value="20.7" step="0.1" oninput="calculateBMIAndABW()">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Ideal BMI</label>
+        <div class="segment-control" id="ideal-bmi-toggle" style="margin-bottom:0;">
+          <button class="segment-btn active" onclick="setIdealBMI(20.7)" id="bmi-btn-20.7">20.7</button>
+          <button class="segment-btn" onclick="setIdealBMI(22.9)" id="bmi-btn-22.9">22.9</button>
+          <button class="segment-btn" onclick="setIdealBMI('custom')" id="bmi-btn-custom">Custom</button>
         </div>
+        <input type="number" class="input-field" id="ideal-bmi-custom" placeholder="Enter custom BMI" step="0.1" style="display:none;margin-top:6px;" oninput="calculateBMIAndABW()" onfocus="this.select()">
+        <input type="hidden" id="ideal-bmi" value="20.7">
       </div>
       <div id="bmi-abw-results" class="result-box">
         <div class="result-grid">
@@ -484,6 +490,39 @@
       </div>
     </div>
 
+    <!-- Growth Chart Viewer -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon teal"><i class="fas fa-chart-line"></i></div>
+        <div>
+          <div class="card-title">Growth Chart</div>
+          <div class="card-subtitle">HK Growth Study 2020 — tap chart to enlarge</div>
+        </div>
+      </div>
+      <div class="segment-control" id="chart-type-toggle" style="margin-bottom: 8px;">
+        <button class="segment-btn active" onclick="setChartType('weight',this)">Weight</button>
+        <button class="segment-btn" onclick="setChartType('height',this)">Height</button>
+        <button class="segment-btn" onclick="setChartType('bmi',this)">BMI</button>
+      </div>
+      <div class="segment-control" id="chart-range-toggle" style="margin-bottom: 10px;">
+        <button class="segment-btn active" id="chart-range-024" onclick="setChartRange('0-24')">0–24 months</button>
+        <button class="segment-btn" id="chart-range-218" onclick="setChartRange('2-18')">2–18 years</button>
+      </div>
+      <div style="position:relative;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--border-color);border-radius:10px;">
+        <canvas id="growth-chart-canvas" style="display:block;width:100%;"></canvas>
+      </div>
+    </div>
+
+    <!-- Fullscreen chart overlay -->
+    <div id="chart-fullscreen" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;background:rgba(0,0,0,0.92);overflow:auto;-webkit-overflow-scrolling:touch;" onclick="closeChartFullscreen()">
+      <div style="position:sticky;top:0;z-index:1;display:flex;justify-content:flex-end;padding:12px 16px;">
+        <button style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:18px;width:40px;height:40px;border-radius:50%;cursor:pointer;" onclick="closeChartFullscreen()"><i class="fas fa-times"></i></button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 64px);padding:8px;">
+        <canvas id="growth-chart-canvas-full" style="max-width:100%;"></canvas>
+      </div>
+    </div>
+
     <!-- Energy, Protein, Fluid Requirements -->
     <div class="card">
       <div class="card-header">
@@ -572,139 +611,8 @@
       </div>
       <div id="supp-results-container"></div>
     </div>
-  </div>
 
-  <!-- Add/Edit Supplement Modal -->
-  <div class="modal-overlay" id="supp-modal">
-    <div class="modal" style="max-width: 440px;">
-      <div class="modal-header">
-        <h3 class="modal-title" id="supp-modal-title">Add Supplement</h3>
-        <button class="modal-close" onclick="closeSuppModal()"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="input-group">
-        <label class="input-label">Product Name</label>
-        <input type="text" class="input-field" id="ns-name" placeholder="e.g. Ensure Plus">
-      </div>
-      <div class="input-group">
-        <label class="input-label">Category</label>
-        <select class="input-field" id="ns-category">
-          <option value="">-- Select Category --</option>
-          <option value="Standard Formula">Standard Formula</option>
-          <option value="Higher Energy Formula">Higher Energy Formula</option>
-          <option value="DM Formula">DM Formula</option>
-          <option value="Renal Formula">Renal Formula</option>
-          <option value="Wound Healing Formula">Wound Healing Formula</option>
-          <option value="Cancer Formula">Cancer Formula</option>
-          <option value="Hepatic Formula">Hepatic Formula</option>
-          <option value="Modular">Modular</option>
-          <option value="Medications">Medications</option>
-          <option value="Others">Others</option>
-        </select>
-        <input type="text" class="input-field" id="ns-category-custom" placeholder="Or type custom category..." style="margin-top: 6px; font-size: 13px;">
-      </div>
-      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Per 100 mL (all optional)</div>
-      <div class="input-row">
-        <div class="input-group"><label class="input-label">Energy (kcal)</label><input type="number" class="input-field" id="ns-kcal" placeholder="--" step="any"></div>
-        <div class="input-group"><label class="input-label">Protein (g)</label><input type="number" class="input-field" id="ns-protein" placeholder="--" step="any"></div>
-      </div>
-      <div class="input-row">
-        <div class="input-group"><label class="input-label">CHO (g)</label><input type="number" class="input-field" id="ns-carbs" placeholder="--" step="any"></div>
-        <div class="input-group"><label class="input-label">Fat (g)</label><input type="number" class="input-field" id="ns-fat" placeholder="--" step="any"></div>
-      </div>
-      <div class="input-row">
-        <div class="input-group"><label class="input-label">Fibre (g)</label><input type="number" class="input-field" id="ns-fibre" placeholder="--" step="any"></div>
-        <div class="input-group"><label class="input-label">Na (mmol)</label><input type="number" class="input-field" id="ns-na" placeholder="--" step="any"></div>
-      </div>
-      <div class="input-row">
-        <div class="input-group"><label class="input-label">K (mmol)</label><input type="number" class="input-field" id="ns-k" placeholder="--" step="any"></div>
-        <div class="input-group"><label class="input-label">P (mmol)</label><input type="number" class="input-field" id="ns-p" placeholder="--" step="any"></div>
-      </div>
-      <div class="input-row">
-        <div class="input-group"><label class="input-label">Ca (mg)</label><input type="number" class="input-field" id="ns-ca" placeholder="--" step="any"></div>
-        <div class="input-group"><label class="input-label">Water (mL)</label><input type="number" class="input-field" id="ns-water" placeholder="--" step="any"></div>
-      </div>
-      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--purple); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Vitamins (per 100 mL)</div>
-      <div class="input-row">
-        <div class="input-group"><label class="input-label">Vit A (mcg RE)</label><input type="number" class="input-field" id="ns-vitA" placeholder="--" step="any"></div>
-        <div class="input-group"><label class="input-label">Vit D (mcg)</label><input type="number" class="input-field" id="ns-vitD" placeholder="--" step="any"></div>
-      </div>
-      <div class="input-row">
-        <div class="input-group"><label class="input-label">Vit E (mg)</label><input type="number" class="input-field" id="ns-vitE" placeholder="--" step="any"></div>
-        <div class="input-group"><label class="input-label">Vit K (mcg)</label><input type="number" class="input-field" id="ns-vitK" placeholder="--" step="any"></div>
-      </div>
-      <div class="input-row">
-        <div class="input-group"><label class="input-label">Vit C (mg)</label><input type="number" class="input-field" id="ns-vitC" placeholder="--" step="any"></div>
-        <div class="input-group"><label class="input-label">Thiamin (mg)</label><input type="number" class="input-field" id="ns-thiamin" placeholder="--" step="any"></div>
-      </div>
-      <div class="input-row">
-        <div class="input-group"><label class="input-label">Riboflavin (mg)</label><input type="number" class="input-field" id="ns-riboflavin" placeholder="--" step="any"></div>
-        <div class="input-group"><label class="input-label">Niacin (mg NE)</label><input type="number" class="input-field" id="ns-niacin" placeholder="--" step="any"></div>
-      </div>
-      <div class="input-row">
-        <div class="input-group"><label class="input-label">Vit B6 (mg)</label><input type="number" class="input-field" id="ns-vitB6" placeholder="--" step="any"></div>
-        <div class="input-group"><label class="input-label">Folate (mcg DFE)</label><input type="number" class="input-field" id="ns-folate" placeholder="--" step="any"></div>
-      </div>
-      <div class="input-row">
-        <div class="input-group"><label class="input-label">Vit B12 (mcg)</label><input type="number" class="input-field" id="ns-vitB12" placeholder="--" step="any"></div>
-        <div class="input-group"><label class="input-label">Panto. Acid (mg)</label><input type="number" class="input-field" id="ns-pantoAcid" placeholder="--" step="any"></div>
-      </div>
-      <div class="input-row">
-        <div class="input-group"><label class="input-label">Biotin (mcg)</label><input type="number" class="input-field" id="ns-biotin" placeholder="--" step="any"></div>
-        <div class="input-group"><label class="input-label">Choline (mg)</label><input type="number" class="input-field" id="ns-choline" placeholder="--" step="any"></div>
-      </div>
-      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--teal); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Minerals (per 100 mL)</div>
-      <div class="input-row">
-        <div class="input-group"><label class="input-label">Chromium (mcg)</label><input type="number" class="input-field" id="ns-chromium" placeholder="--" step="any"></div>
-        <div class="input-group"><label class="input-label">Copper (mg)</label><input type="number" class="input-field" id="ns-copper" placeholder="--" step="any"></div>
-      </div>
-      <div class="input-row">
-        <div class="input-group"><label class="input-label">Iodine (mcg)</label><input type="number" class="input-field" id="ns-iodine" placeholder="--" step="any"></div>
-        <div class="input-group"><label class="input-label">Iron (mg)</label><input type="number" class="input-field" id="ns-iron" placeholder="--" step="any"></div>
-      </div>
-      <div class="input-row">
-        <div class="input-group"><label class="input-label">Magnesium (mg)</label><input type="number" class="input-field" id="ns-magnesium" placeholder="--" step="any"></div>
-        <div class="input-group"><label class="input-label">Manganese (mg)</label><input type="number" class="input-field" id="ns-manganese" placeholder="--" step="any"></div>
-      </div>
-      <div class="input-row">
-        <div class="input-group"><label class="input-label">Molybdenum (mcg)</label><input type="number" class="input-field" id="ns-molybdenum" placeholder="--" step="any"></div>
-        <div class="input-group"><label class="input-label">Selenium (mcg)</label><input type="number" class="input-field" id="ns-selenium" placeholder="--" step="any"></div>
-      </div>
-      <div class="input-row">
-        <div class="input-group"><label class="input-label">Zinc (mg)</label><input type="number" class="input-field" id="ns-zinc" placeholder="--" step="any"></div>
-        <div class="input-group"><label class="input-label">Chloride (mg)</label><input type="number" class="input-field" id="ns-chloride" placeholder="--" step="any"></div>
-      </div>
-      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Preparation</div>
-      <div class="input-group">
-        <label class="input-label">Dilution (powder to water)</label>
-        <div style="display: flex; align-items: center; gap: 6px;">
-          <input type="number" class="input-field" id="ns-dilution-scoops" placeholder="xx" step="any" style="width: 60px; text-align: center;">
-          <span style="font-size: 13px; font-weight: 600; color: var(--text-secondary); white-space: nowrap;">scoop :</span>
-          <input type="number" class="input-field" id="ns-dilution-water" placeholder="xx" step="any" style="width: 70px; text-align: center;">
-          <span style="font-size: 13px; font-weight: 600; color: var(--text-secondary); white-space: nowrap;">mL water</span>
-        </div>
-      </div>
-      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Notes</div>
-      <div class="input-group">
-        <textarea class="input-field" id="ns-notes" rows="2" placeholder="Any extra notes..." style="resize: vertical; min-height: 48px;"></textarea>
-      </div>
-      <button class="btn btn-primary" style="width: 100%; margin-top: 14px;" id="supp-modal-save-btn" onclick="saveSupp()"><i class="fas fa-save" style="margin-right: 6px;"></i> Save Supplement</button>
-    </div>
-  </div>
-
-  <!-- Supplement Info Modal -->
-  <div class="modal-overlay" id="supp-info-modal">
-    <div class="modal" style="max-width: 400px;">
-      <div class="modal-header">
-        <h3 class="modal-title" id="supp-info-title">Supplement Info</h3>
-        <button class="modal-close" onclick="closeSuppInfoModal()"><i class="fas fa-times"></i></button>
-      </div>
-      <div id="supp-info-body"></div>
-    </div>
-  </div>
-
-  <!-- Tab 4: Ped Milk -->
-  <div id="tab-pedmilk" class="tab-content">
-    <!-- Manage bar -->
+<!-- Manage bar -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
       <span style="font-size: 16px; font-weight: 700;">Paediatric Milk</span>
       <div style="display: flex; gap: 6px;">
@@ -844,6 +752,134 @@
     </div>
   </div>
 
+  <!-- Add/Edit Supplement Modal -->
+  <div class="modal-overlay" id="supp-modal">
+    <div class="modal" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="supp-modal-title">Add Supplement</h3>
+        <button class="modal-close" onclick="closeSuppModal()"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Product Name</label>
+        <input type="text" class="input-field" id="ns-name" placeholder="e.g. Ensure Plus">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Category</label>
+        <select class="input-field" id="ns-category">
+          <option value="">-- Select Category --</option>
+          <option value="Standard Formula">Standard Formula</option>
+          <option value="Higher Energy Formula">Higher Energy Formula</option>
+          <option value="DM Formula">DM Formula</option>
+          <option value="Renal Formula">Renal Formula</option>
+          <option value="Wound Healing Formula">Wound Healing Formula</option>
+          <option value="Cancer Formula">Cancer Formula</option>
+          <option value="Hepatic Formula">Hepatic Formula</option>
+          <option value="Modular">Modular</option>
+          <option value="Medications">Medications</option>
+          <option value="Others">Others</option>
+        </select>
+        <input type="text" class="input-field" id="ns-category-custom" placeholder="Or type custom category..." style="margin-top: 6px; font-size: 13px;">
+      </div>
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Per 100 mL (all optional)</div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Energy (kcal)</label><input type="number" class="input-field" id="ns-kcal" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Protein (g)</label><input type="number" class="input-field" id="ns-protein" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">CHO (g)</label><input type="number" class="input-field" id="ns-carbs" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Fat (g)</label><input type="number" class="input-field" id="ns-fat" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Fibre (g)</label><input type="number" class="input-field" id="ns-fibre" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Na (mmol)</label><input type="number" class="input-field" id="ns-na" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">K (mmol)</label><input type="number" class="input-field" id="ns-k" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">P (mmol)</label><input type="number" class="input-field" id="ns-p" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Ca (mg)</label><input type="number" class="input-field" id="ns-ca" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Water (mL)</label><input type="number" class="input-field" id="ns-water" placeholder="--" step="any"></div>
+      </div>
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--purple); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Vitamins (per 100 mL)</div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Vit A (mcg RE)</label><input type="number" class="input-field" id="ns-vitA" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Vit D (mcg)</label><input type="number" class="input-field" id="ns-vitD" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Vit E (mg)</label><input type="number" class="input-field" id="ns-vitE" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Vit K (mcg)</label><input type="number" class="input-field" id="ns-vitK" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Vit C (mg)</label><input type="number" class="input-field" id="ns-vitC" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Thiamin (mg)</label><input type="number" class="input-field" id="ns-thiamin" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Riboflavin (mg)</label><input type="number" class="input-field" id="ns-riboflavin" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Niacin (mg NE)</label><input type="number" class="input-field" id="ns-niacin" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Vit B6 (mg)</label><input type="number" class="input-field" id="ns-vitB6" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Folate (mcg DFE)</label><input type="number" class="input-field" id="ns-folate" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Vit B12 (mcg)</label><input type="number" class="input-field" id="ns-vitB12" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Panto. Acid (mg)</label><input type="number" class="input-field" id="ns-pantoAcid" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Biotin (mcg)</label><input type="number" class="input-field" id="ns-biotin" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Choline (mg)</label><input type="number" class="input-field" id="ns-choline" placeholder="--" step="any"></div>
+      </div>
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--teal); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Minerals (per 100 mL)</div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Chromium (mcg)</label><input type="number" class="input-field" id="ns-chromium" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Copper (mg)</label><input type="number" class="input-field" id="ns-copper" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Iodine (mcg)</label><input type="number" class="input-field" id="ns-iodine" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Iron (mg)</label><input type="number" class="input-field" id="ns-iron" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Magnesium (mg)</label><input type="number" class="input-field" id="ns-magnesium" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Manganese (mg)</label><input type="number" class="input-field" id="ns-manganese" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Molybdenum (mcg)</label><input type="number" class="input-field" id="ns-molybdenum" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Selenium (mcg)</label><input type="number" class="input-field" id="ns-selenium" placeholder="--" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Zinc (mg)</label><input type="number" class="input-field" id="ns-zinc" placeholder="--" step="any"></div>
+        <div class="input-group"><label class="input-label">Chloride (mg)</label><input type="number" class="input-field" id="ns-chloride" placeholder="--" step="any"></div>
+      </div>
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Preparation</div>
+      <div class="input-group">
+        <label class="input-label">Dilution (powder to water)</label>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <input type="number" class="input-field" id="ns-dilution-scoops" placeholder="xx" step="any" style="width: 60px; text-align: center;">
+          <span style="font-size: 13px; font-weight: 600; color: var(--text-secondary); white-space: nowrap;">scoop :</span>
+          <input type="number" class="input-field" id="ns-dilution-water" placeholder="xx" step="any" style="width: 70px; text-align: center;">
+          <span style="font-size: 13px; font-weight: 600; color: var(--text-secondary); white-space: nowrap;">mL water</span>
+        </div>
+      </div>
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Notes</div>
+      <div class="input-group">
+        <textarea class="input-field" id="ns-notes" rows="2" placeholder="Any extra notes..." style="resize: vertical; min-height: 48px;"></textarea>
+      </div>
+      <button class="btn btn-primary" style="width: 100%; margin-top: 14px;" id="supp-modal-save-btn" onclick="saveSupp()"><i class="fas fa-save" style="margin-right: 6px;"></i> Save Supplement</button>
+    </div>
+  </div>
+
+  <!-- Supplement Info Modal -->
+  <div class="modal-overlay" id="supp-info-modal">
+    <div class="modal" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="supp-info-title">Supplement Info</h3>
+        <button class="modal-close" onclick="closeSuppInfoModal()"><i class="fas fa-times"></i></button>
+      </div>
+      <div id="supp-info-body"></div>
+    </div>
+  </div>
+
   <!-- Add/Edit Formula Modal -->
   <div class="modal-overlay" id="formula-modal">
     <div class="modal" style="max-width: 440px;">
@@ -972,6 +1008,176 @@
         <button class="modal-close" onclick="closeFormulaInfoModal()"><i class="fas fa-times"></i></button>
       </div>
       <div id="formula-info-body"></div>
+    </div>
+  </div>
+
+
+  <!-- Tab: Food (TMH Food List) -->
+  <div id="tab-food" class="tab-content">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon green"><i class="fas fa-utensils"></i></div>
+        <div>
+          <div class="card-title">TMH Food List</div>
+          <div class="card-subtitle">Search nutrition, texture &amp; diet suitability</div>
+        </div>
+      </div>
+
+      <!-- Search by category then item -->
+      <div class="input-group">
+        <label class="input-label">Food Category</label>
+        <select class="input-field" id="food-category" onchange="onFoodCategoryChange()">
+          <option value="">-- Select Category --</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Food Item</label>
+        <select class="input-field" id="food-item" onchange="onFoodItemChange()">
+          <option value="">-- Select Item --</option>
+        </select>
+      </div>
+
+      <!-- Quick search bar -->
+      <div class="input-group" style="margin-bottom:10px;">
+        <label class="input-label">Quick Search (by name)</label>
+        <input type="text" class="input-field" id="food-search" placeholder="Type to search..." oninput="onFoodSearch()">
+        <div id="food-search-results" style="display:none; max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 10px; margin-top: 4px; background: var(--bg-primary);"></div>
+      </div>
+
+      <!-- Food detail display -->
+      <div id="food-detail" style="display:none;">
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Nutrition Info</div>
+        <div id="food-detail-name" style="font-size: 16px; font-weight: 600; margin-bottom: 8px;"></div>
+        <div id="food-detail-portion" style="font-size: 13px; color: var(--text-secondary); margin-bottom: 10px;"></div>
+        <div class="result-grid" id="food-nutrition-grid"></div>
+
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Suitable Texture</div>
+        <div id="food-texture-tags" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom: 8px;"></div>
+
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Suitable Diet</div>
+        <div id="food-diet-tags" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom: 8px;"></div>
+      </div>
+    </div>
+
+    <!-- Add / Manage section -->
+    <div class="card">
+      <div class="card-header" style="cursor:pointer;" onclick="toggleFoodManage()">
+        <div class="card-icon orange"><i class="fas fa-plus-circle"></i></div>
+        <div style="flex:1;">
+          <div class="card-title">Manage Foods</div>
+          <div class="card-subtitle">Add, edit or delete food items</div>
+        </div>
+        <i class="fas fa-chevron-down" id="food-manage-chevron" style="color: var(--text-secondary); transition: transform 0.2s;"></i>
+      </div>
+      <div id="food-manage-body" style="display:none;">
+        <button class="btn btn-primary" style="margin-bottom:14px;" onclick="openFoodModal()"><i class="fas fa-plus" style="margin-right:6px;"></i>Add New Food</button>
+        <div id="food-manage-list"></div>
+      </div>
+    </div>
+
+    <!-- Settings: Categories, Textures, Diets -->
+    <div class="card">
+      <div class="card-header" style="cursor:pointer;" onclick="toggleFoodSettings()">
+        <div class="card-icon purple"><i class="fas fa-sliders"></i></div>
+        <div style="flex:1;">
+          <div class="card-title">Settings</div>
+          <div class="card-subtitle">Edit categories, textures &amp; diet options</div>
+        </div>
+        <i class="fas fa-chevron-down" id="food-settings-chevron" style="color: var(--text-secondary); transition: transform 0.2s;"></i>
+      </div>
+      <div id="food-settings-body" style="display:none;">
+        <!-- Categories -->
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 10px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Food Categories</div>
+        <div id="food-settings-cats"></div>
+        <div style="display:flex; gap:8px; margin: 8px 0 16px;">
+          <input type="text" class="input-field" id="food-new-cat" placeholder="New category name" style="flex:1; padding:10px 12px; font-size:14px;">
+          <button class="btn btn-primary" style="width:auto; padding:10px 16px; font-size:14px;" onclick="addFoodOption('cat')"><i class="fas fa-plus"></i></button>
+        </div>
+        <!-- Textures -->
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 10px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Texture Options</div>
+        <div id="food-settings-textures"></div>
+        <div style="display:flex; gap:8px; margin: 8px 0 16px;">
+          <input type="text" class="input-field" id="food-new-texture" placeholder="New texture name" style="flex:1; padding:10px 12px; font-size:14px;">
+          <button class="btn btn-primary" style="width:auto; padding:10px 16px; font-size:14px;" onclick="addFoodOption('texture')"><i class="fas fa-plus"></i></button>
+        </div>
+        <!-- Diets -->
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 10px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Diet Options</div>
+        <div id="food-settings-diets"></div>
+        <div style="display:flex; gap:8px; margin: 8px 0 16px;">
+          <input type="text" class="input-field" id="food-new-diet" placeholder="New diet name" style="flex:1; padding:10px 12px; font-size:14px;">
+          <button class="btn btn-primary" style="width:auto; padding:10px 16px; font-size:14px;" onclick="addFoodOption('diet')"><i class="fas fa-plus"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Import / Export -->
+    <div class="card">
+      <div class="card-header" style="cursor:pointer;" onclick="toggleFoodImportExport()">
+        <div class="card-icon teal"><i class="fas fa-file-import"></i></div>
+        <div style="flex:1;">
+          <div class="card-title">Import / Export</div>
+          <div class="card-subtitle">Excel import &amp; export for food list</div>
+        </div>
+        <i class="fas fa-chevron-down" id="food-ie-chevron" style="color: var(--text-secondary); transition: transform 0.2s;"></i>
+      </div>
+      <div id="food-ie-body" style="display:none; padding-top:12px;">
+        <div style="display:flex; gap:10px; margin-bottom:10px;">
+          <button class="btn btn-secondary" style="flex:1; padding:12px; font-size:14px;" onclick="exportFoodExcel()"><i class="fas fa-download" style="margin-right:4px;"></i>Export</button>
+          <label class="btn btn-secondary" style="flex:1; padding:12px; font-size:14px; text-align:center; cursor:pointer;">
+            <i class="fas fa-upload" style="margin-right:4px;"></i>Import
+            <input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importFoodExcel(event)">
+          </label>
+        </div>
+        <button class="btn btn-primary" style="padding:12px; font-size:14px;" onclick="fbUploadFoodDB()"><i class="fas fa-cloud-arrow-up" style="margin-right:4px;"></i>Upload to Firebase</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Food Add/Edit Modal -->
+  <div class="modal-overlay" id="food-modal">
+    <div class="modal" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="food-modal-title">Add Food</h3>
+        <button class="modal-close" onclick="closeFoodModal()"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Category</label>
+        <select class="input-field" id="food-m-cat"></select>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Food Name</label>
+        <input type="text" class="input-field" id="food-m-name" placeholder="e.g. 白粥">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Portion Description</label>
+        <input type="text" class="input-field" id="food-m-portion" placeholder="e.g. 1 bowl">
+      </div>
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 10px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Nutrition per Serving</div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Weight (g)</label><input type="number" class="input-field" id="food-m-wt" step="any"></div>
+        <div class="input-group"><label class="input-label">Energy (kcal)</label><input type="number" class="input-field" id="food-m-kcal" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Protein (g)</label><input type="number" class="input-field" id="food-m-pro" step="any"></div>
+        <div class="input-group"><label class="input-label">Fat (g)</label><input type="number" class="input-field" id="food-m-fat" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Carbs (g)</label><input type="number" class="input-field" id="food-m-cho" step="any"></div>
+        <div class="input-group"><label class="input-label">Fibre (g)</label><input type="number" class="input-field" id="food-m-fib" step="any"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-group"><label class="input-label">Na (mg)</label><input type="number" class="input-field" id="food-m-na" step="any"></div>
+        <div class="input-group"><label class="input-label">K (mg)</label><input type="number" class="input-field" id="food-m-k" step="any"></div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">P (mg)</label>
+        <input type="number" class="input-field" id="food-m-p" step="any">
+      </div>
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 10px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Suitable Texture</div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;" id="food-m-texture"></div>
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 10px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Suitable Diet</div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;" id="food-m-diet"></div>
+      <button class="btn btn-primary" onclick="saveFoodItem()"><i class="fas fa-save" style="margin-right:6px;"></i>Save Food</button>
     </div>
   </div>
 
@@ -1364,6 +1570,9 @@
             <div class="result-label">Expected Weight Gain Range (kg)</div>
           </div>
         </div>
+        <div class="formula-note" style="margin-top: 8px;">
+          <small><i class="fas fa-exclamation-triangle"></i> Above figures reflect T2/T3 weekly gain only. First trimester gain (BMI &lt;19: ≥2 kg; BMI ≥19: 0–2 kg) is <strong>not</strong> included — add manually.</small>
+        </div>
       </div>
     </div>
 
@@ -1610,8 +1819,8 @@
   <div class="tab-bar">
     <div class="tab-item active" onclick="switchTab('adult')"><i class="fas fa-user"></i><span>Adult</span></div>
     <div class="tab-item" onclick="switchTab('peds')"><i class="fas fa-child"></i><span>Peds</span></div>
-    <div class="tab-item" onclick="switchTab('supplements')"><i class="fas fa-flask"></i><span>Suppl.</span></div>
-    <div class="tab-item" onclick="switchTab('pedmilk')"><i class="fas fa-baby-carriage"></i><span>Ped Milk</span></div>
+    <div class="tab-item" onclick="switchTab('supplements')"><i class="fas fa-prescription-bottle"></i><span>Formula</span></div>
+    <div class="tab-item" onclick="switchTab('food')"><i class="fas fa-utensils"></i><span>Food</span></div>
     <div class="tab-item" onclick="switchTab('keto')"><i class="fas fa-fire-flame-curved"></i><span>Keto</span></div>
     <div class="tab-item" onclick="switchTab('pregnancy')"><i class="fas fa-person-pregnant"></i><span>Preg.</span></div>
   </div>
@@ -1723,6 +1932,11 @@
       fbLoadSuppDB(function() {
         initSuppDropdowns();
       });
+      fbLoadFoodOptions(function() {
+        fbLoadFoodDB(function() {
+          populateFoodCategories();
+        });
+      });
     }
 
     // --- localStorage cache helpers ---
@@ -1801,6 +2015,19 @@
         formulaDatabase.length = 0;
         cachedFormula.forEach(function(f) { formulaDatabase.push(f); });
         console.log('Loaded ' + formulaDatabase.length + ' formulas from local cache');
+      }
+      var cachedFood = localLoad('tmhFoodDB');
+      if (cachedFood && cachedFood.items && cachedFood.items.length > 0) {
+        tmhFoodDB = cachedFood.items;
+        tmhFoodNextId = cachedFood.nextId || (tmhFoodDB.length > 0 ? Math.max.apply(null, tmhFoodDB.map(function(f) { return f.id; })) + 1 : 1);
+        console.log('Loaded ' + tmhFoodDB.length + ' foods from local cache');
+      }
+      var cachedOpts = localLoad('foodOptions');
+      if (cachedOpts) {
+        if (cachedOpts.categories && cachedOpts.categories.length > 0) FOOD_CATEGORIES = cachedOpts.categories;
+        if (cachedOpts.textures && cachedOpts.textures.length > 0) FOOD_TEXTURES = cachedOpts.textures;
+        if (cachedOpts.diets && cachedOpts.diets.length > 0) FOOD_DIETS = cachedOpts.diets;
+        console.log('Loaded food options from local cache');
       }
     }
 
@@ -1895,30 +2122,30 @@
           216: [49.0, 55.0, 62.0, 70.0, 78.8, 88.5, 99.0, 110.0, 122.0]
         },
         height: {
-          0: [46.0, 47.5, 49.0, 50.5, 52.0, 53.5, 55.0, 56.5, 58.0],
-          2: [53.0, 54.5, 56.5, 58.0, 59.5, 61.0, 62.5, 64.0, 65.5],
-          4: [58.5, 60.0, 62.0, 63.5, 65.5, 67.0, 68.5, 70.5, 72.0],
-          6: [62.5, 64.0, 66.0, 68.0, 69.5, 71.5, 73.5, 75.0, 77.0],
-          9: [68.0, 69.5, 71.5, 73.5, 75.5, 77.5, 79.5, 81.5, 83.5],
-          12: [71.0, 73.0, 75.0, 77.0, 79.0, 81.5, 83.5, 85.5, 87.5],
-          18: [76.5, 79.0, 81.0, 83.5, 86.0, 88.0, 90.5, 92.5, 95.0],
-          24: [81.0, 83.5, 86.0, 88.5, 91.0, 93.5, 96.0, 98.5, 101.0],
-          36: [88.0, 91.0, 94.0, 97.0, 100.0, 103.0, 106.0, 109.0, 112.0],
-          48: [94.5, 97.5, 101.0, 104.5, 108.0, 111.5, 115.0, 118.5, 122.0],
-          60: [100.0, 103.5, 107.5, 111.5, 115.5, 119.5, 123.5, 127.5, 131.5],
-          72: [105.0, 109.0, 113.5, 118.0, 122.5, 127.0, 131.5, 136.0, 140.0],
-          84: [110.0, 114.5, 119.0, 124.0, 129.0, 134.0, 139.0, 144.0, 148.5],
-          96: [115.0, 119.5, 124.5, 130.0, 135.0, 140.5, 146.0, 151.0, 156.0],
-          108: [119.5, 124.5, 130.0, 135.5, 141.0, 146.5, 152.0, 157.5, 163.0],
-          120: [124.0, 129.0, 134.5, 140.5, 146.5, 152.5, 158.0, 163.5, 169.0],
-          132: [128.0, 133.5, 139.5, 146.0, 152.0, 158.0, 164.0, 169.5, 175.0],
-          144: [132.5, 138.5, 145.0, 151.5, 158.0, 164.0, 170.0, 175.5, 181.0],
-          156: [138.0, 144.5, 151.0, 158.0, 164.5, 170.5, 176.5, 182.0, 187.5],
-          168: [145.0, 151.5, 158.0, 164.5, 171.0, 177.0, 182.5, 187.5, 192.5],
-          180: [152.0, 158.0, 164.0, 170.0, 176.0, 181.5, 186.5, 191.0, 195.5],
-          192: [157.0, 162.5, 168.0, 173.5, 179.0, 184.0, 188.5, 193.0, 197.0],
-          204: [159.5, 165.0, 170.5, 175.5, 180.5, 185.5, 190.0, 194.0, 198.0],
-          216: [161.0, 166.5, 172.0, 177.0, 182.0, 186.5, 191.0, 195.0, 199.0]
+          0: [45.5, 46.5, 47.5, 48.5, 50.0, 51.0, 52.0, 53.0, 54.5],
+          2: [53.5, 54.5, 55.5, 57.0, 58.0, 59.5, 61.0, 62.0, 63.5],
+          4: [58.5, 60.0, 61.0, 62.5, 64.0, 65.5, 67.0, 68.5, 70.0],
+          6: [62.0, 63.5, 65.0, 66.5, 68.0, 69.5, 71.0, 72.5, 74.5],
+          9: [66.0, 67.5, 69.0, 70.5, 72.0, 74.0, 75.5, 77.5, 79.0],
+          12: [69.0, 71.0, 72.5, 74.0, 76.0, 77.5, 79.5, 81.0, 83.0],
+          18: [75.0, 76.5, 78.5, 80.5, 82.0, 84.0, 86.0, 88.5, 90.5],
+          24: [78.5, 80.5, 82.5, 84.5, 86.5, 88.5, 91.0, 93.0, 95.5],
+          36: [85.5, 88.0, 90.0, 92.5, 95.0, 97.5, 100.0, 102.5, 105.0],
+          48: [92.0, 94.5, 97.0, 99.5, 102.5, 104.5, 108.0, 111.0, 114.0],
+          60: [96.5, 100.0, 103.0, 106.0, 109.0, 112.0, 114.5, 117.5, 120.0],
+          72: [103.0, 106.5, 110.0, 113.0, 116.5, 119.5, 123.0, 126.5, 129.5],
+          84: [109.0, 111.5, 115.0, 118.5, 122.0, 125.5, 129.0, 132.5, 136.5],
+          96: [113.0, 117.0, 120.5, 124.0, 128.0, 131.5, 135.5, 139.5, 144.0],
+          108: [117.5, 121.5, 125.0, 129.0, 133.5, 137.5, 142.0, 146.0, 150.5],
+          120: [122.0, 126.0, 130.0, 134.5, 139.0, 143.5, 148.0, 152.5, 157.0],
+          132: [127.0, 131.5, 136.0, 140.5, 145.5, 150.0, 154.5, 159.5, 164.0],
+          144: [134.0, 138.5, 143.5, 148.0, 151.5, 157.5, 162.0, 167.0, 171.5],
+          156: [141.5, 146.5, 151.5, 156.0, 160.5, 165.0, 169.5, 174.0, 178.0],
+          168: [147.5, 152.5, 157.5, 162.0, 166.5, 170.5, 175.0, 179.0, 183.0],
+          180: [151.5, 156.5, 161.0, 165.5, 169.5, 174.0, 178.0, 182.0, 185.5],
+          192: [154.0, 158.5, 163.0, 167.5, 171.5, 175.5, 179.5, 183.5, 187.0],
+          204: [155.0, 159.5, 164.0, 168.0, 172.5, 176.5, 180.5, 184.0, 188.0],
+          216: [156.0, 160.0, 164.5, 168.5, 172.5, 176.5, 180.5, 184.5, 188.5]
         },
         bmi: {
           0: [11.5, 12.0, 12.8, 13.4, 14.0, 14.7, 15.4, 16.2, 17.0],
@@ -1977,30 +2204,30 @@
           216: [42.5, 47.2, 52.5, 58.0, 64.0, 70.5, 77.0, 84.0, 91.5]
         },
         height: {
-          0: [45.0, 46.5, 48.0, 49.5, 51.0, 52.0, 53.5, 55.0, 56.5],
-          2: [52.0, 53.5, 55.0, 56.5, 58.0, 59.5, 61.0, 62.5, 64.0],
-          4: [57.5, 59.0, 60.5, 62.5, 64.0, 65.5, 67.5, 69.0, 70.5],
-          6: [61.5, 63.0, 65.0, 66.5, 68.5, 70.0, 72.0, 73.5, 75.5],
-          9: [66.0, 67.5, 69.5, 71.5, 73.5, 75.5, 77.5, 79.5, 81.5],
-          12: [70.0, 72.0, 74.0, 76.0, 78.0, 80.0, 82.0, 84.0, 86.0],
-          18: [76.0, 78.0, 80.5, 82.5, 85.0, 87.0, 89.0, 91.0, 93.5],
-          24: [80.5, 83.0, 85.5, 88.0, 90.0, 92.5, 95.0, 97.0, 99.5],
-          36: [87.0, 90.0, 93.0, 96.0, 99.0, 102.0, 105.0, 108.0, 111.0],
-          48: [93.5, 96.5, 100.0, 103.5, 107.0, 110.5, 114.0, 117.5, 121.0],
-          60: [99.0, 102.5, 106.5, 110.5, 114.5, 118.5, 122.5, 126.5, 130.5],
-          72: [104.0, 108.0, 112.5, 117.0, 121.5, 126.0, 130.5, 135.0, 139.0],
-          84: [109.0, 113.5, 118.5, 123.5, 128.5, 133.5, 138.0, 143.0, 147.5],
-          96: [114.0, 119.0, 124.0, 129.5, 135.0, 140.0, 145.5, 150.5, 155.5],
-          108: [119.0, 124.0, 129.5, 135.5, 141.0, 146.5, 152.0, 157.0, 162.0],
-          120: [123.5, 129.0, 135.0, 141.0, 147.0, 152.5, 158.0, 163.0, 168.0],
-          132: [128.5, 134.5, 140.5, 147.0, 153.0, 158.5, 164.0, 169.0, 174.0],
-          144: [134.0, 140.5, 147.0, 153.0, 159.0, 164.5, 169.5, 174.5, 179.0],
-          156: [140.0, 146.5, 152.5, 158.5, 164.0, 169.0, 173.5, 178.0, 182.0],
-          168: [145.0, 151.0, 156.5, 162.0, 167.0, 171.5, 176.0, 180.0, 184.0],
-          180: [148.0, 153.5, 158.5, 163.5, 168.5, 173.0, 177.0, 181.0, 185.0],
-          192: [149.5, 155.0, 160.0, 165.0, 169.5, 174.0, 178.0, 182.0, 186.0],
-          204: [150.0, 155.5, 160.5, 165.5, 170.0, 174.5, 178.5, 182.5, 186.5],
-          216: [150.5, 156.0, 161.0, 166.0, 170.5, 175.0, 179.0, 183.0, 187.0]
+          0: [45.0, 46.0, 47.0, 48.0, 49.0, 50.0, 51.0, 52.0, 53.0],
+          2: [52.0, 53.5, 54.5, 55.5, 57.0, 58.0, 59.0, 60.5, 61.5],
+          4: [57.0, 58.5, 59.5, 61.0, 62.0, 63.5, 65.0, 66.0, 67.5],
+          6: [61.0, 62.0, 63.5, 65.0, 66.0, 67.5, 69.0, 70.5, 72.0],
+          9: [65.0, 66.5, 68.0, 69.5, 71.0, 72.5, 74.0, 75.5, 77.0],
+          12: [68.5, 70.0, 71.5, 73.0, 75.0, 76.5, 78.0, 80.0, 81.5],
+          18: [74.0, 75.5, 77.5, 79.0, 81.0, 82.5, 84.5, 86.5, 88.5],
+          24: [77.5, 79.5, 81.0, 83.0, 85.0, 87.0, 89.0, 91.0, 93.5],
+          36: [85.0, 87.0, 89.0, 91.0, 93.5, 95.5, 98.0, 100.5, 103.0],
+          48: [91.0, 94.0, 96.5, 99.5, 102.0, 104.5, 107.0, 109.5, 112.0],
+          60: [97.0, 99.0, 101.5, 104.5, 107.0, 110.0, 112.5, 115.5, 118.5],
+          72: [102.5, 105.5, 108.5, 111.5, 114.5, 117.5, 120.5, 124.0, 127.0],
+          84: [108.0, 111.0, 114.0, 117.0, 120.5, 124.0, 127.5, 131.0, 132.5],
+          96: [113.0, 116.0, 119.5, 123.0, 126.5, 130.0, 134.5, 137.5, 141.5],
+          108: [118.0, 121.5, 125.0, 129.0, 132.5, 136.5, 141.0, 145.0, 149.5],
+          120: [124.0, 127.5, 131.5, 135.5, 140.0, 144.0, 149.0, 152.0, 158.0],
+          132: [130.5, 134.0, 138.5, 142.5, 147.0, 151.5, 156.5, 161.0, 166.0],
+          144: [135.0, 139.5, 144.0, 148.5, 153.0, 157.5, 162.0, 166.5, 171.5],
+          156: [139.0, 143.5, 147.5, 152.0, 156.0, 160.5, 164.5, 169.0, 173.0],
+          168: [141.5, 146.0, 150.0, 154.0, 158.0, 162.0, 166.0, 170.0, 173.5],
+          180: [143.0, 147.0, 151.0, 155.0, 158.5, 162.5, 166.5, 170.5, 174.0],
+          192: [144.0, 148.0, 152.0, 156.0, 159.0, 163.0, 167.0, 171.0, 174.5],
+          204: [145.5, 149.0, 153.0, 156.5, 160.0, 164.0, 167.5, 171.0, 175.0],
+          216: [146.0, 149.5, 153.0, 156.5, 160.0, 164.0, 167.5, 171.5, 175.0]
         },
         bmi: {
           0: [11.0, 11.5, 12.3, 12.9, 13.5, 14.2, 14.9, 15.7, 16.5],
@@ -2177,6 +2404,8 @@
 
       calculatePedRealtime();
       updatePedReference();
+      autoSelectChartRange();
+      drawGrowthChart();
     }
 
     // Reference data tables from clinical guidelines
@@ -2417,6 +2646,291 @@
       calculateGrowthPercentiles();
     }
 
+    // ========== Growth Chart Drawing ==========
+    let growthChartType = 'weight';
+    let growthChartRange = '0-24';
+
+    function setChartType(type, btn) {
+      growthChartType = type;
+      document.querySelectorAll('#chart-type-toggle .segment-btn').forEach(function(b) { b.classList.remove('active'); });
+      if (btn) btn.classList.add('active');
+      drawGrowthChart();
+    }
+
+    function setChartRange(range) {
+      growthChartRange = range;
+      document.getElementById('chart-range-024').classList.toggle('active', range === '0-24');
+      document.getElementById('chart-range-218').classList.toggle('active', range === '2-18');
+      drawGrowthChart();
+    }
+
+    function autoSelectChartRange() {
+      var ageVal = parseFloat(document.getElementById('ped-age').value);
+      var ageUnit = document.getElementById('ped-age-unit').value;
+      if (isNaN(ageVal)) return;
+      var ageMonths = ageUnit === 'years' ? ageVal * 12 : ageVal;
+      var newRange = ageMonths <= 24 ? '0-24' : '2-18';
+      if (newRange !== growthChartRange) setChartRange(newRange);
+    }
+
+    function drawGrowthChart(targetCanvas) {
+      var canvas = targetCanvas || document.getElementById('growth-chart-canvas');
+      if (!canvas) return;
+      var ctx = canvas.getContext('2d');
+      var isFullscreen = (targetCanvas === document.getElementById('growth-chart-canvas-full'));
+
+      var genderData = hkData[pedGender];
+      if (!genderData) return;
+      var typeData = genderData[growthChartType];
+      if (!typeData) return;
+
+      // Age points for range
+      var allAges = Object.keys(typeData).map(Number).sort(function(a,b){return a-b;});
+      var agePoints;
+      if (growthChartRange === '0-24') {
+        agePoints = allAges.filter(function(a){return a <= 24;});
+      } else {
+        agePoints = allAges.filter(function(a){return a >= 24;});
+      }
+      if (agePoints.length < 2) return;
+
+      // Y range from data
+      var yMin = Infinity, yMax = -Infinity;
+      agePoints.forEach(function(age) {
+        var vals = typeData[age];
+        if (vals) { vals.forEach(function(v) { if (v < yMin) yMin = v; if (v > yMax) yMax = v; }); }
+      });
+      var yPad = (yMax - yMin) * 0.08;
+      yMin = Math.floor((yMin - yPad));
+      yMax = Math.ceil((yMax + yPad));
+      if (yMin < 0) yMin = 0;
+
+      // Nice Y ticks
+      var yRange = yMax - yMin;
+      var yStep;
+      if (yRange <= 15) yStep = 1;
+      else if (yRange <= 30) yStep = 2;
+      else if (yRange <= 60) yStep = 5;
+      else if (yRange <= 150) yStep = 10;
+      else yStep = 20;
+      yMin = Math.floor(yMin / yStep) * yStep;
+      yMax = Math.ceil(yMax / yStep) * yStep;
+
+      // Canvas sizing
+      var dpr = window.devicePixelRatio || 1;
+      var containerW = isFullscreen ? Math.min(window.innerWidth - 16, 700) : canvas.parentElement.clientWidth;
+      var cW = Math.max(containerW, 300);
+      var cH = isFullscreen ? Math.round(cW * 1.3) : Math.round(cW * 1.1);
+
+      canvas.width = cW * dpr;
+      canvas.height = cH * dpr;
+      canvas.style.width = cW + 'px';
+      canvas.style.height = cH + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      // Plot area
+      var pad = { top: 30, right: 36, bottom: 54, left: 42 };
+      var pW = cW - pad.left - pad.right;
+      var pH = cH - pad.top - pad.bottom;
+
+      var xMin = agePoints[0], xMax = agePoints[agePoints.length - 1];
+      function toX(a) { return pad.left + (a - xMin) / (xMax - xMin) * pW; }
+      function toY(v) { return pad.top + (1 - (v - yMin) / (yMax - yMin)) * pH; }
+
+      var isDark = document.documentElement.classList.contains('dark');
+      var bgColor = isDark ? '#1c2b26' : '#ffffff';
+      var gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+      var axisColor = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.25)';
+      var textColor = isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.55)';
+      var titleColor = isDark ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.8)';
+      var isBoy = (pedGender === 'male');
+      var curveTint = isBoy ? [66, 133, 244] : [219, 68, 119];
+
+      // Background
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, cW, cH);
+      // Plot area shading
+      ctx.fillStyle = isBoy ? (isDark ? 'rgba(66,133,244,0.04)' : 'rgba(66,133,244,0.03)') : (isDark ? 'rgba(219,68,119,0.04)' : 'rgba(219,68,119,0.03)');
+      ctx.fillRect(pad.left, pad.top, pW, pH);
+
+      // Title
+      ctx.fillStyle = titleColor;
+      ctx.font = 'bold 13px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      var typeLabel = growthChartType === 'weight' ? 'Weight (kg)' : growthChartType === 'height' ? 'Height (cm)' : 'BMI (kg/m²)';
+      var genderLabel = isBoy ? 'Boys' : 'Girls';
+      var rangeLabel = growthChartRange === '0-24' ? '0–24 months' : '2–18 years';
+      ctx.fillText(genderLabel + ' — ' + typeLabel + ' — ' + rangeLabel, cW / 2, 18);
+
+      // Y grid + labels
+      ctx.font = '10px -apple-system, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      for (var yv = yMin; yv <= yMax; yv += yStep) {
+        var yy = toY(yv);
+        ctx.strokeStyle = gridColor;
+        ctx.lineWidth = 0.5;
+        ctx.beginPath(); ctx.moveTo(pad.left, yy); ctx.lineTo(pad.left + pW, yy); ctx.stroke();
+        ctx.fillStyle = textColor;
+        ctx.fillText(yv + '', pad.left - 4, yy);
+      }
+
+      // X grid + labels
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      var xTicks;
+      if (growthChartRange === '0-24') {
+        xTicks = [0, 3, 6, 9, 12, 15, 18, 21, 24];
+      } else {
+        xTicks = [24, 36, 48, 60, 72, 84, 96, 108, 120, 132, 144, 156, 168, 180, 192, 204, 216];
+      }
+      xTicks.forEach(function(xv) {
+        if (xv < xMin || xv > xMax) return;
+        var xx = toX(xv);
+        ctx.strokeStyle = gridColor;
+        ctx.lineWidth = 0.5;
+        ctx.beginPath(); ctx.moveTo(xx, pad.top); ctx.lineTo(xx, pad.top + pH); ctx.stroke();
+        ctx.fillStyle = textColor;
+        var xLabel = growthChartRange === '0-24' ? xv + '' : Math.round(xv / 12) + '';
+        ctx.fillText(xLabel, xx, pad.top + pH + 5);
+      });
+
+      // X-axis label
+      ctx.fillStyle = textColor;
+      ctx.font = '11px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(growthChartRange === '0-24' ? 'Age (months)' : 'Age (years)', cW / 2, cH - 8);
+
+      // Axes border
+      ctx.strokeStyle = axisColor;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(pad.left, pad.top);
+      ctx.lineTo(pad.left, pad.top + pH);
+      ctx.lineTo(pad.left + pW, pad.top + pH);
+      ctx.stroke();
+
+      // Draw centile curves
+      var centileAlphas = [0.25, 0.35, 0.5, 0.7, 1.0, 0.7, 0.5, 0.35, 0.25];
+      var centileWidths = [0.8, 0.8, 1.0, 1.2, 2.2, 1.2, 1.0, 0.8, 0.8];
+      var centileDash = [[], [], [], [], [], [], [], [], []];
+
+      centiles.forEach(function(centile, ci) {
+        var alpha = centileAlphas[ci];
+        ctx.strokeStyle = 'rgba(' + curveTint[0] + ',' + curveTint[1] + ',' + curveTint[2] + ',' + alpha + ')';
+        ctx.lineWidth = centileWidths[ci];
+        ctx.setLineDash(centileDash[ci]);
+        ctx.beginPath();
+        var started = false;
+        agePoints.forEach(function(age) {
+          var val = typeData[age] ? typeData[age][ci] : null;
+          if (val == null) return;
+          var x = toX(age), y = toY(val);
+          if (!started) { ctx.moveTo(x, y); started = true; }
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Label at right edge
+        var lastAge = agePoints[agePoints.length - 1];
+        var lastVal = typeData[lastAge] ? typeData[lastAge][ci] : null;
+        if (lastVal != null) {
+          var lx = toX(lastAge) + 3;
+          var ly = toY(lastVal);
+          ctx.fillStyle = 'rgba(' + curveTint[0] + ',' + curveTint[1] + ',' + curveTint[2] + ',' + Math.min(alpha + 0.2, 1) + ')';
+          ctx.font = (ci === 4 ? 'bold ' : '') + '8px -apple-system, sans-serif';
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          var cLabel = centile < 1 ? centile.toFixed(1) : Math.round(centile) + '';
+          ctx.fillText(cLabel, lx, ly);
+        }
+      });
+
+      // Shade between 25th and 75th (ci=3 and ci=5) for reference
+      ctx.fillStyle = 'rgba(' + curveTint[0] + ',' + curveTint[1] + ',' + curveTint[2] + ',0.06)';
+      ctx.beginPath();
+      agePoints.forEach(function(age, i) {
+        var val = typeData[age] ? typeData[age][3] : null;
+        if (val == null) return;
+        if (i === 0) ctx.moveTo(toX(age), toY(val));
+        else ctx.lineTo(toX(age), toY(val));
+      });
+      for (var ri = agePoints.length - 1; ri >= 0; ri--) {
+        var val75 = typeData[agePoints[ri]] ? typeData[agePoints[ri]][5] : null;
+        if (val75 != null) ctx.lineTo(toX(agePoints[ri]), toY(val75));
+      }
+      ctx.closePath();
+      ctx.fill();
+
+      // ---- Patient marker ----
+      var ageVal = parseFloat(document.getElementById('ped-age').value);
+      var ageUnit = document.getElementById('ped-age-unit').value;
+      if (!isNaN(ageVal) && ageVal >= 0) {
+        var ageMonths = ageUnit === 'years' ? ageVal * 12 : ageVal;
+        var measurement;
+        if (growthChartType === 'weight') {
+          measurement = parseFloat(document.getElementById('ped-weight').value);
+        } else if (growthChartType === 'height') {
+          measurement = parseFloat(document.getElementById('ped-height').value);
+        } else {
+          // BMI: try reading from the calculated display first, then compute directly as fallback
+          var bmiText = (document.getElementById('ped-bmi-val').textContent || '').trim();
+          var bmiDisplay = parseFloat(bmiText);
+          if (!isNaN(bmiDisplay) && bmiDisplay > 0) {
+            measurement = bmiDisplay;
+          } else {
+            // Fallback: compute BMI directly from weight & height inputs
+            var w = parseFloat(document.getElementById('ped-weight').value);
+            var h = parseFloat(document.getElementById('ped-height').value);
+            if (w > 0 && h > 0) {
+              measurement = w / Math.pow(h / 100, 2);
+            }
+          }
+        }
+
+        if (measurement && !isNaN(measurement) && ageMonths >= xMin && ageMonths <= xMax) {
+          var px = toX(ageMonths), py = toY(measurement);
+
+          // Crosshair lines
+          ctx.save();
+          ctx.strokeStyle = 'rgba(255,40,40,0.4)';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([4, 3]);
+          ctx.beginPath(); ctx.moveTo(px, pad.top); ctx.lineTo(px, pad.top + pH); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(pad.left, py); ctx.lineTo(pad.left + pW, py); ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.restore();
+
+          // Red dot – simple, tiny, no outline or label
+          ctx.fillStyle = '#FF0000';
+          ctx.beginPath();
+          ctx.arc(px, py, isFullscreen ? 2.5 : 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Attach fullscreen handler (small canvas only)
+      if (!isFullscreen) {
+        canvas.onclick = function() { openChartFullscreen(); };
+        canvas.style.cursor = 'pointer';
+      }
+    }
+
+    function openChartFullscreen() {
+      var overlay = document.getElementById('chart-fullscreen');
+      overlay.style.display = 'block';
+      document.body.style.overflow = 'hidden';
+      var fullCanvas = document.getElementById('growth-chart-canvas-full');
+      drawGrowthChart(fullCanvas);
+    }
+
+    function closeChartFullscreen() {
+      document.getElementById('chart-fullscreen').style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+
     function switchTab(tabName) {
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
@@ -2425,10 +2939,43 @@
     }
 
     // Adult calculations
+    let idealBMIMode = '20.7';
+    function setIdealBMI(val) {
+      const btn207 = document.getElementById('bmi-btn-20.7');
+      const btn229 = document.getElementById('bmi-btn-22.9');
+      const btnCustom = document.getElementById('bmi-btn-custom');
+      const customInput = document.getElementById('ideal-bmi-custom');
+      const hiddenInput = document.getElementById('ideal-bmi');
+      btn207.classList.remove('active');
+      btn229.classList.remove('active');
+      btnCustom.classList.remove('active');
+      if (val === 'custom') {
+        idealBMIMode = 'custom';
+        btnCustom.classList.add('active');
+        customInput.style.display = 'block';
+        customInput.focus();
+        if (customInput.value) hiddenInput.value = customInput.value;
+        else { hiddenInput.value = ''; }
+      } else {
+        idealBMIMode = String(val);
+        customInput.style.display = 'none';
+        hiddenInput.value = val;
+        if (val === 20.7) btn207.classList.add('active');
+        else btn229.classList.add('active');
+      }
+      calculateBMIAndABW();
+    }
     function calculateBMIAndABW() {
       const weight = parseFloat(document.getElementById('actual-weight').value);
       const height = parseFloat(document.getElementById('actual-height').value);
-      const idealBMI = parseFloat(document.getElementById('ideal-bmi').value) || 20.7;
+      let idealBMI;
+      if (idealBMIMode === 'custom') {
+        idealBMI = parseFloat(document.getElementById('ideal-bmi-custom').value);
+        document.getElementById('ideal-bmi').value = idealBMI || '';
+      } else {
+        idealBMI = parseFloat(document.getElementById('ideal-bmi').value);
+      }
+      if (!idealBMI) idealBMI = 20.7;
 
       // Reset values
       document.getElementById('res-actual-bmi').textContent = '--';
@@ -3446,6 +3993,7 @@
       });
       closeSuppModal();
       refreshAllSuppDropdowns();
+      populateFormulaDropdown();
       renderSuppManageList();
       calcSuppTotals();
       fbSaveSuppDB();
@@ -3454,6 +4002,7 @@
     function deleteSupp(id) {
       suppDB = suppDB.filter(function(s) { return s.id !== id; });
       refreshAllSuppDropdowns();
+      populateFormulaDropdown();
       renderSuppManageList();
       calcSuppTotals();
       fbSaveSuppDB();
@@ -3532,13 +4081,54 @@
     }
 
     // === Dropdown builder ===
-    function buildSuppDropdownHTML(selectedId) {
+    // Unified lookup: parse "s:1" or "f:41" key → product object from either database
+    function findProductByKey(key) {
+      if (!key || typeof key !== 'string' || key.indexOf(':') === -1) return null;
+      var parts = key.split(':');
+      var src = parts[0], id = parseInt(parts[1]);
+      if (isNaN(id)) return null;
+      if (src === 's') return suppDB.find(function(s) { return s.id === id; });
+      if (src === 'f') return formulaDatabase.find(function(f) { return f.id === id; });
+      return null;
+    }
+
+    function buildCombinedDropdownHTML(selectedVal) {
       var html = '<option value="">-- Select --</option>';
+      // Adult formulas grouped by category
+      var suppGroups = {};
       suppDB.forEach(function(s) {
-        var label = s.name;
-        var sel = (selectedId && s.id === selectedId) ? ' selected' : '';
-        html += '<option value="' + s.id + '"' + sel + '>' + label + '</option>';
+        var cat = s.category || 'Adult Formula';
+        if (!suppGroups[cat]) suppGroups[cat] = [];
+        suppGroups[cat].push(s);
       });
+      Object.keys(suppGroups).sort(function(a,b) {
+        if (a === 'Adult Formula') return -1;
+        if (b === 'Adult Formula') return 1;
+        return a.localeCompare(b);
+      }).forEach(function(cat) {
+        var label = (cat === 'Adult Formula') ? cat : 'Adult – ' + cat;
+        html += '<optgroup label="' + label + '">';
+        suppGroups[cat].forEach(function(s) {
+          var key = 's:' + s.id;
+          var sel = (selectedVal === key) ? ' selected' : '';
+          html += '<option value="' + key + '"' + sel + '>' + s.name + '</option>';
+        });
+        html += '</optgroup>';
+      });
+      // Ped milk grouped by category
+      var currentCat = '';
+      formulaDatabase.forEach(function(f) {
+        if (f.category !== currentCat) {
+          if (currentCat !== '') html += '</optgroup>';
+          html += '<optgroup label="' + f.category + '">';
+          currentCat = f.category;
+        }
+        var displayName = f.nameCN ? f.name + ' (' + f.nameCN + ')' : f.name;
+        var key = 'f:' + f.id;
+        var sel = (selectedVal === key) ? ' selected' : '';
+        html += '<option value="' + key + '"' + sel + '>' + displayName + '</option>';
+      });
+      if (currentCat !== '') html += '</optgroup>';
       return html;
     }
 
@@ -3546,8 +4136,8 @@
       for (var i = 1; i <= 5; i++) {
         var sel = document.getElementById('supp-sel-' + i);
         if (sel) {
-          var curVal = parseInt(sel.value);
-          sel.innerHTML = buildSuppDropdownHTML(curVal || 0);
+          var curVal = sel.value;
+          sel.innerHTML = buildCombinedDropdownHTML(curVal);
         }
       }
     }
@@ -3636,15 +4226,14 @@
         var freqEl = document.getElementById('supp-freq-' + i);
         if (!selEl || !volEl || !freqEl) continue;
 
-        var suppId = parseInt(selEl.value);
         var vol = parseFloat(volEl.value);
         var freq = parseFloat(freqEl.value);
         var str = parseFloat(strEl.value);
         if (isNaN(freq)) freq = 0;
         if (isNaN(str) || str === 0) str = 1;
-        if (!suppId || !vol || freq <= 0) continue;
+        if (!selEl.value || !vol || freq <= 0) continue;
 
-        var supp = suppDB.find(function(s) { return s.id === suppId; });
+        var supp = findProductByKey(selEl.value);
         if (!supp) continue;
 
         var f = vol / 100;
@@ -3795,35 +4384,21 @@
     ];
 
     function buildFormulaOptionsHTML() {
-      let currentCategory = '';
-      let html = '<option value="">-- Select --</option>';
-      formulaDatabase.forEach(f => {
-        if (f.category !== currentCategory) {
-          if (currentCategory !== '') html += '</optgroup>';
-          html += '<optgroup label="' + f.category + '">';
-          currentCategory = f.category;
-        }
-        const displayName = f.nameCN ? f.name + ' (' + f.nameCN + ')' : f.name;
-        html += '<option value="' + f.id + '">' + displayName + '</option>';
-      });
-      if (currentCategory !== '') html += '</optgroup>';
-      return html;
+      return buildCombinedDropdownHTML('');
     }
 
     function populateFormulaDropdown() {
-      var optionsHtml = buildFormulaOptionsHTML();
       // Populate grid dropdowns (preserve selections)
       for (var i = 1; i <= 5; i++) {
         var sel = document.getElementById('fm-sel-' + i);
         if (sel) {
-          var curVal = parseInt(sel.value);
-          sel.innerHTML = optionsHtml;
-          if (curVal) sel.value = curVal;
+          var curVal = sel.value;
+          sel.innerHTML = buildCombinedDropdownHTML(curVal);
         }
       }
       // Populate calculator dropdowns
-      document.getElementById('strength-formula-select').innerHTML = optionsHtml;
-      document.getElementById('reverse-formula-select').innerHTML = optionsHtml;
+      document.getElementById('strength-formula-select').innerHTML = buildCombinedDropdownHTML('');
+      document.getElementById('reverse-formula-select').innerHTML = buildCombinedDropdownHTML('');
     }
 
     // === Formula CRUD ===
@@ -3916,6 +4491,7 @@
         return a.name.localeCompare(b.name);
       });
       populateFormulaDropdown();
+      refreshAllSuppDropdowns();
       renderFormulaManageList();
       calcFormulaTotals();
       fbSaveFormulaDB();
@@ -3924,6 +4500,7 @@
     function deleteFormula(id) {
       formulaDatabase = formulaDatabase.filter(function(f) { return f.id !== id; });
       populateFormulaDropdown();
+      refreshAllSuppDropdowns();
       renderFormulaManageList();
       calcFormulaTotals();
       fbSaveFormulaDB();
@@ -4065,14 +4642,13 @@
         var volEl = document.getElementById('fm-vol-' + i);
         var freqEl = document.getElementById('fm-freq-' + i);
         if (!selEl || !volEl || !freqEl) continue;
-        var fId = parseInt(selEl.value);
         var vol = parseFloat(volEl.value);
         var freq = parseFloat(freqEl.value);
         var str = parseFloat(strEl.value);
         if (isNaN(freq)) freq = 0;
         if (isNaN(str) || str === 0) str = 1;
-        if (!fId || !vol || freq <= 0) continue;
-        var fm = formulaDatabase.find(function(f) { return f.id === fId; });
+        if (!selEl.value || !vol || freq <= 0) continue;
+        var fm = findProductByKey(selEl.value);
         if (!fm) continue;
         var factor = (vol / 100) * freq * str;
         SUPP_FIELDS.forEach(function(key) {
@@ -4385,6 +4961,7 @@
           if (type === 'formula') {
             formulaDatabase.sort(function(a, b) { return a.name.localeCompare(b.name); });
             populateFormulaDropdown();
+            refreshAllSuppDropdowns();
             renderFormulaManageList();
             calcFormulaTotals();
             fbSaveFormulaDB();
@@ -4397,6 +4974,7 @@
               return a.name.localeCompare(b.name);
             });
             refreshAllSuppDropdowns();
+            populateFormulaDropdown();
             renderSuppManageList();
             calcSuppTotals();
             fbSaveSuppDB();
@@ -4480,8 +5058,7 @@
     }
 
     function calculateCustomStrength() {
-      const formulaId = parseInt(document.getElementById('strength-formula-select').value);
-      const formula = getFormulaById(formulaId);
+      const formula = findProductByKey(document.getElementById('strength-formula-select').value);
       const strength = parseFloat(document.getElementById('target-strength').value);
       const targetVol = parseFloat(document.getElementById('target-volume').value);
       const dilutionFactor = parseFloat(document.getElementById('dilution-factor').value);
@@ -4535,8 +5112,7 @@
     }
 
     function calculateReverseNutrition() {
-      const formulaId = parseInt(document.getElementById('reverse-formula-select').value);
-      const formula = getFormulaById(formulaId);
+      const formula = findProductByKey(document.getElementById('reverse-formula-select').value);
       const scoops = parseFloat(document.getElementById('reverse-scoops').value);
       const water = parseFloat(document.getElementById('reverse-water').value);
       const expansionFactor = parseFloat(document.getElementById('reverse-expansion').value);
@@ -4962,34 +5538,32 @@
         return;
       }
 
-      // Determine BMI category
-      // T1: BMI<19 aims 2kg; BMI>=19 allows 0-2kg
-      let bmiCategory, t1GainLow, t1GainHigh, weeklyLow, weeklyHigh;
+      // Determine BMI category (HK Dept of Health cutoffs)
+      // weeklyLow/weeklyHigh = Avg/Week from reference table for T2 & T3
+      let bmiCategory, weeklyLow, weeklyHigh;
       if (bmi < 19) {
         bmiCategory = 'Underweight (BMI < 19)';
-        t1GainLow = 2; t1GainHigh = 2;
         weeklyLow = 0.52; weeklyHigh = 0.67;
       } else if (bmi <= 23.5) {
         bmiCategory = 'Normal (BMI 19–23.5)';
-        t1GainLow = 0; t1GainHigh = 2;
         weeklyLow = 0.44; weeklyHigh = 0.66;
       } else {
         bmiCategory = 'Overweight (BMI > 23.5)';
-        t1GainLow = 0; t1GainHigh = 2;
         weeklyLow = 0.28; weeklyHigh = 0.58;
       }
 
       // Calculate expected weight gain at current week
+      // T1 gain (0–2 kg) is EXCLUDED — user adds manually
       let gainLow, gainHigh;
       if (weeks <= 13) {
-        // First trimester
-        gainLow = (weeks / 13) * t1GainLow;
-        gainHigh = (weeks / 13) * t1GainHigh;
+        // First trimester: no T2/T3 gain yet
+        gainLow = 0;
+        gainHigh = 0;
       } else {
-        // Second/third trimester
+        // After T1: (weeks beyond 13) × avg weekly rate from table only
         const weeksAfterT1 = weeks - 13;
-        gainLow = t1GainLow + (weeksAfterT1 * weeklyLow);
-        gainHigh = t1GainHigh + (weeksAfterT1 * weeklyHigh);
+        gainLow = weeksAfterT1 * weeklyLow;
+        gainHigh = weeksAfterT1 * weeklyHigh;
       }
 
       const refWeightLow = preWeight + gainLow;
@@ -5005,7 +5579,7 @@
       document.getElementById('res-preg-weeks').textContent = Math.floor(weeks) + '+' + Math.floor(daysDiff % 7);
       document.getElementById('res-preg-trimester').textContent = trimester;
 
-      // Underweight has no upper limit — show "≥ X kg"
+      // Underweight: show "≥" (no upper limit)
       if (bmi < 19) {
         document.getElementById('res-preg-ref-weight').textContent = '≥ ' + refWeightLow.toFixed(1) + ' kg';
         document.getElementById('res-preg-gain-range').textContent = '≥ +' + gainLow.toFixed(1) + ' kg';
@@ -5151,6 +5725,664 @@
       });
     }
 
+
+    // ========== Food Tab: TMH Food List ==========
+    var tmhFoodDB = [
+      // 穀品 Starch
+      {id:1, cat:'穀品', name:'白粥(飯粥)', portion:'1碗', wt:225, kcal:181, pro:3.0, fat:0.3, cho:40.8, fib:0.2, na:5, k:18, p:26, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['糖尿','腎','低鈉','素食','低渣']},
+      {id:2, cat:'穀品', name:'皮蛋瘦肉粥', portion:'1碗', wt:225, kcal:218, pro:10.2, fat:5.3, cho:31.5, fib:0.3, na:320, k:98, p:85, texture:['糊餐','碎餐','軟餐','普通'], diet:['低渣']},
+      {id:3, cat:'穀品', name:'白飯', portion:'1碗', wt:200, kcal:260, pro:4.8, fat:0.6, cho:57.4, fib:0.6, na:2, k:22, p:34, texture:['軟餐','普通'], diet:['糖尿','腎','低鈉','素食','低渣']},
+      {id:4, cat:'穀品', name:'粉(米粉/河粉)', portion:'1碗', wt:200, kcal:218, pro:3.2, fat:0.8, cho:49.6, fib:0.2, na:150, k:10, p:20, texture:['碎餐','軟餐','普通'], diet:['腎','素食','低渣']},
+      {id:5, cat:'穀品', name:'通粉(macaroni)', portion:'1碗', wt:200, kcal:248, pro:8.6, fat:1.2, cho:50.0, fib:1.8, na:4, k:44, p:76, texture:['碎餐','軟餐','普通'], diet:['糖尿','腎','低鈉','素食']},
+      {id:6, cat:'穀品', name:'意粉(spaghetti)', portion:'1碗', wt:200, kcal:248, pro:8.6, fat:1.2, cho:50.0, fib:1.8, na:4, k:44, p:76, texture:['碎餐','軟餐','普通'], diet:['糖尿','腎','低鈉','素食']},
+      {id:7, cat:'穀品', name:'方包(白)', portion:'1片', wt:40, kcal:103, pro:3.7, fat:1.2, cho:19.6, fib:0.8, na:190, k:38, p:32, texture:['軟餐','普通'], diet:['糖尿','素食','低渣']},
+      {id:8, cat:'穀品', name:'麥包', portion:'1片', wt:40, kcal:95, pro:4.0, fat:1.2, cho:17.4, fib:2.0, na:180, k:82, p:56, texture:['軟餐','普通'], diet:['糖尿','素食','高纖']},
+      {id:9, cat:'穀品', name:'粟米片(corn flakes)', portion:'1碗(30g)', wt:30, kcal:113, pro:2.0, fat:0.2, cho:25.4, fib:0.3, na:200, k:26, p:12, texture:['普通'], diet:['糖尿','素食','低渣']},
+      {id:10, cat:'穀品', name:'芝麻糊', portion:'1碗', wt:250, kcal:175, pro:3.5, fat:5.0, cho:28.0, fib:1.2, na:35, k:50, p:40, texture:['流質','糊餐'], diet:['素食']},
+      // 奶類 Dairy
+      {id:11, cat:'奶類', name:'鮮奶(全脂)', portion:'1杯', wt:240, kcal:149, pro:8.0, fat:8.2, cho:11.4, fib:0, na:105, k:349, p:227, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['糖尿','素食']},
+      {id:12, cat:'奶類', name:'脫脂奶', portion:'1杯', wt:240, kcal:83, pro:8.3, fat:0.2, cho:12.2, fib:0, na:103, k:382, p:247, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['糖尿','素食','低渣']},
+      {id:13, cat:'奶類', name:'低脂奶', portion:'1杯', wt:240, kcal:122, pro:8.1, fat:4.8, cho:11.7, fib:0, na:107, k:366, p:232, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['糖尿','素食']},
+      {id:14, cat:'奶類', name:'豆漿(無糖)', portion:'1杯', wt:240, kcal:80, pro:7.0, fat:4.0, cho:4.0, fib:0.5, na:10, k:118, p:60, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['糖尿','腎','低鈉','素食']},
+      {id:15, cat:'奶類', name:'低鈣奶', portion:'1杯', wt:240, kcal:122, pro:8.1, fat:4.8, cho:11.7, fib:0, na:107, k:200, p:120, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['糖尿','腎','素食']},
+      // 蛋類 Eggs
+      {id:16, cat:'蛋類', name:'烚蛋', portion:'1隻', wt:50, kcal:78, pro:6.3, fat:5.3, cho:0.6, fib:0, na:62, k:63, p:86, texture:['碎餐','軟餐','普通'], diet:['糖尿','低鈉','低渣']},
+      {id:17, cat:'蛋類', name:'蒸水蛋', portion:'1份', wt:65, kcal:85, pro:6.5, fat:6.0, cho:0.8, fib:0, na:150, k:65, p:88, texture:['糊餐','碎餐','軟餐','普通'], diet:['糖尿','低渣']},
+      {id:18, cat:'蛋類', name:'炒蛋', portion:'1份', wt:60, kcal:120, pro:7.0, fat:9.5, cho:1.2, fib:0, na:170, k:70, p:90, texture:['碎餐','軟餐','普通'], diet:['糖尿','低渣']},
+      {id:19, cat:'蛋類', name:'奄列(omelette)', portion:'1份', wt:65, kcal:130, pro:7.5, fat:10.0, cho:1.0, fib:0, na:180, k:72, p:92, texture:['碎餐','軟餐','普通'], diet:['糖尿','低渣']},
+      // 湯 Soup
+      {id:20, cat:'湯', name:'菜湯(clear)', portion:'1碗', wt:240, kcal:30, pro:1.0, fat:0.5, cho:5.0, fib:0.5, na:380, k:120, p:20, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['糖尿','素食']},
+      {id:21, cat:'湯', name:'忌廉湯(cream soup)', portion:'1碗', wt:240, kcal:150, pro:4.0, fat:8.0, cho:15.0, fib:0.5, na:480, k:180, p:85, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:[]},
+      {id:22, cat:'湯', name:'肉碎菜湯', portion:'1碗', wt:240, kcal:80, pro:5.0, fat:3.0, cho:8.0, fib:1.0, na:420, k:160, p:55, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['糖尿']},
+      {id:23, cat:'湯', name:'滾湯(中式)', portion:'1碗', wt:240, kcal:40, pro:2.0, fat:1.0, cho:5.0, fib:0.3, na:450, k:100, p:30, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['糖尿']},
+      {id:24, cat:'湯', name:'老火湯', portion:'1碗', wt:240, kcal:60, pro:3.0, fat:2.0, cho:6.0, fib:0.5, na:500, k:250, p:60, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:[]},
+      // 肉類 Meat
+      {id:25, cat:'肉類', name:'蒸魚(白肉魚)', portion:'1份', wt:100, kcal:105, pro:19.0, fat:2.8, cho:0, fib:0, na:60, k:340, p:200, texture:['碎餐','軟餐','普通'], diet:['糖尿','低鈉','低渣']},
+      {id:26, cat:'肉類', name:'豬肉(瘦/免治)', portion:'1份', wt:100, kcal:143, pro:21.0, fat:6.2, cho:0, fib:0, na:50, k:315, p:190, texture:['碎餐','軟餐','普通'], diet:['糖尿','低鈉','低渣']},
+      {id:27, cat:'肉類', name:'雞肉(去皮)', portion:'1份', wt:100, kcal:165, pro:23.0, fat:7.6, cho:0, fib:0, na:65, k:220, p:180, texture:['碎餐','軟餐','普通'], diet:['糖尿','低鈉','低渣']},
+      {id:28, cat:'肉類', name:'牛肉(瘦)', portion:'1份', wt:100, kcal:155, pro:22.0, fat:7.0, cho:0, fib:0, na:55, k:330, p:200, texture:['碎餐','軟餐','普通'], diet:['糖尿','低鈉','低渣']},
+      {id:29, cat:'肉類', name:'豆腐(硬)', portion:'1磚', wt:150, kcal:108, pro:11.4, fat:6.0, cho:2.4, fib:0.3, na:12, k:150, p:120, texture:['糊餐','碎餐','軟餐','普通'], diet:['糖尿','腎','低鈉','素食']},
+      {id:30, cat:'肉類', name:'蒸肉餅', portion:'1份', wt:100, kcal:180, pro:18.0, fat:11.0, cho:2.0, fib:0, na:350, k:250, p:160, texture:['碎餐','軟餐','普通'], diet:['糖尿','低渣']},
+      {id:31, cat:'肉類', name:'咕嚕肉', portion:'1份', wt:120, kcal:220, pro:14.0, fat:12.0, cho:14.0, fib:0.5, na:420, k:200, p:140, texture:['軟餐','普通'], diet:[]},
+      {id:32, cat:'肉類', name:'滑蛋蝦仁', portion:'1份', wt:120, kcal:155, pro:14.0, fat:9.0, cho:4.0, fib:0, na:380, k:160, p:170, texture:['碎餐','軟餐','普通'], diet:['糖尿']},
+      // 調味醬類 Sauce
+      {id:33, cat:'調味醬類', name:'茄汁', portion:'1湯匙', wt:15, kcal:15, pro:0.2, fat:0, cho:3.6, fib:0, na:170, k:55, p:5, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['素食']},
+      {id:34, cat:'調味醬類', name:'豉油', portion:'1湯匙', wt:18, kcal:8, pro:1.3, fat:0, cho:0.8, fib:0, na:900, k:32, p:15, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['素食']},
+      {id:35, cat:'調味醬類', name:'蠔油', portion:'1湯匙', wt:18, kcal:9, pro:0.2, fat:0, cho:2.0, fib:0, na:490, k:8, p:5, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:[]},
+      {id:36, cat:'調味醬類', name:'花生醬', portion:'1湯匙', wt:16, kcal:94, pro:4.0, fat:8.0, cho:3.0, fib:0.9, na:73, k:103, p:50, texture:['糊餐','普通'], diet:['糖尿','素食']},
+      {id:37, cat:'調味醬類', name:'果醬', portion:'1湯匙', wt:20, kcal:50, pro:0.1, fat:0, cho:13.0, fib:0.2, na:6, k:10, p:2, texture:['糊餐','普通'], diet:['腎','低鈉','素食']},
+      // 主食 Main
+      {id:38, cat:'主食', name:'粟米肉粒飯', portion:'1碟', wt:350, kcal:480, pro:18.0, fat:12.0, cho:72.0, fib:2.0, na:550, k:280, p:180, texture:['軟餐','普通'], diet:['糖尿']},
+      {id:39, cat:'主食', name:'豉汁排骨飯(pork rib)', portion:'1碟', wt:350, kcal:520, pro:22.0, fat:16.0, cho:68.0, fib:1.0, na:600, k:300, p:200, texture:['軟餐','普通'], diet:[]},
+      {id:40, cat:'主食', name:'蒸魚飯', portion:'1碟', wt:350, kcal:420, pro:24.0, fat:6.0, cho:65.0, fib:0.5, na:350, k:350, p:220, texture:['碎餐','軟餐','普通'], diet:['糖尿','低鈉']},
+      {id:41, cat:'主食', name:'菜肉包 (steamed bun)', portion:'1個', wt:80, kcal:170, pro:6.0, fat:4.0, cho:27.0, fib:1.0, na:280, k:60, p:50, texture:['軟餐','普通'], diet:['糖尿']},
+      {id:42, cat:'主食', name:'叉燒飯', portion:'1碟', wt:350, kcal:510, pro:20.0, fat:14.0, cho:72.0, fib:0.5, na:580, k:280, p:190, texture:['軟餐','普通'], diet:[]},
+      {id:43, cat:'主食', name:'湯米粉(plain)', portion:'1碗', wt:300, kcal:250, pro:5.0, fat:1.5, cho:54.0, fib:0.3, na:420, k:30, p:25, texture:['碎餐','軟餐','普通'], diet:['腎','素食','低渣']},
+      {id:44, cat:'主食', name:'炒飯', portion:'1碟', wt:300, kcal:450, pro:12.0, fat:15.0, cho:65.0, fib:1.5, na:650, k:150, p:120, texture:['普通'], diet:[]},
+      {id:45, cat:'主食', name:'粥粉麵套餐', portion:'1份', wt:400, kcal:350, pro:12.0, fat:5.0, cho:62.0, fib:1.0, na:500, k:120, p:80, texture:['碎餐','軟餐','普通'], diet:['糖尿']},
+      // 蔬菜 Vegetables
+      {id:46, cat:'蔬菜', name:'菜心(灼)', portion:'1碗', wt:100, kcal:22, pro:1.8, fat:0.3, cho:3.2, fib:1.5, na:35, k:260, p:38, texture:['碎餐','軟餐','普通'], diet:['糖尿','低鈉','素食','高纖']},
+      {id:47, cat:'蔬菜', name:'白菜(灼)', portion:'1碗', wt:100, kcal:15, pro:1.2, fat:0.2, cho:2.2, fib:1.0, na:40, k:200, p:28, texture:['碎餐','軟餐','普通'], diet:['糖尿','低鈉','素食','高纖']},
+      {id:48, cat:'蔬菜', name:'西蘭花(灼)', portion:'1碗', wt:100, kcal:35, pro:3.0, fat:0.4, cho:5.0, fib:2.6, na:30, k:316, p:66, texture:['碎餐','軟餐','普通'], diet:['糖尿','低鈉','素食','高纖']},
+      {id:49, cat:'蔬菜', name:'冬瓜(煮)', portion:'1碗', wt:100, kcal:12, pro:0.4, fat:0.2, cho:2.4, fib:0.5, na:5, k:108, p:15, texture:['碎餐','軟餐','普通'], diet:['糖尿','腎','低鈉','素食']},
+      {id:50, cat:'蔬菜', name:'蕃茄(生)', portion:'1個', wt:120, kcal:22, pro:1.1, fat:0.2, cho:4.7, fib:1.4, na:6, k:284, p:29, texture:['碎餐','軟餐','普通'], diet:['糖尿','低鈉','素食','高纖']},
+      {id:51, cat:'蔬菜', name:'南瓜(煮)', portion:'1碗', wt:100, kcal:26, pro:1.0, fat:0.1, cho:6.5, fib:0.5, na:1, k:340, p:44, texture:['糊餐','碎餐','軟餐','普通'], diet:['糖尿','低鈉','素食']},
+      {id:52, cat:'蔬菜', name:'紅蘿蔔(煮)', portion:'1碗', wt:100, kcal:35, pro:0.8, fat:0.2, cho:7.6, fib:2.8, na:58, k:235, p:30, texture:['糊餐','碎餐','軟餐','普通'], diet:['糖尿','低鈉','素食','高纖']},
+      {id:53, cat:'蔬菜', name:'菠菜(灼)', portion:'1碗', wt:100, kcal:23, pro:2.9, fat:0.4, cho:1.4, fib:2.2, na:70, k:466, p:40, texture:['碎餐','軟餐','普通'], diet:['糖尿','低鈉','素食','高纖']},
+      // 生果 Fruit
+      {id:54, cat:'生果', name:'蘋果', portion:'1個(中)', wt:150, kcal:78, pro:0.4, fat:0.2, cho:20.7, fib:3.6, na:2, k:160, p:17, texture:['碎餐','軟餐','普通'], diet:['糖尿','腎','低鈉','素食','高纖']},
+      {id:55, cat:'生果', name:'香蕉', portion:'1條(中)', wt:120, kcal:107, pro:1.3, fat:0.4, cho:27.2, fib:3.1, na:1, k:422, p:26, texture:['糊餐','碎餐','軟餐','普通'], diet:['糖尿','低鈉','素食','高纖']},
+      {id:56, cat:'生果', name:'橙', portion:'1個(中)', wt:150, kcal:70, pro:1.3, fat:0.2, cho:17.6, fib:3.6, na:0, k:237, p:21, texture:['碎餐','軟餐','普通'], diet:['糖尿','低鈉','素食','高纖']},
+      {id:57, cat:'生果', name:'西瓜', portion:'1片', wt:200, kcal:60, pro:1.2, fat:0.3, cho:15.2, fib:0.8, na:2, k:224, p:22, texture:['碎餐','軟餐','普通'], diet:['糖尿','腎','低鈉','素食']},
+      {id:58, cat:'生果', name:'木瓜', portion:'1/4個', wt:150, kcal:59, pro:0.9, fat:0.2, cho:14.9, fib:2.7, na:12, k:257, p:8, texture:['糊餐','碎餐','軟餐','普通'], diet:['糖尿','低鈉','素食','高纖']},
+      {id:59, cat:'生果', name:'梨', portion:'1個(中)', wt:170, kcal:96, pro:0.6, fat:0.2, cho:25.7, fib:5.3, na:2, k:206, p:20, texture:['碎餐','軟餐','普通'], diet:['糖尿','腎','低鈉','素食','高纖']},
+      {id:60, cat:'生果', name:'提子', portion:'1碗', wt:80, kcal:55, pro:0.6, fat:0.1, cho:14.4, fib:0.7, na:2, k:152, p:16, texture:['普通'], diet:['糖尿','腎','低鈉','素食']},
+      // 飲品 Drinks
+      {id:61, cat:'飲品', name:'清茶', portion:'1杯', wt:240, kcal:2, pro:0, fat:0, cho:0, fib:0, na:5, k:20, p:2, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['糖尿','腎','低鈉','素食','低渣']},
+      {id:62, cat:'飲品', name:'檸茶(甜)', portion:'1杯', wt:240, kcal:70, pro:0, fat:0, cho:18.0, fib:0, na:5, k:25, p:2, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['腎','低鈉','素食','低渣']},
+      {id:63, cat:'飲品', name:'奶茶', portion:'1杯', wt:240, kcal:100, pro:3.0, fat:4.0, cho:13.0, fib:0, na:50, k:130, p:80, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['低渣']},
+      {id:64, cat:'飲品', name:'咖啡(走)', portion:'1杯', wt:240, kcal:5, pro:0.3, fat:0, cho:0, fib:0, na:5, k:60, p:5, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['糖尿','腎','低鈉','素食','低渣']},
+      {id:65, cat:'飲品', name:'阿華田/好立克', portion:'1杯', wt:250, kcal:160, pro:4.0, fat:3.0, cho:28.0, fib:0, na:100, k:200, p:100, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:[]},
+      {id:66, cat:'飲品', name:'蘋果汁', portion:'1杯', wt:240, kcal:112, pro:0.2, fat:0.3, cho:28.0, fib:0.2, na:7, k:250, p:17, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['低鈉','素食','低渣']},
+      {id:67, cat:'飲品', name:'橙汁', portion:'1杯', wt:240, kcal:110, pro:1.7, fat:0.5, cho:25.8, fib:0.5, na:2, k:496, p:42, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['低鈉','素食','低渣']},
+      // 三文治 Sandwich
+      {id:68, cat:'三文治', name:'雞蛋三文治', portion:'1份', wt:100, kcal:230, pro:10.0, fat:10.0, cho:24.0, fib:1.0, na:400, k:100, p:110, texture:['軟餐','普通'], diet:['糖尿']},
+      {id:69, cat:'三文治', name:'火腿三文治', portion:'1份', wt:100, kcal:240, pro:11.0, fat:9.0, cho:26.0, fib:1.0, na:550, k:120, p:130, texture:['軟餐','普通'], diet:['糖尿']},
+      {id:70, cat:'三文治', name:'吞拿魚三文治', portion:'1份', wt:110, kcal:260, pro:14.0, fat:11.0, cho:24.0, fib:1.0, na:480, k:140, p:140, texture:['軟餐','普通'], diet:['糖尿']},
+      // 營養補充品 Supplement
+      {id:71, cat:'營養補充品', name:'Fresubin Protein Powder (1.5g)', portion:'1包', wt:7.5, kcal:31, pro:6.4, fat:0.1, cho:0.3, fib:0, na:27, k:0, p:0, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['糖尿','腎','低鈉','素食']},
+      {id:72, cat:'營養補充品', name:'Polycal 糖粉', portion:'1湯匙(5g)', wt:5, kcal:19, pro:0, fat:0, cho:4.7, fib:0, na:0, k:0, p:0, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['腎','低鈉','素食']},
+      {id:73, cat:'營養補充品', name:'Ensure (RTD 237mL)', portion:'1罐', wt:237, kcal:220, pro:9.0, fat:6.0, cho:33.0, fib:0, na:200, k:370, p:200, texture:['流質','糊餐'], diet:['糖尿']}
+    ];
+    var tmhFoodNextId = 74;
+
+    var FOOD_CATEGORIES = ['穀品','奶類','蛋類','湯','肉類','調味醬類','主食','蔬菜','生果','飲品','三文治','營養補充品'];
+    var FOOD_TEXTURES = ['流質','糊餐','碎餐','軟餐','普通'];
+    var FOOD_DIETS = ['糖尿','腎','低鈉','素食','高纖','低渣'];
+
+    var foodEditId = null; // null = add mode, number = edit mode
+
+    // ---- Settings: manage categories / textures / diets ----
+    function toggleFoodSettings() {
+      var body = document.getElementById('food-settings-body');
+      var chevron = document.getElementById('food-settings-chevron');
+      if (body.style.display === 'none') {
+        body.style.display = 'block';
+        chevron.style.transform = 'rotate(180deg)';
+        renderFoodSettingsLists();
+      } else {
+        body.style.display = 'none';
+        chevron.style.transform = '';
+      }
+    }
+
+    function renderFoodSettingsLists() {
+      renderFoodOptionList('food-settings-cats', FOOD_CATEGORIES, 'cat');
+      renderFoodOptionList('food-settings-textures', FOOD_TEXTURES, 'texture');
+      renderFoodOptionList('food-settings-diets', FOOD_DIETS, 'diet');
+    }
+
+    function renderFoodOptionList(containerId, arr, type) {
+      var el = document.getElementById(containerId);
+      if (!el) return;
+      el.innerHTML = arr.map(function(item, idx) {
+        return '<div style="display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--border-color);" id="food-opt-' + type + '-' + idx + '">' +
+          '<span style="flex:1; font-size:14px;" id="food-opt-label-' + type + '-' + idx + '">' + item + '</span>' +
+          '<button style="border:none; background:none; color:var(--accent); font-size:15px; cursor:pointer; padding:4px;" onclick="startRenameFoodOption(\'' + type + '\',' + idx + ')" title="Rename"><i class="fas fa-pen"></i></button>' +
+          '<button style="border:none; background:none; color:var(--danger); font-size:15px; cursor:pointer; padding:4px;" onclick="confirmDeleteFoodOption(\'' + type + '\',' + idx + ')" title="Delete"><i class="fas fa-trash"></i></button>' +
+          '</div>';
+      }).join('');
+    }
+
+    function addFoodOption(type) {
+      var inputId = 'food-new-' + type;
+      var input = document.getElementById(inputId);
+      var val = input.value.trim();
+      if (!val) { input.style.borderColor = 'var(--danger)'; return; }
+      input.style.borderColor = '';
+      var arr = getFoodOptionArr(type);
+      if (arr.indexOf(val) !== -1) { input.style.borderColor = 'var(--warning)'; return; } // duplicate
+      arr.push(val);
+      input.value = '';
+      saveFoodOptions();
+      renderFoodSettingsLists();
+      populateFoodCategories();
+    }
+
+    function startRenameFoodOption(type, idx) {
+      var arr = getFoodOptionArr(type);
+      var oldVal = arr[idx];
+      var labelEl = document.getElementById('food-opt-label-' + type + '-' + idx);
+      var rowEl = document.getElementById('food-opt-' + type + '-' + idx);
+      if (!labelEl || !rowEl) return;
+      // Replace the row content with an inline edit form
+      rowEl.innerHTML = '<input type="text" class="input-field" style="flex:1; padding:8px 10px; font-size:14px;" id="food-rename-input-' + type + '-' + idx + '" value="' + oldVal.replace(/"/g, '&quot;') + '">' +
+        '<button style="border:none; background:var(--accent); color:#fff; border-radius:8px; padding:6px 12px; font-size:13px; cursor:pointer;" onclick="finishRenameFoodOption(\'' + type + '\',' + idx + ')"><i class="fas fa-check"></i></button>' +
+        '<button style="border:none; background:var(--bg-tertiary); color:var(--text-secondary); border-radius:8px; padding:6px 12px; font-size:13px; cursor:pointer;" onclick="renderFoodSettingsLists()"><i class="fas fa-times"></i></button>';
+      var inp = document.getElementById('food-rename-input-' + type + '-' + idx);
+      if (inp) { inp.focus(); inp.select(); }
+    }
+
+    function finishRenameFoodOption(type, idx) {
+      var inp = document.getElementById('food-rename-input-' + type + '-' + idx);
+      if (!inp) return;
+      var newVal = inp.value.trim();
+      if (!newVal) return;
+      var arr = getFoodOptionArr(type);
+      var oldVal = arr[idx];
+      if (newVal === oldVal) { renderFoodSettingsLists(); return; }
+      // Check duplicate
+      if (arr.indexOf(newVal) !== -1 && newVal !== oldVal) { inp.style.borderColor = 'var(--warning)'; return; }
+      arr[idx] = newVal;
+      // Update all food items that reference the old value
+      renameFoodOptionInDB(type, oldVal, newVal);
+      saveFoodOptions();
+      renderFoodSettingsLists();
+      populateFoodCategories();
+    }
+
+    function confirmDeleteFoodOption(type, idx) {
+      var arr = getFoodOptionArr(type);
+      var val = arr[idx];
+      var typeLabel = type === 'cat' ? 'category' : type === 'texture' ? 'texture' : 'diet';
+      var overlay = document.createElement('div');
+      overlay.className = 'modal-overlay active';
+      overlay.style.zIndex = '3000';
+      overlay.innerHTML = '<div class="modal" style="max-width:340px;"><div class="modal-header"><h3 class="modal-title">Delete ' + typeLabel + '</h3></div>' +
+        '<p style="color:var(--text-secondary); margin-bottom:16px; font-size:14px;">Delete <strong>' + val + '</strong>? Foods using this ' + typeLabel + ' will keep their data but it won\'t appear in lists.</p>' +
+        '<div style="display:flex; gap:10px;"><button class="btn btn-secondary" style="flex:1; padding:12px; font-size:14px;" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>' +
+        '<button class="btn" style="flex:1; padding:12px; font-size:14px; background:var(--danger); color:#fff;" onclick="deleteFoodOption(\'' + type + '\',' + idx + '); this.closest(\'.modal-overlay\').remove();">Delete</button></div></div>';
+      document.body.appendChild(overlay);
+    }
+
+    function deleteFoodOption(type, idx) {
+      var arr = getFoodOptionArr(type);
+      arr.splice(idx, 1);
+      saveFoodOptions();
+      renderFoodSettingsLists();
+      populateFoodCategories();
+    }
+
+    function getFoodOptionArr(type) {
+      if (type === 'cat') return FOOD_CATEGORIES;
+      if (type === 'texture') return FOOD_TEXTURES;
+      if (type === 'diet') return FOOD_DIETS;
+      return [];
+    }
+
+    function renameFoodOptionInDB(type, oldVal, newVal) {
+      tmhFoodDB.forEach(function(f) {
+        if (type === 'cat' && f.cat === oldVal) { f.cat = newVal; }
+        if (type === 'texture' && f.texture) {
+          var ti = f.texture.indexOf(oldVal);
+          if (ti !== -1) f.texture[ti] = newVal;
+        }
+        if (type === 'diet' && f.diet) {
+          var di = f.diet.indexOf(oldVal);
+          if (di !== -1) f.diet[di] = newVal;
+        }
+      });
+      fbSaveFoodDB();
+    }
+
+    function saveFoodOptions() {
+      localSave('foodOptions', { categories: FOOD_CATEGORIES, textures: FOOD_TEXTURES, diets: FOOD_DIETS });
+      if (!fbReady) return;
+      fbDb.ref('foodOptions').set({ categories: FOOD_CATEGORIES, textures: FOOD_TEXTURES, diets: FOOD_DIETS });
+    }
+
+    function fbLoadFoodOptions(callback) {
+      if (!fbReady) { callback(); return; }
+      fbDb.ref('foodOptions').once('value').then(function(snap) {
+        var data = snap.val();
+        if (data) {
+          if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) FOOD_CATEGORIES = data.categories;
+          if (data.textures && Array.isArray(data.textures) && data.textures.length > 0) FOOD_TEXTURES = data.textures;
+          if (data.diets && Array.isArray(data.diets) && data.diets.length > 0) FOOD_DIETS = data.diets;
+          localSave('foodOptions', { categories: FOOD_CATEGORIES, textures: FOOD_TEXTURES, diets: FOOD_DIETS });
+        }
+        callback();
+      }).catch(function(e) {
+        console.log('Firebase load food options error: ' + e.message);
+        callback();
+      });
+    }
+
+    // Build modal category select dynamically
+    function buildFoodModalCatSelect(selectedVal) {
+      var sel = document.getElementById('food-m-cat');
+      sel.innerHTML = '';
+      FOOD_CATEGORIES.forEach(function(c) {
+        var opt = document.createElement('option');
+        opt.value = c; opt.textContent = c;
+        if (c === selectedVal) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    }
+
+    // Build modal texture checkboxes dynamically
+    function buildFoodModalTextureCheckboxes(checkedArr) {
+      var container = document.getElementById('food-m-texture');
+      container.innerHTML = FOOD_TEXTURES.map(function(t) {
+        var checked = (checkedArr && checkedArr.indexOf(t) !== -1) ? ' checked' : '';
+        return '<label style="display:flex; align-items:center; gap:4px; font-size:14px;"><input type="checkbox" value="' + t + '"' + checked + '> ' + t + '</label>';
+      }).join('');
+    }
+
+    // Build modal diet checkboxes dynamically
+    function buildFoodModalDietCheckboxes(checkedArr) {
+      var container = document.getElementById('food-m-diet');
+      container.innerHTML = FOOD_DIETS.map(function(d) {
+        var checked = (checkedArr && checkedArr.indexOf(d) !== -1) ? ' checked' : '';
+        return '<label style="display:flex; align-items:center; gap:4px; font-size:14px;"><input type="checkbox" value="' + d + '"' + checked + '> ' + d + '</label>';
+      }).join('');
+    }
+
+    // --- Populate category dropdown ---
+    function populateFoodCategories() {
+      var sel = document.getElementById('food-category');
+      var prev = sel.value;
+      sel.innerHTML = '<option value="">-- Select Category --</option>';
+      // Gather categories present in current DB
+      var cats = [];
+      tmhFoodDB.forEach(function(f) { if (cats.indexOf(f.cat) === -1) cats.push(f.cat); });
+      // Add any from master list not already present
+      FOOD_CATEGORIES.forEach(function(c) { if (cats.indexOf(c) === -1) cats.push(c); });
+      cats.forEach(function(c) {
+        var count = tmhFoodDB.filter(function(f) { return f.cat === c; }).length;
+        sel.innerHTML += '<option value="' + c + '"' + (c === prev ? ' selected' : '') + '>' + c + ' (' + count + ')</option>';
+      });
+    }
+
+    function onFoodCategoryChange() {
+      var cat = document.getElementById('food-category').value;
+      var itemSel = document.getElementById('food-item');
+      itemSel.innerHTML = '<option value="">-- Select Item --</option>';
+      if (!cat) { document.getElementById('food-detail').style.display = 'none'; return; }
+      var items = tmhFoodDB.filter(function(f) { return f.cat === cat; });
+      items.sort(function(a,b) { return a.name.localeCompare(b.name, 'zh'); });
+      items.forEach(function(f) {
+        itemSel.innerHTML += '<option value="' + f.id + '">' + f.name + '</option>';
+      });
+    }
+
+    function onFoodItemChange() {
+      var id = parseInt(document.getElementById('food-item').value);
+      if (isNaN(id)) { document.getElementById('food-detail').style.display = 'none'; return; }
+      var food = tmhFoodDB.find(function(f) { return f.id === id; });
+      if (!food) { document.getElementById('food-detail').style.display = 'none'; return; }
+      displayFoodDetail(food);
+    }
+
+    // --- Quick Search ---
+    function onFoodSearch() {
+      var q = document.getElementById('food-search').value.trim().toLowerCase();
+      var resultsDiv = document.getElementById('food-search-results');
+      if (!q || q.length < 1) { resultsDiv.style.display = 'none'; return; }
+      var matches = tmhFoodDB.filter(function(f) {
+        return f.name.toLowerCase().indexOf(q) !== -1;
+      }).slice(0, 15);
+      if (matches.length === 0) {
+        resultsDiv.innerHTML = '<div style="padding:10px 14px; color:var(--text-secondary); font-size:13px;">No results</div>';
+        resultsDiv.style.display = 'block';
+        return;
+      }
+      resultsDiv.innerHTML = matches.map(function(f) {
+        return '<div style="padding:10px 14px; cursor:pointer; border-bottom:1px solid var(--border-color); font-size:14px;" onclick="selectFoodFromSearch(' + f.id + ')" onmousedown="event.preventDefault()">' +
+          '<strong>' + f.name + '</strong> <span style="color:var(--text-secondary); font-size:12px;">(' + f.cat + ')</span></div>';
+      }).join('');
+      resultsDiv.style.display = 'block';
+    }
+
+    function selectFoodFromSearch(id) {
+      document.getElementById('food-search').value = '';
+      document.getElementById('food-search-results').style.display = 'none';
+      var food = tmhFoodDB.find(function(f) { return f.id === id; });
+      if (!food) return;
+      // Also set the category/item dropdowns
+      document.getElementById('food-category').value = food.cat;
+      onFoodCategoryChange();
+      document.getElementById('food-item').value = String(food.id);
+      displayFoodDetail(food);
+    }
+
+    // Close search dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      var searchBox = document.getElementById('food-search');
+      var resultsDiv = document.getElementById('food-search-results');
+      if (searchBox && resultsDiv && !searchBox.contains(e.target) && !resultsDiv.contains(e.target)) {
+        resultsDiv.style.display = 'none';
+      }
+    });
+
+    // --- Display food detail ---
+    function displayFoodDetail(food) {
+      document.getElementById('food-detail').style.display = 'block';
+      document.getElementById('food-detail-name').textContent = food.name;
+      document.getElementById('food-detail-portion').textContent = (food.portion || '') + (food.wt ? ' (' + food.wt + 'g)' : '');
+
+      var grid = document.getElementById('food-nutrition-grid');
+      var items = [
+        {label: 'Energy', val: food.kcal, unit: 'kcal'},
+        {label: 'Protein', val: food.pro, unit: 'g'},
+        {label: 'Fat', val: food.fat, unit: 'g'},
+        {label: 'Carbs', val: food.cho, unit: 'g'},
+        {label: 'Fibre', val: food.fib, unit: 'g'},
+        {label: 'Na', val: food.na, unit: 'mg'},
+        {label: 'K', val: food.k, unit: 'mg'},
+        {label: 'P', val: food.p, unit: 'mg'}
+      ];
+      grid.innerHTML = items.map(function(it) {
+        var v = (it.val !== undefined && it.val !== null && it.val !== '') ? it.val : '--';
+        return '<div class="result-item"><div class="result-value" style="font-size:17px;">' + v + '</div><div class="result-label">' + it.label + ' (' + it.unit + ')</div></div>';
+      }).join('');
+
+      // Texture tags
+      var texDiv = document.getElementById('food-texture-tags');
+      var textureArr = food.texture || [];
+      texDiv.innerHTML = FOOD_TEXTURES.map(function(t) {
+        var active = textureArr.indexOf(t) !== -1;
+        var bg = active ? 'var(--accent)' : 'var(--bg-tertiary)';
+        var color = active ? '#fff' : 'var(--text-secondary)';
+        return '<span style="padding:4px 10px; border-radius:20px; font-size:13px; font-weight:500; background:' + bg + '; color:' + color + ';">' + t + '</span>';
+      }).join('');
+
+      // Diet tags
+      var dietDiv = document.getElementById('food-diet-tags');
+      var dietArr = food.diet || [];
+      dietDiv.innerHTML = FOOD_DIETS.map(function(d) {
+        var active = dietArr.indexOf(d) !== -1;
+        var bg = active ? 'var(--accent)' : 'var(--bg-tertiary)';
+        var color = active ? '#fff' : 'var(--text-secondary)';
+        return '<span style="padding:4px 10px; border-radius:20px; font-size:13px; font-weight:500; background:' + bg + '; color:' + color + ';">' + d + '</span>';
+      }).join('');
+    }
+
+    // --- Manage section ---
+    function toggleFoodManage() {
+      var body = document.getElementById('food-manage-body');
+      var chevron = document.getElementById('food-manage-chevron');
+      if (body.style.display === 'none') {
+        body.style.display = 'block';
+        chevron.style.transform = 'rotate(180deg)';
+        renderFoodManageList();
+      } else {
+        body.style.display = 'none';
+        chevron.style.transform = '';
+      }
+    }
+
+    function renderFoodManageList() {
+      var list = document.getElementById('food-manage-list');
+      if (tmhFoodDB.length === 0) {
+        list.innerHTML = '<div style="text-align:center; padding:16px; color:var(--text-secondary); font-size:13px;">No food items yet.</div>';
+        return;
+      }
+      // Group by category
+      var groups = {};
+      tmhFoodDB.forEach(function(f) {
+        if (!groups[f.cat]) groups[f.cat] = [];
+        groups[f.cat].push(f);
+      });
+      var html = '';
+      Object.keys(groups).forEach(function(cat) {
+        html += '<div style="font-size:12px; font-weight:700; color:var(--accent); margin:10px 0 4px; text-transform:uppercase; letter-spacing:0.5px;">' + cat + '</div>';
+        groups[cat].forEach(function(f) {
+          html += '<div style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-color);">';
+          html += '<div style="font-size:14px; flex:1;">' + f.name + ' <span style="font-size:11px; color:var(--text-secondary);">' + (f.portion || '') + '</span></div>';
+          html += '<div style="display:flex; gap:8px;">';
+          html += '<button style="border:none; background:none; color:var(--accent); font-size:16px; cursor:pointer; padding:4px;" onclick="editFoodItem(' + f.id + ')"><i class="fas fa-pen-to-square"></i></button>';
+          html += '<button style="border:none; background:none; color:var(--danger); font-size:16px; cursor:pointer; padding:4px;" onclick="confirmDeleteFood(' + f.id + ')"><i class="fas fa-trash"></i></button>';
+          html += '</div></div>';
+        });
+      });
+      list.innerHTML = html;
+    }
+
+    // --- Modal: Add / Edit food ---
+    function openFoodModal(editId) {
+      foodEditId = editId || null;
+      var modal = document.getElementById('food-modal');
+      document.getElementById('food-modal-title').textContent = foodEditId ? 'Edit Food' : 'Add Food';
+      // Clear fields
+      document.getElementById('food-m-name').value = '';
+      document.getElementById('food-m-portion').value = '';
+      ['wt','kcal','pro','fat','cho','fib','na','k','p'].forEach(function(f) { document.getElementById('food-m-' + f).value = ''; });
+
+      if (foodEditId) {
+        var food = tmhFoodDB.find(function(f) { return f.id === foodEditId; });
+        if (food) {
+          buildFoodModalCatSelect(food.cat);
+          buildFoodModalTextureCheckboxes(food.texture || []);
+          buildFoodModalDietCheckboxes(food.diet || []);
+          document.getElementById('food-m-name').value = food.name;
+          document.getElementById('food-m-portion').value = food.portion || '';
+          if (food.wt) document.getElementById('food-m-wt').value = food.wt;
+          if (food.kcal) document.getElementById('food-m-kcal').value = food.kcal;
+          if (food.pro) document.getElementById('food-m-pro').value = food.pro;
+          if (food.fat) document.getElementById('food-m-fat').value = food.fat;
+          if (food.cho) document.getElementById('food-m-cho').value = food.cho;
+          if (food.fib) document.getElementById('food-m-fib').value = food.fib;
+          if (food.na) document.getElementById('food-m-na').value = food.na;
+          if (food.k) document.getElementById('food-m-k').value = food.k;
+          if (food.p) document.getElementById('food-m-p').value = food.p;
+        } else {
+          buildFoodModalCatSelect(FOOD_CATEGORIES[0]);
+          buildFoodModalTextureCheckboxes([]);
+          buildFoodModalDietCheckboxes([]);
+        }
+      } else {
+        // Default: set category from current dropdown selection
+        var curCat = document.getElementById('food-category').value || FOOD_CATEGORIES[0];
+        buildFoodModalCatSelect(curCat);
+        buildFoodModalTextureCheckboxes([]);
+        buildFoodModalDietCheckboxes([]);
+      }
+      modal.classList.add('active');
+    }
+
+    function closeFoodModal() {
+      document.getElementById('food-modal').classList.remove('active');
+      foodEditId = null;
+    }
+
+    function editFoodItem(id) {
+      openFoodModal(id);
+    }
+
+    function saveFoodItem() {
+      var name = document.getElementById('food-m-name').value.trim();
+      if (!name) { document.getElementById('food-m-name').style.borderColor = 'var(--danger)'; return; }
+      document.getElementById('food-m-name').style.borderColor = '';
+
+      var cat = document.getElementById('food-m-cat').value;
+      var portion = document.getElementById('food-m-portion').value.trim();
+      var wt = parseFloat(document.getElementById('food-m-wt').value) || 0;
+      var kcal = parseFloat(document.getElementById('food-m-kcal').value) || 0;
+      var pro = parseFloat(document.getElementById('food-m-pro').value) || 0;
+      var fat = parseFloat(document.getElementById('food-m-fat').value) || 0;
+      var cho = parseFloat(document.getElementById('food-m-cho').value) || 0;
+      var fib = parseFloat(document.getElementById('food-m-fib').value) || 0;
+      var na = parseFloat(document.getElementById('food-m-na').value) || 0;
+      var k = parseFloat(document.getElementById('food-m-k').value) || 0;
+      var p = parseFloat(document.getElementById('food-m-p').value) || 0;
+
+      var texture = [];
+      document.querySelectorAll('#food-m-texture input:checked').forEach(function(cb) { texture.push(cb.value); });
+      var diet = [];
+      document.querySelectorAll('#food-m-diet input:checked').forEach(function(cb) { diet.push(cb.value); });
+
+      var item = { id: foodEditId || tmhFoodNextId++, cat: cat, name: name, portion: portion, wt: wt, kcal: kcal, pro: pro, fat: fat, cho: cho, fib: fib, na: na, k: k, p: p, texture: texture, diet: diet };
+
+      if (foodEditId) {
+        var idx = tmhFoodDB.findIndex(function(f) { return f.id === foodEditId; });
+        if (idx !== -1) tmhFoodDB[idx] = item;
+      } else {
+        tmhFoodDB.push(item);
+      }
+
+      fbSaveFoodDB();
+      populateFoodCategories();
+      onFoodCategoryChange();
+      renderFoodManageList();
+      closeFoodModal();
+      // Show the newly saved item
+      document.getElementById('food-category').value = cat;
+      onFoodCategoryChange();
+      document.getElementById('food-item').value = String(item.id);
+      displayFoodDetail(item);
+    }
+
+    // --- Delete food (custom confirm) ---
+    function confirmDeleteFood(id) {
+      var food = tmhFoodDB.find(function(f) { return f.id === id; });
+      if (!food) return;
+      var overlay = document.createElement('div');
+      overlay.className = 'modal-overlay active';
+      overlay.style.zIndex = '3000';
+      overlay.innerHTML = '<div class="modal" style="max-width:340px;"><div class="modal-header"><h3 class="modal-title">Delete Food</h3></div>' +
+        '<p style="color:var(--text-secondary); margin-bottom:16px; font-size:14px;">Delete <strong>' + food.name + '</strong>?</p>' +
+        '<div style="display:flex; gap:10px;"><button class="btn btn-secondary" style="flex:1; padding:12px; font-size:14px;" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>' +
+        '<button class="btn" style="flex:1; padding:12px; font-size:14px; background:var(--danger); color:#fff;" onclick="deleteFood(' + id + '); this.closest(\'.modal-overlay\').remove();">Delete</button></div></div>';
+      document.body.appendChild(overlay);
+    }
+
+    function deleteFood(id) {
+      tmhFoodDB = tmhFoodDB.filter(function(f) { return f.id !== id; });
+      fbSaveFoodDB();
+      populateFoodCategories();
+      onFoodCategoryChange();
+      renderFoodManageList();
+      document.getElementById('food-detail').style.display = 'none';
+    }
+
+    // --- Firebase: Food CRUD ---
+    function fbSaveFoodDB() {
+      localSave('tmhFoodDB', { items: tmhFoodDB, nextId: tmhFoodNextId });
+      if (!fbReady) return;
+      fbDb.ref('tmhFoodDB').set({ items: tmhFoodDB, nextId: tmhFoodNextId });
+    }
+
+    function fbLoadFoodDB(callback) {
+      if (!fbReady) { callback(); return; }
+      fbDb.ref('tmhFoodDB').once('value').then(function(snap) {
+        var data = snap.val();
+        if (data && data.items && data.items.length > 0) {
+          tmhFoodDB = data.items;
+          tmhFoodNextId = data.nextId || (tmhFoodDB.length > 0 ? Math.max.apply(null, tmhFoodDB.map(function(f) { return f.id; })) + 1 : 1);
+          localSave('tmhFoodDB', { items: tmhFoodDB, nextId: tmhFoodNextId });
+        }
+        callback();
+      }).catch(function(e) {
+        console.log('Firebase load food error: ' + e.message);
+        callback();
+      });
+    }
+
+    function fbUploadFoodDB() {
+      if (!fbReady) return;
+      fbDb.ref('tmhFoodDB').set({ items: tmhFoodDB, nextId: tmhFoodNextId }).then(function() {
+        console.log('Food database uploaded to Firebase');
+        // Show success feedback
+        var btn = document.querySelector('#food-ie-body .btn-primary');
+        if (btn) { var orig = btn.innerHTML; btn.innerHTML = '<i class="fas fa-check" style="margin-right:4px;"></i>Uploaded!'; setTimeout(function() { btn.innerHTML = orig; }, 2000); }
+      });
+    }
+
+    // --- Import / Export ---
+    function toggleFoodImportExport() {
+      var body = document.getElementById('food-ie-body');
+      var chevron = document.getElementById('food-ie-chevron');
+      if (body.style.display === 'none') {
+        body.style.display = 'block';
+        chevron.style.transform = 'rotate(180deg)';
+      } else {
+        body.style.display = 'none';
+        chevron.style.transform = '';
+      }
+    }
+
+    function exportFoodExcel() {
+      var rows = [['ID','Category','Name','Portion','Weight(g)','Energy(kcal)','Protein(g)','Fat(g)','Carbs(g)','Fibre(g)','Na(mg)','K(mg)','P(mg)','Textures','Diets']];
+      tmhFoodDB.forEach(function(f) {
+        rows.push([f.id, f.cat, f.name, f.portion, f.wt, f.kcal, f.pro, f.fat, f.cho, f.fib, f.na, f.k, f.p,
+          (f.texture || []).join(','), (f.diet || []).join(',')]);
+      });
+      var ws = XLSX.utils.aoa_to_sheet(rows);
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'TMH Food');
+      XLSX.writeFile(wb, 'TMH_FoodList.xlsx');
+    }
+
+    function importFoodExcel(event) {
+      var file = event.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          var wb = XLSX.read(e.target.result, {type:'binary'});
+          var ws = wb.Sheets[wb.SheetNames[0]];
+          var data = XLSX.utils.sheet_to_json(ws);
+          if (!data || data.length === 0) return;
+          // Map columns
+          var imported = [];
+          var maxId = tmhFoodNextId;
+          data.forEach(function(row) {
+            var item = {
+              id: maxId++,
+              cat: row['Category'] || row['category'] || row['cat'] || '穀品',
+              name: row['Name'] || row['name'] || row['Food Name'] || '',
+              portion: row['Portion'] || row['portion'] || '',
+              wt: parseFloat(row['Weight(g)'] || row['wt'] || 0),
+              kcal: parseFloat(row['Energy(kcal)'] || row['kcal'] || 0),
+              pro: parseFloat(row['Protein(g)'] || row['pro'] || 0),
+              fat: parseFloat(row['Fat(g)'] || row['fat'] || 0),
+              cho: parseFloat(row['Carbs(g)'] || row['cho'] || 0),
+              fib: parseFloat(row['Fibre(g)'] || row['fib'] || 0),
+              na: parseFloat(row['Na(mg)'] || row['na'] || 0),
+              k: parseFloat(row['K(mg)'] || row['k'] || 0),
+              p: parseFloat(row['P(mg)'] || row['p'] || 0),
+              texture: (row['Textures'] || row['texture'] || '').split(',').filter(function(t) { return t.trim(); }),
+              diet: (row['Diets'] || row['diet'] || '').split(',').filter(function(d) { return d.trim(); })
+            };
+            if (item.name) imported.push(item);
+          });
+          if (imported.length > 0) {
+            imported.forEach(function(item) { tmhFoodDB.push(item); });
+            tmhFoodNextId = maxId;
+            fbSaveFoodDB();
+            populateFoodCategories();
+            onFoodCategoryChange();
+            renderFoodManageList();
+          }
+        } catch (err) {
+          console.log('Import error: ' + err.message);
+        }
+      };
+      reader.readAsBinaryString(file);
+      event.target.value = '';
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       // Load cached data from localStorage before anything else
       // This ensures supplements/formulas from last session are available
@@ -5168,6 +6400,7 @@
       initFormulaNextId();
       initFormulaGrid();
       initSuppDropdowns();
+      populateFoodCategories();
 
       // Set default dates to today
       var todayStr = new Date().toISOString().split('T')[0];
