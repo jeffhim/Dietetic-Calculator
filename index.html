@@ -1054,8 +1054,11 @@
         <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Suitable Texture</div>
         <div id="food-texture-tags" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom: 8px;"></div>
 
-        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Suitable Diet</div>
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Unsuitable Diet</div>
         <div id="food-diet-tags" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom: 8px;"></div>
+
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Allergens</div>
+        <div id="food-allergen-tags" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom: 8px;"></div>
       </div>
     </div>
 
@@ -1100,12 +1103,19 @@
           <input type="text" class="input-field" id="food-new-texture" placeholder="New texture name" style="flex:1; padding:10px 12px; font-size:14px;">
           <button class="btn btn-primary" style="width:auto; padding:10px 16px; font-size:14px;" onclick="addFoodOption('texture')"><i class="fas fa-plus"></i></button>
         </div>
-        <!-- Diets -->
-        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 10px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Diet Options</div>
+        <!-- Diets (Unsuitable) -->
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 10px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Unsuitable Diet Options</div>
         <div id="food-settings-diets"></div>
         <div style="display:flex; gap:8px; margin: 8px 0 16px;">
           <input type="text" class="input-field" id="food-new-diet" placeholder="New diet name" style="flex:1; padding:10px 12px; font-size:14px;">
           <button class="btn btn-primary" style="width:auto; padding:10px 16px; font-size:14px;" onclick="addFoodOption('diet')"><i class="fas fa-plus"></i></button>
+        </div>
+        <!-- Allergens -->
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 10px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Allergen Options</div>
+        <div id="food-settings-allergens"></div>
+        <div style="display:flex; gap:8px; margin: 8px 0 16px;">
+          <input type="text" class="input-field" id="food-new-allergen" placeholder="New allergen name" style="flex:1; padding:10px 12px; font-size:14px;">
+          <button class="btn btn-primary" style="width:auto; padding:10px 16px; font-size:14px;" onclick="addFoodOption('allergen')"><i class="fas fa-plus"></i></button>
         </div>
       </div>
     </div>
@@ -1175,8 +1185,10 @@
       </div>
       <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 10px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Suitable Texture</div>
       <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;" id="food-m-texture"></div>
-      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 10px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Suitable Diet</div>
-      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;" id="food-m-diet"></div>
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 10px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Unsuitable Diet</div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;" id="food-m-diet"></div>
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 10px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);">Allergens</div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;" id="food-m-allergen"></div>
       <button class="btn btn-primary" onclick="saveFoodItem()"><i class="fas fa-save" style="margin-right:6px;"></i>Save Food</button>
     </div>
   </div>
@@ -2027,6 +2039,7 @@
         if (cachedOpts.categories && cachedOpts.categories.length > 0) FOOD_CATEGORIES = cachedOpts.categories;
         if (cachedOpts.textures && cachedOpts.textures.length > 0) FOOD_TEXTURES = cachedOpts.textures;
         if (cachedOpts.diets && cachedOpts.diets.length > 0) FOOD_DIETS = cachedOpts.diets;
+        if (cachedOpts.allergens && cachedOpts.allergens.length > 0) FOOD_ALLERGENS = cachedOpts.allergens;
         console.log('Loaded food options from local cache');
       }
     }
@@ -5819,6 +5832,7 @@
     var FOOD_CATEGORIES = ['穀品','奶類','蛋類','湯','肉類','調味醬類','主食','蔬菜','生果','飲品','三文治','營養補充品'];
     var FOOD_TEXTURES = ['流質','糊餐','碎餐','軟餐','普通'];
     var FOOD_DIETS = ['糖尿','腎','低鈉','素食','高纖','低渣'];
+    var FOOD_ALLERGENS = ['奶類','蛋','花生','堅果','大豆','小麥/麩質','魚','甲殼類','軟體動物','芝麻','芹菜','芥末','羽扇豆','亞硫酸鹽'];
 
     var foodEditId = null; // null = add mode, number = edit mode
 
@@ -5840,6 +5854,7 @@
       renderFoodOptionList('food-settings-cats', FOOD_CATEGORIES, 'cat');
       renderFoodOptionList('food-settings-textures', FOOD_TEXTURES, 'texture');
       renderFoodOptionList('food-settings-diets', FOOD_DIETS, 'diet');
+      renderFoodOptionList('food-settings-allergens', FOOD_ALLERGENS, 'allergen');
     }
 
     function renderFoodOptionList(containerId, arr, type) {
@@ -5927,6 +5942,7 @@
       if (type === 'cat') return FOOD_CATEGORIES;
       if (type === 'texture') return FOOD_TEXTURES;
       if (type === 'diet') return FOOD_DIETS;
+      if (type === 'allergen') return FOOD_ALLERGENS;
       return [];
     }
 
@@ -5941,14 +5957,18 @@
           var di = f.diet.indexOf(oldVal);
           if (di !== -1) f.diet[di] = newVal;
         }
+        if (type === 'allergen' && f.allergen) {
+          var ai = f.allergen.indexOf(oldVal);
+          if (ai !== -1) f.allergen[ai] = newVal;
+        }
       });
       fbSaveFoodDB();
     }
 
     function saveFoodOptions() {
-      localSave('foodOptions', { categories: FOOD_CATEGORIES, textures: FOOD_TEXTURES, diets: FOOD_DIETS });
+      localSave('foodOptions', { categories: FOOD_CATEGORIES, textures: FOOD_TEXTURES, diets: FOOD_DIETS, allergens: FOOD_ALLERGENS });
       if (!fbReady) return;
-      fbDb.ref('foodOptions').set({ categories: FOOD_CATEGORIES, textures: FOOD_TEXTURES, diets: FOOD_DIETS });
+      fbDb.ref('foodOptions').set({ categories: FOOD_CATEGORIES, textures: FOOD_TEXTURES, diets: FOOD_DIETS, allergens: FOOD_ALLERGENS });
     }
 
     function fbLoadFoodOptions(callback) {
@@ -5959,7 +5979,8 @@
           if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) FOOD_CATEGORIES = data.categories;
           if (data.textures && Array.isArray(data.textures) && data.textures.length > 0) FOOD_TEXTURES = data.textures;
           if (data.diets && Array.isArray(data.diets) && data.diets.length > 0) FOOD_DIETS = data.diets;
-          localSave('foodOptions', { categories: FOOD_CATEGORIES, textures: FOOD_TEXTURES, diets: FOOD_DIETS });
+          if (data.allergens && Array.isArray(data.allergens) && data.allergens.length > 0) FOOD_ALLERGENS = data.allergens;
+          localSave('foodOptions', { categories: FOOD_CATEGORIES, textures: FOOD_TEXTURES, diets: FOOD_DIETS, allergens: FOOD_ALLERGENS });
         }
         callback();
       }).catch(function(e) {
@@ -5995,6 +6016,15 @@
       container.innerHTML = FOOD_DIETS.map(function(d) {
         var checked = (checkedArr && checkedArr.indexOf(d) !== -1) ? ' checked' : '';
         return '<label style="display:flex; align-items:center; gap:4px; font-size:14px;"><input type="checkbox" value="' + d + '"' + checked + '> ' + d + '</label>';
+      }).join('');
+    }
+
+    // Build modal allergen checkboxes dynamically
+    function buildFoodModalAllergenCheckboxes(checkedArr) {
+      var container = document.getElementById('food-m-allergen');
+      container.innerHTML = FOOD_ALLERGENS.map(function(a) {
+        var checked = (checkedArr && checkedArr.indexOf(a) !== -1) ? ' checked' : '';
+        return '<label style="display:flex; align-items:center; gap:4px; font-size:14px;"><input type="checkbox" value="' + a + '"' + checked + '> ' + a + '</label>';
       }).join('');
     }
 
@@ -6107,14 +6137,24 @@
         return '<span style="padding:4px 10px; border-radius:20px; font-size:13px; font-weight:500; background:' + bg + '; color:' + color + ';">' + t + '</span>';
       }).join('');
 
-      // Diet tags
+      // Unsuitable diet tags (red/warning when active)
       var dietDiv = document.getElementById('food-diet-tags');
       var dietArr = food.diet || [];
       dietDiv.innerHTML = FOOD_DIETS.map(function(d) {
         var active = dietArr.indexOf(d) !== -1;
-        var bg = active ? 'var(--accent)' : 'var(--bg-tertiary)';
+        var bg = active ? 'var(--danger)' : 'var(--bg-tertiary)';
         var color = active ? '#fff' : 'var(--text-secondary)';
         return '<span style="padding:4px 10px; border-radius:20px; font-size:13px; font-weight:500; background:' + bg + '; color:' + color + ';">' + d + '</span>';
+      }).join('');
+
+      // Allergen tags (orange/warning when active)
+      var allergenDiv = document.getElementById('food-allergen-tags');
+      var allergenArr = food.allergen || [];
+      allergenDiv.innerHTML = FOOD_ALLERGENS.map(function(a) {
+        var active = allergenArr.indexOf(a) !== -1;
+        var bg = active ? 'var(--warning)' : 'var(--bg-tertiary)';
+        var color = active ? '#fff' : 'var(--text-secondary)';
+        return '<span style="padding:4px 10px; border-radius:20px; font-size:13px; font-weight:500; background:' + bg + '; color:' + color + ';">' + a + '</span>';
       }).join('');
     }
 
@@ -6175,6 +6215,7 @@
           buildFoodModalCatSelect(food.cat);
           buildFoodModalTextureCheckboxes(food.texture || []);
           buildFoodModalDietCheckboxes(food.diet || []);
+          buildFoodModalAllergenCheckboxes(food.allergen || []);
           document.getElementById('food-m-name').value = food.name;
           document.getElementById('food-m-portion').value = food.portion || '';
           if (food.wt) document.getElementById('food-m-wt').value = food.wt;
@@ -6190,6 +6231,7 @@
           buildFoodModalCatSelect(FOOD_CATEGORIES[0]);
           buildFoodModalTextureCheckboxes([]);
           buildFoodModalDietCheckboxes([]);
+          buildFoodModalAllergenCheckboxes([]);
         }
       } else {
         // Default: set category from current dropdown selection
@@ -6197,6 +6239,7 @@
         buildFoodModalCatSelect(curCat);
         buildFoodModalTextureCheckboxes([]);
         buildFoodModalDietCheckboxes([]);
+        buildFoodModalAllergenCheckboxes([]);
       }
       modal.classList.add('active');
     }
@@ -6231,8 +6274,10 @@
       document.querySelectorAll('#food-m-texture input:checked').forEach(function(cb) { texture.push(cb.value); });
       var diet = [];
       document.querySelectorAll('#food-m-diet input:checked').forEach(function(cb) { diet.push(cb.value); });
+      var allergen = [];
+      document.querySelectorAll('#food-m-allergen input:checked').forEach(function(cb) { allergen.push(cb.value); });
 
-      var item = { id: foodEditId || tmhFoodNextId++, cat: cat, name: name, portion: portion, wt: wt, kcal: kcal, pro: pro, fat: fat, cho: cho, fib: fib, na: na, k: k, p: p, texture: texture, diet: diet };
+      var item = { id: foodEditId || tmhFoodNextId++, cat: cat, name: name, portion: portion, wt: wt, kcal: kcal, pro: pro, fat: fat, cho: cho, fib: fib, na: na, k: k, p: p, texture: texture, diet: diet, allergen: allergen };
 
       if (foodEditId) {
         var idx = tmhFoodDB.findIndex(function(f) { return f.id === foodEditId; });
@@ -6323,10 +6368,10 @@
     }
 
     function exportFoodExcel() {
-      var rows = [['ID','Category','Name','Portion','Weight(g)','Energy(kcal)','Protein(g)','Fat(g)','Carbs(g)','Fibre(g)','Na(mg)','K(mg)','P(mg)','Textures','Diets']];
+      var rows = [['ID','Category','Name','Portion','Weight(g)','Energy(kcal)','Protein(g)','Fat(g)','Carbs(g)','Fibre(g)','Na(mg)','K(mg)','P(mg)','Textures','Diets','Allergens']];
       tmhFoodDB.forEach(function(f) {
         rows.push([f.id, f.cat, f.name, f.portion, f.wt, f.kcal, f.pro, f.fat, f.cho, f.fib, f.na, f.k, f.p,
-          (f.texture || []).join(','), (f.diet || []).join(',')]);
+          (f.texture || []).join(','), (f.diet || []).join(','), (f.allergen || []).join(',')]);
       });
       var ws = XLSX.utils.aoa_to_sheet(rows);
       var wb = XLSX.utils.book_new();
@@ -6363,7 +6408,8 @@
               k: parseFloat(row['K(mg)'] || row['k'] || 0),
               p: parseFloat(row['P(mg)'] || row['p'] || 0),
               texture: (row['Textures'] || row['texture'] || '').split(',').filter(function(t) { return t.trim(); }),
-              diet: (row['Diets'] || row['diet'] || '').split(',').filter(function(d) { return d.trim(); })
+              diet: (row['Diets'] || row['diet'] || '').split(',').filter(function(d) { return d.trim(); }),
+              allergen: (row['Allergens'] || row['allergen'] || '').split(',').filter(function(a) { return a.trim(); })
             };
             if (item.name) imported.push(item);
           });
