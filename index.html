@@ -514,12 +514,15 @@
     </div>
 
     <!-- Fullscreen chart overlay -->
-    <div id="chart-fullscreen" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;background:rgba(0,0,0,0.92);overflow:auto;-webkit-overflow-scrolling:touch;" onclick="closeChartFullscreen()">
-      <div style="position:sticky;top:0;z-index:1;display:flex;justify-content:flex-end;padding:12px 16px;">
-        <button style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:18px;width:40px;height:40px;border-radius:50%;cursor:pointer;" onclick="closeChartFullscreen()"><i class="fas fa-times"></i></button>
+    <div id="chart-fullscreen" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;background:rgba(0,0,0,0.92);overflow:hidden;">
+      <div style="position:absolute;top:0;right:0;z-index:2;padding:12px 16px;pointer-events:none;">
+        <button style="pointer-events:auto;background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:18px;width:44px;height:44px;border-radius:50%;cursor:pointer;" onclick="closeChartFullscreen()"><i class="fas fa-times"></i></button>
       </div>
-      <div style="display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 64px);padding:8px;">
-        <canvas id="growth-chart-canvas-full" style="max-width:100%;"></canvas>
+      <div style="position:absolute;bottom:0;left:0;right:0;z-index:2;display:flex;justify-content:center;gap:12px;padding:14px;pointer-events:none;">
+        <button style="pointer-events:auto;background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:14px;padding:8px 16px;border-radius:20px;cursor:pointer;" onclick="chartZoomReset()"><i class="fas fa-arrows-to-dot" style="margin-right:4px;"></i>Reset</button>
+      </div>
+      <div id="chart-zoom-container" style="width:100%;height:100%;touch-action:none;overflow:hidden;-webkit-user-select:none;user-select:none;">
+        <img id="chart-zoom-img" style="position:absolute;transform-origin:0 0;max-width:none;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;pointer-events:auto;" draggable="false">
       </div>
     </div>
 
@@ -2686,11 +2689,11 @@
       if (newRange !== growthChartRange) setChartRange(newRange);
     }
 
-    function drawGrowthChart(targetCanvas) {
+    function drawGrowthChart(targetCanvas, forceFullscreen) {
       var canvas = targetCanvas || document.getElementById('growth-chart-canvas');
       if (!canvas) return;
       var ctx = canvas.getContext('2d');
-      var isFullscreen = (targetCanvas === document.getElementById('growth-chart-canvas-full'));
+      var isFullscreen = forceFullscreen === true;
 
       var genderData = hkData[pedGender];
       if (!genderData) return;
@@ -2930,17 +2933,133 @@
       }
     }
 
+    // --- Fullscreen chart with pinch-zoom ---
+    var _cz = { s: 1, tx: 0, ty: 0, imgW: 0, imgH: 0 };
+    var _czTouch = { pinching: false, panning: false, dist0: 0, mx0: 0, my0: 0, s0: 1, tx0: 0, ty0: 0, px0: 0, py0: 0 };
+
     function openChartFullscreen() {
       var overlay = document.getElementById('chart-fullscreen');
       overlay.style.display = 'block';
       document.body.style.overflow = 'hidden';
-      var fullCanvas = document.getElementById('growth-chart-canvas-full');
-      drawGrowthChart(fullCanvas);
+
+      // Draw chart to offscreen canvas then convert to image
+      var offscreen = document.createElement('canvas');
+      drawGrowthChart(offscreen, true);
+
+      var img = document.getElementById('chart-zoom-img');
+      img.onload = function() {
+        _cz.imgW = offscreen.width / (window.devicePixelRatio || 1);
+        _cz.imgH = offscreen.height / (window.devicePixelRatio || 1);
+        chartZoomReset();
+      };
+      img.src = offscreen.toDataURL();
+      initChartZoomListeners();
     }
 
     function closeChartFullscreen() {
       document.getElementById('chart-fullscreen').style.display = 'none';
       document.body.style.overflow = '';
+    }
+
+    function chartZoomReset() {
+      var vw = window.innerWidth, vh = window.innerHeight;
+      // Fit image to screen
+      var fitScale = Math.min(vw / _cz.imgW, vh / _cz.imgH, 1);
+      _cz.s = fitScale;
+      _cz.tx = (vw - _cz.imgW * fitScale) / 2;
+      _cz.ty = (vh - _cz.imgH * fitScale) / 2;
+      _applyChartTransform();
+    }
+
+    function _applyChartTransform() {
+      var img = document.getElementById('chart-zoom-img');
+      if (!img) return;
+      img.style.width = _cz.imgW + 'px';
+      img.style.height = _cz.imgH + 'px';
+      img.style.transform = 'translate(' + _cz.tx + 'px,' + _cz.ty + 'px) scale(' + _cz.s + ')';
+    }
+
+    function _czDist(a, b) {
+      var dx = a.clientX - b.clientX, dy = a.clientY - b.clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    var _czListenersAdded = false;
+    var _czLastTap = 0;
+    function initChartZoomListeners() {
+      if (_czListenersAdded) return;
+      _czListenersAdded = true;
+      var el = document.getElementById('chart-zoom-container');
+
+      // Prevent iOS Safari's native gesture zoom
+      el.addEventListener('gesturestart', function(e) { e.preventDefault(); }, { passive: false });
+      el.addEventListener('gesturechange', function(e) { e.preventDefault(); }, { passive: false });
+      el.addEventListener('gestureend', function(e) { e.preventDefault(); }, { passive: false });
+
+      el.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        if (e.touches.length === 2) {
+          _czTouch.pinching = true;
+          _czTouch.panning = false;
+          _czTouch.dist0 = _czDist(e.touches[0], e.touches[1]);
+          _czTouch.mx0 = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+          _czTouch.my0 = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+          _czTouch.s0 = _cz.s;
+          _czTouch.tx0 = _cz.tx;
+          _czTouch.ty0 = _cz.ty;
+        } else if (e.touches.length === 1) {
+          // Double-tap to zoom
+          var now = Date.now();
+          if (now - _czLastTap < 300) {
+            var tapX = e.touches[0].clientX;
+            var tapY = e.touches[0].clientY;
+            if (_cz.s > 1.05) {
+              chartZoomReset();
+            } else {
+              var zoomTo = 2.5;
+              _cz.tx = tapX - (tapX - _cz.tx) * (zoomTo / _cz.s);
+              _cz.ty = tapY - (tapY - _cz.ty) * (zoomTo / _cz.s);
+              _cz.s = zoomTo;
+              _applyChartTransform();
+            }
+            _czLastTap = 0;
+          } else {
+            _czLastTap = now;
+          }
+          _czTouch.panning = true;
+          _czTouch.pinching = false;
+          _czTouch.px0 = e.touches[0].clientX;
+          _czTouch.py0 = e.touches[0].clientY;
+          _czTouch.tx0 = _cz.tx;
+          _czTouch.ty0 = _cz.ty;
+        }
+      }, { passive: false });
+
+      el.addEventListener('touchmove', function(e) {
+        e.preventDefault();
+        if (_czTouch.pinching && e.touches.length >= 2) {
+          var dist = _czDist(e.touches[0], e.touches[1]);
+          var mx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+          var my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+          var ratio = dist / _czTouch.dist0;
+          var ns = Math.max(0.5, Math.min(10, _czTouch.s0 * ratio));
+
+          // Zoom around pinch midpoint + allow pan during pinch
+          _cz.tx = _czTouch.tx0 + (_czTouch.mx0 - _czTouch.tx0) * (1 - ns / _czTouch.s0) + (mx - _czTouch.mx0);
+          _cz.ty = _czTouch.ty0 + (_czTouch.my0 - _czTouch.ty0) * (1 - ns / _czTouch.s0) + (my - _czTouch.my0);
+          _cz.s = ns;
+          _applyChartTransform();
+        } else if (_czTouch.panning && e.touches.length === 1) {
+          _cz.tx = _czTouch.tx0 + (e.touches[0].clientX - _czTouch.px0);
+          _cz.ty = _czTouch.ty0 + (e.touches[0].clientY - _czTouch.py0);
+          _applyChartTransform();
+        }
+      }, { passive: false });
+
+      el.addEventListener('touchend', function(e) {
+        if (e.touches.length < 2) _czTouch.pinching = false;
+        if (e.touches.length === 0) _czTouch.panning = false;
+      }, { passive: false });
     }
 
 
@@ -5861,12 +5980,30 @@
       var el = document.getElementById(containerId);
       if (!el) return;
       el.innerHTML = arr.map(function(item, idx) {
-        return '<div style="display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--border-color);" id="food-opt-' + type + '-' + idx + '">' +
+        var upDisabled = idx === 0 ? ' opacity:0.25; pointer-events:none;' : '';
+        var downDisabled = idx === arr.length - 1 ? ' opacity:0.25; pointer-events:none;' : '';
+        return '<div style="display:flex; align-items:center; gap:4px; padding:7px 0; border-bottom:1px solid var(--border-color);" id="food-opt-' + type + '-' + idx + '">' +
+          '<div style="display:flex; flex-direction:column; gap:0;">' +
+            '<button style="border:none; background:none; color:var(--text-secondary); font-size:11px; cursor:pointer; padding:2px 4px; line-height:1;' + upDisabled + '" onclick="moveFoodOption(\'' + type + '\',' + idx + ',-1)" title="Move up"><i class="fas fa-chevron-up"></i></button>' +
+            '<button style="border:none; background:none; color:var(--text-secondary); font-size:11px; cursor:pointer; padding:2px 4px; line-height:1;' + downDisabled + '" onclick="moveFoodOption(\'' + type + '\',' + idx + ',1)" title="Move down"><i class="fas fa-chevron-down"></i></button>' +
+          '</div>' +
           '<span style="flex:1; font-size:14px;" id="food-opt-label-' + type + '-' + idx + '">' + item + '</span>' +
           '<button style="border:none; background:none; color:var(--accent); font-size:15px; cursor:pointer; padding:4px;" onclick="startRenameFoodOption(\'' + type + '\',' + idx + ')" title="Rename"><i class="fas fa-pen"></i></button>' +
           '<button style="border:none; background:none; color:var(--danger); font-size:15px; cursor:pointer; padding:4px;" onclick="confirmDeleteFoodOption(\'' + type + '\',' + idx + ')" title="Delete"><i class="fas fa-trash"></i></button>' +
           '</div>';
       }).join('');
+    }
+
+    function moveFoodOption(type, idx, dir) {
+      var arr = getFoodOptionArr(type);
+      var newIdx = idx + dir;
+      if (newIdx < 0 || newIdx >= arr.length) return;
+      var tmp = arr[idx];
+      arr[idx] = arr[newIdx];
+      arr[newIdx] = tmp;
+      saveFoodOptions();
+      renderFoodSettingsLists();
+      populateFoodCategories();
     }
 
     function addFoodOption(type) {
@@ -6242,6 +6379,9 @@
         buildFoodModalAllergenCheckboxes([]);
       }
       modal.classList.add('active');
+      // Scroll modal to top
+      var modalBox = modal.querySelector('.modal');
+      if (modalBox) modalBox.scrollTop = 0;
     }
 
     function closeFoodModal() {
