@@ -298,7 +298,9 @@
         <div class="segment-control" id="bw-toggle" style="margin-bottom:8px;">
           <button class="segment-btn active" onclick="setReqBWSource('actual')" id="bw-toggle-actual">Actual BW</button>
           <button class="segment-btn" onclick="setReqBWSource('adjusted')" id="bw-toggle-adjusted">Adjusted BW</button>
+          <button class="segment-btn" onclick="setReqBWSource('custom')" id="bw-toggle-custom">Custom</button>
         </div>
+        <input type="number" class="input-field" id="custom-bw-input" placeholder="Enter weight (kg)" step="0.1" style="display:none;margin-bottom:4px;" oninput="calculateRequirementsRealtime()" onfocus="this.select()">
         <div id="req-bw-display" style="text-align:center;font-size:22px;font-weight:700;color:var(--accent);padding:8px 0;">--</div>
       </div>
       <div class="input-row">
@@ -3179,12 +3181,16 @@
       isConverting = false;
     }
 
-    let reqBWSource = 'actual'; // 'actual' or 'adjusted'
+    let reqBWSource = 'actual'; // 'actual', 'adjusted', or 'custom'
 
     function setReqBWSource(source) {
       reqBWSource = source;
       document.getElementById('bw-toggle-actual').classList.toggle('active', source === 'actual');
       document.getElementById('bw-toggle-adjusted').classList.toggle('active', source === 'adjusted');
+      document.getElementById('bw-toggle-custom').classList.toggle('active', source === 'custom');
+      var customInput = document.getElementById('custom-bw-input');
+      customInput.style.display = source === 'custom' ? '' : 'none';
+      if (source === 'custom') { customInput.focus(); }
       updateReqBWDisplay();
       calculateRequirementsRealtime();
     }
@@ -3192,6 +3198,8 @@
     function getReqBW() {
       if (reqBWSource === 'actual') {
         return parseFloat(document.getElementById('actual-weight').value);
+      } else if (reqBWSource === 'custom') {
+        return parseFloat(document.getElementById('custom-bw-input').value);
       } else {
         const txt = document.getElementById('res-adjusted-bw').textContent;
         return txt !== '--' ? parseFloat(txt) : NaN;
