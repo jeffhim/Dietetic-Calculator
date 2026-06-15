@@ -399,9 +399,9 @@
           <div class="card-subtitle">HK Growth Study 2020 Reference</div>
         </div>
       </div>
-      <div class="segment-control">
-        <button class="segment-btn active" onclick="setPedGender('male')">Boy</button>
-        <button class="segment-btn" onclick="setPedGender('female')">Girl</button>
+      <div class="segment-control" id="ped-gender-toggle">
+        <button class="segment-btn active" onclick="setPedGender('male')" id="ped-gender-m">Boy</button>
+        <button class="segment-btn" onclick="setPedGender('female')" id="ped-gender-f">Girl</button>
       </div>
       <div class="input-row">
         <div class="input-group">
@@ -535,6 +535,38 @@
         <div>
           <div class="card-title">Energy, Protein & Fluid</div>
           <div class="card-subtitle">Reference values & custom calculation</div>
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Data Source</label>
+        <div class="segment-control" id="ped-req-source-toggle" style="margin-bottom:8px;">
+          <button class="segment-btn active" onclick="setPedReqSource('above')" id="ped-req-src-above">From Above</button>
+          <button class="segment-btn" onclick="setPedReqSource('custom')" id="ped-req-src-custom">Custom</button>
+        </div>
+      </div>
+      <div id="ped-req-custom-panel" style="display:none;margin-bottom:10px;">
+        <div class="input-row">
+          <div class="input-group" style="flex:1.2;">
+            <label class="input-label">Age</label>
+            <div style="display:flex;gap:6px;">
+              <input type="number" class="input-field" id="ped-req-custom-age" placeholder="e.g. 6" step="0.1" style="flex:1;" oninput="onPedReqCustomInput()" onfocus="this.select()">
+              <select class="input-field" id="ped-req-custom-age-unit" style="flex:0.8;padding:6px;" onchange="onPedReqCustomInput()">
+                <option value="months">Months</option>
+                <option value="years">Years</option>
+              </select>
+            </div>
+          </div>
+          <div class="input-group" style="flex:0.8;">
+            <label class="input-label">Sex</label>
+            <div class="segment-control" id="ped-req-custom-sex-toggle">
+              <button class="segment-btn active" onclick="setPedReqCustomSex('male')" id="ped-req-sex-m">Boy</button>
+              <button class="segment-btn" onclick="setPedReqCustomSex('female')" id="ped-req-sex-f">Girl</button>
+            </div>
+          </div>
+          <div class="input-group" style="flex:0.7;">
+            <label class="input-label">Weight (kg)</label>
+            <input type="number" class="input-field" id="ped-req-custom-weight" placeholder="e.g. 8" step="0.1" oninput="onPedReqCustomInput()" onfocus="this.select()">
+          </div>
         </div>
       </div>
       <div class="ref-display" id="ped-ref-display">
@@ -2521,6 +2553,53 @@
     let lastPedRefKey = '';
     let pedFluidManual = false; // tracks if user manually edited the fluid input
 
+    // Pediatric requirement data source: 'above' (from growth card) or 'custom'
+    let pedReqSource = 'above';
+    let pedReqCustomSex = 'male';
+
+    function setPedReqSource(source) {
+      pedReqSource = source;
+      document.getElementById('ped-req-src-above').classList.toggle('active', source === 'above');
+      document.getElementById('ped-req-src-custom').classList.toggle('active', source === 'custom');
+      document.getElementById('ped-req-custom-panel').style.display = source === 'custom' ? '' : 'none';
+      lastPedRefKey = ''; // force reference refresh
+      pedFluidManual = false;
+      updatePedReference();
+    }
+
+    function setPedReqCustomSex(gender) {
+      pedReqCustomSex = gender;
+      document.getElementById('ped-req-sex-m').classList.toggle('active', gender === 'male');
+      document.getElementById('ped-req-sex-f').classList.toggle('active', gender === 'female');
+      lastPedRefKey = ''; // force reference refresh
+      pedFluidManual = false;
+      updatePedReference();
+    }
+
+    function onPedReqCustomInput() {
+      lastPedRefKey = ''; // force reference refresh on any custom input change
+      pedFluidManual = false;
+      updatePedReference();
+    }
+
+    // Helper: get effective age, unit, weight, gender for requirement calculation
+    function getPedReqValues() {
+      if (pedReqSource === 'custom') {
+        return {
+          ageValue: parseFloat(document.getElementById('ped-req-custom-age').value),
+          ageUnit: document.getElementById('ped-req-custom-age-unit').value,
+          weight: parseFloat(document.getElementById('ped-req-custom-weight').value),
+          gender: pedReqCustomSex
+        };
+      }
+      return {
+        ageValue: parseFloat(document.getElementById('ped-age').value),
+        ageUnit: document.getElementById('ped-age-unit').value,
+        weight: parseFloat(document.getElementById('ped-weight').value),
+        gender: pedGender
+      };
+    }
+
     function parseRefFirstNumber(str) {
       const match = String(str).match(/([\d.]+)/);
       return match ? parseFloat(match[1]) : null;
@@ -2552,9 +2631,10 @@
     }
 
     function updatePedReference() {
-      const ageValue = parseFloat(document.getElementById('ped-age').value);
-      const ageUnit = document.getElementById('ped-age-unit').value;
-      const weight = parseFloat(document.getElementById('ped-weight').value);
+      const rv = getPedReqValues();
+      const ageValue = rv.ageValue;
+      const ageUnit = rv.ageUnit;
+      const weight = rv.weight;
 
       if (ageValue == null || isNaN(ageValue) || ageValue < 0) {
         document.getElementById('ref-energy-val').textContent = '--';
@@ -2565,7 +2645,7 @@
 
       const ageMonths = ageUnit === 'years' ? ageValue * 12 : ageValue;
       const ageYears = ageUnit === 'years' ? ageValue : ageValue / 12;
-      const genderKey = pedGender === 'male' ? 'm' : 'f';
+      const genderKey = rv.gender === 'male' ? 'm' : 'f';
 
       let energy = '--', protein = '--';
       let energyRaw = null, proteinRaw = null;
@@ -2608,7 +2688,7 @@
       document.getElementById('ref-fluid-val').textContent = fluid;
 
       // Auto-populate factor inputs only when age or gender changes
-      const currentKey = ageMonths + '-' + pedGender;
+      const currentKey = ageMonths + '-' + rv.gender;
       if (currentKey !== lastPedRefKey) {
         lastPedRefKey = currentKey;
         pedFluidManual = false;
@@ -2630,7 +2710,8 @@
     }
 
     function calculatePedRealtime() {
-      const weight = parseFloat(document.getElementById('ped-weight').value);
+      const rv = getPedReqValues();
+      const weight = rv.weight;
       const energyFactor = parseFloat(document.getElementById('ped-energy-factor').value);
       const proteinFactor = parseFloat(document.getElementById('ped-protein-factor').value);
       const fluidInput = document.getElementById('ped-fluid-factor').value.trim();
@@ -2644,8 +2725,8 @@
         document.getElementById('ped-fluid-result').textContent = weight && fluidFactor ? Math.round(weight * fluidFactor) : '--';
       } else {
         // Auto-calculate from age-based formula / Holliday-Segar
-        const ageValue = parseFloat(document.getElementById('ped-age').value);
-        const ageUnit = document.getElementById('ped-age-unit').value;
+        const ageValue = rv.ageValue;
+        const ageUnit = rv.ageUnit;
         if (ageValue != null && !isNaN(ageValue) && ageValue >= 0) {
           const ageMonths = ageUnit === 'years' ? ageValue * 12 : ageValue;
           const result = calculateFluidAuto(ageMonths, weight);
@@ -2658,9 +2739,8 @@
 
     function setPedGender(gender) {
       pedGender = gender;
-      document.querySelectorAll('#tab-peds .segment-btn').forEach((btn, i) => {
-        btn.classList.toggle('active', (gender === 'male' && i === 0) || (gender === 'female' && i === 1));
-      });
+      document.getElementById('ped-gender-m').classList.toggle('active', gender === 'male');
+      document.getElementById('ped-gender-f').classList.toggle('active', gender === 'female');
       calculateGrowthPercentiles();
     }
 
