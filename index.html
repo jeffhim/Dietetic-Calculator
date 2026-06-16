@@ -1516,6 +1516,106 @@
         </div>
       </div>
     </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon orange"><i class="fas fa-utensils"></i></div>
+        <div>
+          <div class="card-title">Draft Diet</div>
+          <div class="card-subtitle">Plan meals with food exchange servings</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+        <table class="data-table" id="draft-diet-table" style="min-width:420px;text-align:center;">
+          <thead>
+            <tr>
+              <th style="text-align:left;min-width:40px;">Meal</th>
+              <th style="min-width:56px;">Starch</th>
+              <th style="min-width:56px;">Meat</th>
+              <th style="min-width:56px;">Veg</th>
+              <th style="min-width:56px;">Fruit</th>
+              <th style="min-width:56px;">Fat</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="text-align:left;font-weight:600;">B</td>
+              <td><input type="number" class="input-field" id="dd-b-starch" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-b-meat" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-b-veg" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-b-fruit" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-b-fat" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+            </tr>
+            <tr>
+              <td style="text-align:left;font-weight:600;">MS</td>
+              <td><input type="number" class="input-field" id="dd-ms-starch" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-ms-meat" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-ms-veg" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-ms-fruit" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-ms-fat" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+            </tr>
+            <tr>
+              <td style="text-align:left;font-weight:600;">L</td>
+              <td><input type="number" class="input-field" id="dd-l-starch" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-l-meat" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-l-veg" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-l-fruit" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-l-fat" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+            </tr>
+            <tr>
+              <td style="text-align:left;font-weight:600;">AS</td>
+              <td><input type="number" class="input-field" id="dd-as-starch" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-as-meat" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-as-veg" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-as-fruit" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-as-fat" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+            </tr>
+            <tr>
+              <td style="text-align:left;font-weight:600;">D</td>
+              <td><input type="number" class="input-field" id="dd-d-starch" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-d-meat" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-d-veg" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-d-fruit" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-d-fat" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+            </tr>
+            <tr>
+              <td style="text-align:left;font-weight:600;">NS</td>
+              <td><input type="number" class="input-field" id="dd-ns-starch" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-ns-meat" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-ns-veg" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-ns-fruit" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-ns-fat" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr style="background:var(--bg-tertiary);font-weight:600;">
+              <td style="text-align:left;">Total</td>
+              <td id="dd-total-starch">0</td>
+              <td id="dd-total-meat">0</td>
+              <td id="dd-total-veg">0</td>
+              <td id="dd-total-fruit">0</td>
+              <td id="dd-total-fat">0</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="formula-note" style="margin-top:10px;margin-bottom:0;font-size:11px;line-height:1.5;">
+        <i class="fas fa-info-circle"></i>
+        Starch = 10g CHO + 1g Pro &nbsp;|&nbsp; Meat = 7g Pro + 5g Fat &nbsp;|&nbsp; Veg = 5g CHO &nbsp;|&nbsp; Fruit = 10g CHO &nbsp;|&nbsp; Fat = 5g Fat
+      </div>
+      <div id="dd-results" class="result-box" style="margin-top:12px;">
+        <div style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text-primary);">
+          <i class="fas fa-calculator"></i> Diet Summary
+        </div>
+        <div class="result-grid">
+          <div class="result-item"><div class="result-value" id="dd-res-cho">--</div><div class="result-label">CHO (g)</div></div>
+          <div class="result-item"><div class="result-value" id="dd-res-pro">--</div><div class="result-label">Protein (g)</div></div>
+          <div class="result-item"><div class="result-value" id="dd-res-fat">--</div><div class="result-label">Fat (g)</div></div>
+          <div class="result-item"><div class="result-value" id="dd-res-kcal">--</div><div class="result-label">Energy (kcal)</div></div>
+          <div class="result-item full"><div class="result-value" id="dd-res-ratio">--</div><div class="result-label">KD Ratio</div></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Tab 6: Pregnancy -->
@@ -5637,6 +5737,56 @@
       document.getElementById('res-dilution-powder').textContent = powder.toFixed(1);
       document.getElementById('res-dilution-water').textContent = water.toFixed(1);
       resultsDiv.style.display = 'block';
+    }
+
+    // ===== Draft Diet Calculator =====
+    function calcDraftDiet() {
+      var meals = ['b', 'ms', 'l', 'as', 'd', 'ns'];
+      var cats = ['starch', 'meat', 'veg', 'fruit', 'fat'];
+      var totals = { starch: 0, meat: 0, veg: 0, fruit: 0, fat: 0 };
+
+      for (var m = 0; m < meals.length; m++) {
+        for (var c = 0; c < cats.length; c++) {
+          var val = parseFloat(document.getElementById('dd-' + meals[m] + '-' + cats[c]).value) || 0;
+          totals[cats[c]] += val;
+        }
+      }
+
+      // Update totals row
+      document.getElementById('dd-total-starch').textContent = totals.starch % 1 === 0 ? totals.starch : totals.starch.toFixed(1);
+      document.getElementById('dd-total-meat').textContent = totals.meat % 1 === 0 ? totals.meat : totals.meat.toFixed(1);
+      document.getElementById('dd-total-veg').textContent = totals.veg % 1 === 0 ? totals.veg : totals.veg.toFixed(1);
+      document.getElementById('dd-total-fruit').textContent = totals.fruit % 1 === 0 ? totals.fruit : totals.fruit.toFixed(1);
+      document.getElementById('dd-total-fat').textContent = totals.fat % 1 === 0 ? totals.fat : totals.fat.toFixed(1);
+
+      // Nutrition per exchange:
+      // Starch: 10g CHO + 1g Pro
+      // Meat:   7g Pro + 5g Fat
+      // Veg:    5g CHO
+      // Fruit:  10g CHO
+      // Fat:    5g Fat
+      var cho = totals.starch * 10 + totals.veg * 5 + totals.fruit * 10;
+      var pro = totals.starch * 1 + totals.meat * 7;
+      var fat = totals.meat * 5 + totals.fat * 5;
+
+      var hasAny = (totals.starch + totals.meat + totals.veg + totals.fruit + totals.fat) > 0;
+
+      document.getElementById('dd-res-cho').textContent = hasAny ? cho.toFixed(1) : '--';
+      document.getElementById('dd-res-pro').textContent = hasAny ? pro.toFixed(1) : '--';
+      document.getElementById('dd-res-fat').textContent = hasAny ? fat.toFixed(1) : '--';
+
+      // KD ratio = Fat / (CHO + Pro)
+      var choPro = cho + pro;
+      if (hasAny && choPro > 0) {
+        var ratio = fat / choPro;
+        document.getElementById('dd-res-ratio').textContent = ratio.toFixed(1) + ' : 1';
+      } else {
+        document.getElementById('dd-res-ratio').textContent = '--';
+      }
+
+      // Calories: CHO=4, Pro=4, Fat=9
+      var kcal = cho * 4 + pro * 4 + fat * 9;
+      document.getElementById('dd-res-kcal').textContent = hasAny ? Math.round(kcal) : '--';
     }
 
     // ===== Pregnancy Tab Functions =====
