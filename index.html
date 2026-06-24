@@ -486,17 +486,16 @@
           Enter age &amp; sex to view chart
         </div>
         <div id="gc-chart-wrapper" style="display:none;">
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0 8px;">
-            <span id="gc-range-label" style="font-size:13px;font-weight:600;color:var(--accent);"></span>
-            <a id="gc-open-link" href="" target="_blank" style="font-size:12px;color:var(--accent);text-decoration:none;padding:4px 12px;background:var(--accent-light);border-radius:6px;font-weight:600;">Open ↗</a>
-          </div>
-          <object id="gc-pdf-object" data="" type="application/pdf" style="width:100%;height:60vh;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);">
-            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px;">
-              <div style="font-size:28px;margin-bottom:10px;">📊</div>
-              <p style="color:var(--text-secondary);font-size:13px;margin-bottom:14px;text-align:center;">PDF preview not supported here</p>
-              <a id="gc-pdf-fallback" href="" target="_blank" style="display:inline-block;padding:10px 24px;background:var(--accent);color:#fff;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;">View Growth Chart ↗</a>
+          <a id="gc-open-link" href="" target="_blank" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:inherit;gap:12px;">
+            <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+              <div style="font-size:22px;flex-shrink:0;">📊</div>
+              <div style="min-width:0;">
+                <div id="gc-range-label" style="font-size:14px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+                <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Tap to view chart</div>
+              </div>
             </div>
-          </object>
+            <div style="flex-shrink:0;padding:6px 14px;background:var(--accent);color:#fff;border-radius:8px;font-size:13px;font-weight:600;">Open</div>
+          </a>
         </div>
       </div>
       <div class="section-divider"></div>
@@ -2460,16 +2459,7 @@
       var sexLbl = sex === 'male' ? 'Boys' : 'Girls';
       document.getElementById('gc-range-label').textContent = sexLbl + ' ' + typeLabels[growthChartType] + ' (' + range + ' years)';
 
-      var pdfObj = document.getElementById('gc-pdf-object');
-      var openLink = document.getElementById('gc-open-link');
-      var fallbackLink = document.getElementById('gc-pdf-fallback');
-
-      // Only update object data if URL changed to avoid unnecessary reloads
-      if (pdfObj.getAttribute('data') !== url) {
-        pdfObj.setAttribute('data', url);
-      }
-      openLink.href = url;
-      fallbackLink.href = url;
+      document.getElementById('gc-open-link').href = url;
     }
 
     function buildSchofieldEqStr(gender, ageYears, weight, heightM, ree) {
@@ -4061,45 +4051,4 @@
         var strEl = document.getElementById('supp-str-' + i);
         var volEl = document.getElementById('supp-vol-' + i);
         var freqEl = document.getElementById('supp-freq-' + i);
-        if (!selEl || !volEl || !freqEl) continue;
-
-        var vol = parseFloat(volEl.value);
-        var freq = parseFloat(freqEl.value);
-        var str = parseFloat(strEl.value);
-        if (isNaN(freq)) freq = 0;
-        if (isNaN(str) || str === 0) str = 1;
-        if (!selEl.value || !vol || freq <= 0) continue;
-
-        var supp = findProductByKey(selEl.value);
-        if (!supp) continue;
-
-        var f = vol / 100;
-        var dailyVol = vol * freq;
-
-        SUPP_FIELDS.forEach(function(key) {
-          if (supp[key] != null) totals[key] += supp[key] * f * freq * str;
-        });
-        totalVol += dailyVol;
-        hasAny = true;
-      }
-
-      // Add water volume
-      var waterVol = parseFloat(document.getElementById('supp-water-vol').value) || 0;
-      var waterFreq = parseFloat(document.getElementById('supp-water-freq').value) || 0;
-      var dailyWater = waterVol * waterFreq;
-      if (dailyWater > 0) {
-        totalVol += dailyWater;
-        totals.water += dailyWater;
-        hasAny = true;
-      }
-
-      var container = document.getElementById('supp-results-container');
-      container.innerHTML = buildSuppResultsHTML(totals, totalVol, bw, hasAny);
-    }
-
-    // === Init supplement dropdowns + render blank results on page load ===
-    function initSuppDropdowns() {
-      refreshAllSuppDropdowns();
-      // Render blank results table immediately
-      var emptyTotals = {};
-      SUPP_FIELDS.forEach...
+        if (!selEl || !volEl || !freqEl) co...
