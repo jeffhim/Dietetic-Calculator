@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dietetic-calculator-v2';
+const CACHE_NAME = 'dietetic-calculator-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
