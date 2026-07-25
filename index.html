@@ -2142,7 +2142,11 @@
               label.textContent = displayName.split(' ')[0];
               btn.style.background = 'rgba(255,255,255,0.3)';
               document.body.classList.add('signed-in');
+              window.fbUid = user.uid;
               console.log('Firebase: signed in as ' + user.email + ' (UID: ' + user.uid + ')');
+              // Show UID on long-press of auth button (for Firebase rules setup)
+              btn.title = 'UID: ' + user.uid;
+              btn.setAttribute('data-uid', user.uid);
               // Now load data
               fbLoadAllData();
             } else {
@@ -2162,6 +2166,30 @@
     }
 
     // Google sign-in / sign-out toggle
+    // Long-press auth button to show UID
+    (function() {
+      var authBtn = document.getElementById('fb-auth-btn');
+      if (!authBtn) return;
+      var pressTimer = null;
+      authBtn.addEventListener('touchstart', function(e) {
+        pressTimer = setTimeout(function() {
+          if (fbUser && fbUser.uid) {
+            var uidBox = document.createElement('div');
+            uidBox.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;';
+            uidBox.innerHTML = '<div style="background:var(--bg-primary,#fff);padding:20px;border-radius:14px;max-width:320px;width:90%;text-align:center;">' +
+              '<p style="font-size:13px;color:var(--text-secondary,#666);margin-bottom:8px;">Your Firebase UID:</p>' +
+              '<p style="font-size:12px;font-family:monospace;background:var(--bg-secondary,#f5f5f5);padding:10px;border-radius:8px;word-break:break-all;margin-bottom:14px;user-select:all;">' + fbUser.uid + '</p>' +
+              '<button onclick="navigator.clipboard.writeText(\'' + fbUser.uid + '\');this.textContent=\'Copied!\';setTimeout(()=>this.closest(\'div[style*=fixed]\').remove(),600)" style="padding:10px 24px;border:none;border-radius:8px;background:var(--accent,#007aff);color:#fff;font-size:14px;cursor:pointer;">Copy UID</button>' +
+              '<br><button onclick="this.closest(\'div[style*=fixed]\').remove()" style="margin-top:8px;padding:8px 16px;border:none;background:none;color:var(--text-secondary,#666);font-size:13px;cursor:pointer;">Close</button>' +
+            '</div>';
+            document.body.appendChild(uidBox);
+          }
+        }, 800);
+      });
+      authBtn.addEventListener('touchend', function() { clearTimeout(pressTimer); });
+      authBtn.addEventListener('touchmove', function() { clearTimeout(pressTimer); });
+    })();
+
     function fbToggleAuth() {
       if (!fbAuth) return;
       if (fbUser) {
