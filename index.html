@@ -1046,6 +1046,86 @@
   </div>
 
 
+  <!-- Tab: Stock (Nutrition Formula Inventory) -->
+  <div id="tab-stock" class="tab-content">
+    <!-- Category filter -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <span style="font-size:16px;font-weight:700;">Formula Stock</span>
+      <div style="display:flex;gap:6px;">
+        <button class="supp-add-btn" onclick="openStockCatManager()" style="background:var(--bg-tertiary);color:var(--text-primary);"><i class="fas fa-tags" style="font-size:10px;"></i> Categories</button>
+        <button class="supp-add-btn" onclick="openStockModal()"><i class="fas fa-plus" style="font-size:10px;"></i> Add</button>
+      </div>
+    </div>
+    <!-- Filter bar -->
+    <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+      <button class="segment-btn active" id="stock-filter-all" onclick="setStockFilter('all')" style="font-size:12px;padding:5px 10px;border-radius:16px;">All</button>
+      <button class="segment-btn" id="stock-filter-green" onclick="setStockFilter('green')" style="font-size:12px;padding:5px 10px;border-radius:16px;"><span style="color:#22c55e;">●</span> Available</button>
+      <button class="segment-btn" id="stock-filter-yellow" onclick="setStockFilter('yellow')" style="font-size:12px;padding:5px 10px;border-radius:16px;"><span style="color:#eab308;">●</span> Limited</button>
+      <button class="segment-btn" id="stock-filter-red" onclick="setStockFilter('red')" style="font-size:12px;padding:5px 10px;border-radius:16px;"><span style="color:#ef4444;">●</span> Unavailable</button>
+    </div>
+    <!-- Category filter -->
+    <div id="stock-cat-filter" style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;"></div>
+    <!-- Product list -->
+    <div id="stock-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+    <div id="stock-empty" style="text-align:center;padding:40px 16px;color:var(--text-secondary);">
+      <i class="fas fa-boxes-stacked" style="font-size:32px;margin-bottom:12px;display:block;opacity:0.4;"></i>
+      <p style="font-size:14px;">No products yet</p>
+      <p style="font-size:12px;margin-top:4px;">Tap "+ Add" to add a formula</p>
+    </div>
+
+    <!-- Add/Edit modal -->
+    <div id="stock-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.5);overflow-y:auto;-webkit-overflow-scrolling:touch;">
+      <div style="max-width:400px;margin:60px auto 40px;background:var(--bg-primary);border-radius:16px;padding:20px;margin-left:16px;margin-right:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <span id="stock-modal-title" style="font-size:16px;font-weight:700;">Add Product</span>
+          <button onclick="closeStockModal()" style="background:none;border:none;font-size:20px;color:var(--text-secondary);cursor:pointer;">✕</button>
+        </div>
+        <div class="input-group" style="margin-bottom:12px;">
+          <label class="input-label">Product Name</label>
+          <input type="text" class="input-field" id="stock-name" placeholder="e.g. Ensure Plus">
+        </div>
+        <div class="input-group" style="margin-bottom:12px;">
+          <label class="input-label">Category (Usage)</label>
+          <select class="input-field" id="stock-category" style="padding:10px 12px;"></select>
+        </div>
+        <div class="input-group" style="margin-bottom:12px;">
+          <label class="input-label">Availability</label>
+          <div style="display:flex;gap:8px;">
+            <button class="segment-btn" id="stock-status-green" onclick="setStockModalStatus('green')" style="flex:1;border-radius:10px;padding:10px 0;">
+              <span style="color:#22c55e;font-size:16px;">●</span><br><span style="font-size:11px;">Available</span>
+            </button>
+            <button class="segment-btn" id="stock-status-yellow" onclick="setStockModalStatus('yellow')" style="flex:1;border-radius:10px;padding:10px 0;">
+              <span style="color:#eab308;font-size:16px;">●</span><br><span style="font-size:11px;">Limited</span>
+            </button>
+            <button class="segment-btn" id="stock-status-red" onclick="setStockModalStatus('red')" style="flex:1;border-radius:10px;padding:10px 0;">
+              <span style="color:#ef4444;font-size:16px;">●</span><br><span style="font-size:11px;">Unavailable</span>
+            </button>
+          </div>
+        </div>
+        <div class="input-group" style="margin-bottom:16px;">
+          <label class="input-label">Notes <span style="font-weight:400;color:var(--text-secondary);">(optional)</span></label>
+          <input type="text" class="input-field" id="stock-notes" placeholder="e.g. Expected restock date">
+        </div>
+        <button class="btn btn-primary" onclick="saveStockItem()" style="width:100%;">Save</button>
+      </div>
+    </div>
+
+    <!-- Category Manager modal -->
+    <div id="stock-cat-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.5);overflow-y:auto;-webkit-overflow-scrolling:touch;">
+      <div style="max-width:400px;margin:60px auto 40px;background:var(--bg-primary);border-radius:16px;padding:20px;margin-left:16px;margin-right:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <span style="font-size:16px;font-weight:700;">Manage Categories</span>
+          <button onclick="closeStockCatManager()" style="background:none;border:none;font-size:20px;color:var(--text-secondary);cursor:pointer;">✕</button>
+        </div>
+        <div id="stock-cat-list" style="margin-bottom:12px;"></div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" class="input-field" id="stock-new-cat" placeholder="New category name" style="flex:1;">
+          <button class="btn btn-primary" onclick="addStockCategory()" style="width:auto;padding:10px 16px;"><i class="fas fa-plus"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Tab: Food (TMH Food List) -->
   <div id="tab-food" class="tab-content">
     <div class="card">
@@ -1993,6 +2073,7 @@
     <div class="tab-item active" onclick="switchTab('adult')"><i class="fas fa-user"></i><span>Adult</span></div>
     <div class="tab-item" onclick="switchTab('peds')"><i class="fas fa-child"></i><span>Peds</span></div>
     <div class="tab-item" onclick="switchTab('supplements')"><i class="fas fa-prescription-bottle"></i><span>Formula</span></div>
+    <div class="tab-item" onclick="switchTab('stock')"><i class="fas fa-traffic-light"></i><span>Stock</span></div>
     <div class="tab-item" onclick="switchTab('food')"><i class="fas fa-utensils"></i><span>Food</span></div>
     <div class="tab-item" onclick="switchTab('keto')"><i class="fas fa-fire-flame-curved"></i><span>Keto</span></div>
     <div class="tab-item" onclick="switchTab('pregnancy')"><i class="fas fa-person-pregnant"></i><span>Preg.</span></div>
@@ -2110,6 +2191,7 @@
           populateFoodCategories();
         });
       });
+      loadStockFromFirebase();
     }
 
     // --- localStorage cache helpers ---
@@ -2202,6 +2284,12 @@
         if (cachedOpts.diets && cachedOpts.diets.length > 0) FOOD_DIETS = cachedOpts.diets;
         if (cachedOpts.allergens && cachedOpts.allergens.length > 0) FOOD_ALLERGENS = cachedOpts.allergens;
         console.log('Loaded food options from local cache');
+      }
+      var cachedStock = localLoad('stockData');
+      if (cachedStock) {
+        if (cachedStock.items && cachedStock.items.length > 0) stockItems = cachedStock.items;
+        if (cachedStock.categories && cachedStock.categories.length > 0) stockCategories = cachedStock.categories;
+        console.log('Loaded ' + stockItems.length + ' stock items from local cache');
       }
     }
 
@@ -5693,6 +5781,243 @@
     }
 
 
+    // ========== Stock Tab: Formula Inventory ==========
+    var stockItems = []; // [{id, name, category, status:'green'|'yellow'|'red', notes}]
+    var stockCategories = ['Standard', 'High Protein', 'Renal', 'Diabetic', 'Paediatric', 'Fibre'];
+    var stockFilter = 'all'; // 'all', 'green', 'yellow', 'red'
+    var stockCatFilter = null; // null = all, or category string
+    var stockEditId = null;
+    var stockModalStatus = 'green';
+
+    function setStockFilter(f) {
+      stockFilter = f;
+      document.getElementById('stock-filter-all').classList.toggle('active', f === 'all');
+      document.getElementById('stock-filter-green').classList.toggle('active', f === 'green');
+      document.getElementById('stock-filter-yellow').classList.toggle('active', f === 'yellow');
+      document.getElementById('stock-filter-red').classList.toggle('active', f === 'red');
+      renderStockList();
+    }
+
+    function setStockCatFilter(cat) {
+      stockCatFilter = (stockCatFilter === cat) ? null : cat;
+      renderStockCatFilterBar();
+      renderStockList();
+    }
+
+    function renderStockCatFilterBar() {
+      var container = document.getElementById('stock-cat-filter');
+      if (stockCategories.length === 0) { container.innerHTML = ''; return; }
+      container.innerHTML = stockCategories.map(function(cat) {
+        var isActive = stockCatFilter === cat;
+        return '<button class="segment-btn' + (isActive ? ' active' : '') + '" onclick="setStockCatFilter(\'' + cat.replace(/'/g, "\\'") + '\')" style="font-size:11px;padding:4px 10px;border-radius:14px;">' + cat + '</button>';
+      }).join('');
+    }
+
+    function renderStockList() {
+      var list = document.getElementById('stock-list');
+      var empty = document.getElementById('stock-empty');
+      var filtered = stockItems.filter(function(item) {
+        if (stockFilter !== 'all' && item.status !== stockFilter) return false;
+        if (stockCatFilter && item.category !== stockCatFilter) return false;
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        list.innerHTML = '';
+        empty.style.display = '';
+        if (stockItems.length > 0) {
+          empty.querySelector('p').textContent = 'No products match filter';
+          empty.querySelectorAll('p')[1].textContent = 'Try a different filter';
+        } else {
+          empty.querySelector('p').textContent = 'No products yet';
+          empty.querySelectorAll('p')[1].textContent = 'Tap "+ Add" to add a formula';
+        }
+        return;
+      }
+      empty.style.display = 'none';
+
+      // Sort: green first, yellow, red last; within same status alphabetical
+      var statusOrder = { green: 0, yellow: 1, red: 2 };
+      filtered.sort(function(a, b) {
+        if (statusOrder[a.status] !== statusOrder[b.status]) return statusOrder[a.status] - statusOrder[b.status];
+        return a.name.localeCompare(b.name);
+      });
+
+      list.innerHTML = filtered.map(function(item) {
+        var dotColor = item.status === 'green' ? '#22c55e' : (item.status === 'yellow' ? '#eab308' : '#ef4444');
+        var bgColor = item.status === 'green' ? 'rgba(34,197,94,0.08)' : (item.status === 'yellow' ? 'rgba(234,179,8,0.08)' : 'rgba(239,68,68,0.08)');
+        var borderColor = item.status === 'green' ? 'rgba(34,197,94,0.25)' : (item.status === 'yellow' ? 'rgba(234,179,8,0.25)' : 'rgba(239,68,68,0.25)');
+        var catBadge = item.category ? '<span style="font-size:10px;background:var(--bg-tertiary);padding:2px 7px;border-radius:10px;color:var(--text-secondary);">' + item.category + '</span>' : '';
+        var notesHtml = item.notes ? '<div style="font-size:11px;color:var(--text-secondary);margin-top:3px;">' + item.notes + '</div>' : '';
+        return '<div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:' + bgColor + ';border:1px solid ' + borderColor + ';border-radius:10px;cursor:pointer;" onclick="openStockModal(' + item.id + ')">' +
+          '<div style="font-size:14px;margin-top:2px;color:' + dotColor + ';">●</div>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span style="font-size:14px;font-weight:600;">' + item.name + '</span>' + catBadge + '</div>' +
+            notesHtml +
+          '</div>' +
+          '<button onclick="event.stopPropagation();deleteStockItem(' + item.id + ')" style="background:none;border:none;color:var(--text-secondary);font-size:14px;padding:4px;cursor:pointer;opacity:0.5;"><i class="fas fa-trash-alt"></i></button>' +
+        '</div>';
+      }).join('');
+    }
+
+    function openStockModal(editId) {
+      stockEditId = editId || null;
+      var modal = document.getElementById('stock-modal');
+      var titleEl = document.getElementById('stock-modal-title');
+      populateStockCategorySelect();
+
+      if (stockEditId) {
+        var item = stockItems.find(function(i) { return i.id === stockEditId; });
+        if (!item) return;
+        titleEl.textContent = 'Edit Product';
+        document.getElementById('stock-name').value = item.name;
+        document.getElementById('stock-category').value = item.category || '';
+        document.getElementById('stock-notes').value = item.notes || '';
+        setStockModalStatus(item.status);
+      } else {
+        titleEl.textContent = 'Add Product';
+        document.getElementById('stock-name').value = '';
+        document.getElementById('stock-category').value = stockCategories[0] || '';
+        document.getElementById('stock-notes').value = '';
+        setStockModalStatus('green');
+      }
+      modal.style.display = '';
+    }
+
+    function closeStockModal() {
+      document.getElementById('stock-modal').style.display = 'none';
+    }
+
+    function setStockModalStatus(status) {
+      stockModalStatus = status;
+      document.getElementById('stock-status-green').classList.toggle('active', status === 'green');
+      document.getElementById('stock-status-yellow').classList.toggle('active', status === 'yellow');
+      document.getElementById('stock-status-red').classList.toggle('active', status === 'red');
+    }
+
+    function populateStockCategorySelect() {
+      var sel = document.getElementById('stock-category');
+      sel.innerHTML = stockCategories.map(function(c) {
+        return '<option value="' + c + '">' + c + '</option>';
+      }).join('');
+    }
+
+    function saveStockItem() {
+      var name = document.getElementById('stock-name').value.trim();
+      if (!name) { document.getElementById('stock-name').focus(); return; }
+      var category = document.getElementById('stock-category').value;
+      var notes = document.getElementById('stock-notes').value.trim();
+
+      if (stockEditId) {
+        var item = stockItems.find(function(i) { return i.id === stockEditId; });
+        if (item) {
+          item.name = name;
+          item.category = category;
+          item.status = stockModalStatus;
+          item.notes = notes;
+        }
+      } else {
+        var newId = stockItems.length > 0 ? Math.max.apply(null, stockItems.map(function(i) { return i.id; })) + 1 : 1;
+        stockItems.push({ id: newId, name: name, category: category, status: stockModalStatus, notes: notes });
+      }
+
+      closeStockModal();
+      renderStockList();
+      saveStockToFirebase();
+    }
+
+    function deleteStockItem(id) {
+      // Custom confirm dialog
+      var modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;';
+      modal.innerHTML = '<div style="background:var(--bg-primary);padding:20px;border-radius:14px;max-width:300px;width:90%;text-align:center;">' +
+        '<p style="font-size:14px;margin-bottom:16px;color:var(--text-primary);">Delete this product?</p>' +
+        '<div style="display:flex;gap:8px;">' +
+          '<button onclick="this.closest(\'div[style*=fixed]\').remove()" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:14px;cursor:pointer;">Cancel</button>' +
+          '<button onclick="confirmDeleteStock(' + id + ');this.closest(\'div[style*=fixed]\').remove()" style="flex:1;padding:10px;border:none;border-radius:8px;background:#ef4444;color:#fff;font-size:14px;cursor:pointer;">Delete</button>' +
+        '</div></div>';
+      document.body.appendChild(modal);
+    }
+
+    function confirmDeleteStock(id) {
+      stockItems = stockItems.filter(function(i) { return i.id !== id; });
+      renderStockList();
+      saveStockToFirebase();
+    }
+
+    // Category manager
+    function openStockCatManager() {
+      renderStockCatList();
+      document.getElementById('stock-cat-modal').style.display = '';
+    }
+
+    function closeStockCatManager() {
+      document.getElementById('stock-cat-modal').style.display = 'none';
+    }
+
+    function renderStockCatList() {
+      var container = document.getElementById('stock-cat-list');
+      if (stockCategories.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-secondary);font-size:13px;">No categories. Add one below.</div>';
+        return;
+      }
+      container.innerHTML = stockCategories.map(function(cat, idx) {
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 4px;border-bottom:1px solid var(--border);">' +
+          '<span style="font-size:14px;">' + cat + '</span>' +
+          '<button onclick="removeStockCategory(' + idx + ')" style="background:none;border:none;color:#ef4444;font-size:13px;cursor:pointer;padding:4px 8px;"><i class="fas fa-times"></i></button>' +
+        '</div>';
+      }).join('');
+    }
+
+    function addStockCategory() {
+      var input = document.getElementById('stock-new-cat');
+      var name = input.value.trim();
+      if (!name) return;
+      if (stockCategories.indexOf(name) >= 0) { input.value = ''; return; }
+      stockCategories.push(name);
+      input.value = '';
+      renderStockCatList();
+      renderStockCatFilterBar();
+      populateStockCategorySelect();
+      saveStockToFirebase();
+    }
+
+    function removeStockCategory(idx) {
+      stockCategories.splice(idx, 1);
+      renderStockCatList();
+      renderStockCatFilterBar();
+      populateStockCategorySelect();
+      saveStockToFirebase();
+    }
+
+    // Persistence for stock (localStorage + Firebase)
+    function saveStockToFirebase() {
+      localSave('stockData', { items: stockItems, categories: stockCategories });
+      if (!window.fbDb || !window.fbUid) return;
+      firebase.database().ref('users/' + window.fbUid + '/stock').set({
+        items: stockItems,
+        categories: stockCategories
+      });
+    }
+
+    function loadStockFromFirebase() {
+      if (!window.fbDb || !window.fbUid) return;
+      firebase.database().ref('users/' + window.fbUid + '/stock').once('value').then(function(snap) {
+        var data = snap.val();
+        if (data) {
+          if (data.items) stockItems = data.items;
+          if (data.categories) stockCategories = data.categories;
+          renderStockCatFilterBar();
+          renderStockList();
+        }
+      });
+    }
+
+    function initStockTab() {
+      renderStockCatFilterBar();
+      renderStockList();
+    }
+
     // ========== Food Tab: TMH Food List ==========
     var tmhFoodDB = [
       // 穀品 Starch
@@ -6437,6 +6762,7 @@
       initFormulaGrid();
       initSuppDropdowns();
       populateFoodCategories();
+      initStockTab();
 
       // Set default dates to today
       var todayStr = new Date().toISOString().split('T')[0];
