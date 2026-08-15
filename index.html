@@ -300,6 +300,7 @@
         <div class="segment-control" id="bw-toggle" style="margin-bottom:8px;">
           <button class="segment-btn active" onclick="setReqBWSource('actual')" id="bw-toggle-actual">Actual BW</button>
           <button class="segment-btn" onclick="setReqBWSource('adjusted')" id="bw-toggle-adjusted">Adjusted BW</button>
+          <button class="segment-btn" onclick="setReqBWSource('estimated')" id="bw-toggle-estimated">Est. BW</button>
           <button class="segment-btn" onclick="setReqBWSource('custom')" id="bw-toggle-custom">Custom</button>
         </div>
         <input type="number" class="input-field" id="custom-bw-input" placeholder="Enter weight (kg)" step="0.1" style="display:none;margin-bottom:4px;" oninput="calculateRequirementsRealtime()" onfocus="this.select()">
@@ -3244,10 +3245,14 @@
       const estHeight = parseFloat(document.getElementById('est-height').value);
       if (!estBMI || !estHeight) {
         document.getElementById('res-est-weight').textContent = '--';
-        return;
+      } else {
+        const estWeight = estBMI * Math.pow(estHeight / 100, 2);
+        document.getElementById('res-est-weight').textContent = estWeight.toFixed(1);
       }
-      const estWeight = estBMI * Math.pow(estHeight / 100, 2);
-      document.getElementById('res-est-weight').textContent = estWeight.toFixed(1);
+      if (reqBWSource === 'estimated') {
+        updateReqBWDisplay();
+        calculateRequirementsRealtime();
+      }
     }
 
     let isConverting = false;
@@ -3284,12 +3289,13 @@
       isConverting = false;
     }
 
-    let reqBWSource = 'actual'; // 'actual', 'adjusted', or 'custom'
+    let reqBWSource = 'actual'; // 'actual', 'adjusted', 'estimated', or 'custom'
 
     function setReqBWSource(source) {
       reqBWSource = source;
       document.getElementById('bw-toggle-actual').classList.toggle('active', source === 'actual');
       document.getElementById('bw-toggle-adjusted').classList.toggle('active', source === 'adjusted');
+      document.getElementById('bw-toggle-estimated').classList.toggle('active', source === 'estimated');
       document.getElementById('bw-toggle-custom').classList.toggle('active', source === 'custom');
       var customInput = document.getElementById('custom-bw-input');
       customInput.style.display = source === 'custom' ? '' : 'none';
@@ -3303,6 +3309,9 @@
         return parseFloat(document.getElementById('actual-weight').value);
       } else if (reqBWSource === 'custom') {
         return parseFloat(document.getElementById('custom-bw-input').value);
+      } else if (reqBWSource === 'estimated') {
+        const txt = document.getElementById('res-est-weight').textContent;
+        return txt !== '--' ? parseFloat(txt) : NaN;
       } else {
         const txt = document.getElementById('res-adjusted-bw').textContent;
         return txt !== '--' ? parseFloat(txt) : NaN;
