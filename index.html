@@ -524,6 +524,7 @@
           <div class="ref-grid">
             <div class="ref-item"><span class="ref-label">Energy:</span><span class="ref-value" id="ref-energy-val">--</span></div>
             <div class="ref-item"><span class="ref-label">Protein:</span><span class="ref-value" id="ref-protein-val">--</span></div>
+            <div class="ref-item"><span class="ref-label">Safe Intake:</span><span class="ref-value" id="ref-safe-intake-val" style="font-size:12px;">--</span></div>
             <div class="ref-item"><span class="ref-label">Fluid:</span><span class="ref-value" id="ref-fluid-val">--</span></div>
           </div>
         </div>
@@ -594,7 +595,7 @@
       <div id="ped-req-results" class="result-box">
         <div class="result-grid">
           <div class="result-item"><div class="result-value" id="ped-energy-result">--</div><div class="result-label">Energy (kcal/day)</div></div>
-          <div class="result-item"><div class="result-value" id="ped-protein-result">--</div><div class="result-label">Protein (g/day)</div></div>
+          <div class="result-item"><div class="result-value" id="ped-protein-result">--</div><div class="result-label">Protein (g/day)</div><div class="result-sub" id="ped-protein-rni" style="font-size:11px;color:var(--text-secondary);margin-top:2px;"></div></div>
           <div class="result-item full"><div class="result-value" id="ped-fluid-result">--</div><div class="result-label">Fluid (mL/day)</div></div>
         </div>
       </div>
@@ -2479,6 +2480,105 @@
       }
     };
 
+    // Protein RNI (g/day) by age - from HK RNI table
+    const proteinRNIData = {
+      // months ranges
+      months: [
+        { min: 0, max: 3, value: 12.5 },
+        { min: 4, max: 6, value: 12.7 },
+        { min: 7, max: 9, value: 13.7 },
+        { min: 10, max: 12, value: 14.9 }
+      ],
+      // years ranges (sex-neutral up to 10)
+      yearsNeutral: [
+        { min: 1, max: 3, value: 14.5 },
+        { min: 4, max: 6, value: 19.7 },
+        { min: 7, max: 10, value: 28.3 }
+      ],
+      // years ranges (sex-specific from 11+)
+      yearsMale: [
+        { min: 11, max: 14, value: 42.1 },
+        { min: 15, max: 18, value: 55.2 }
+      ],
+      yearsFemale: [
+        { min: 11, max: 14, value: 41.2 },
+        { min: 15, max: 18, value: 45.0 }
+      ]
+    };
+
+    function getProteinRNI(ageMonths, gender) {
+      if (ageMonths <= 12) {
+        for (var i = 0; i < proteinRNIData.months.length; i++) {
+          var r = proteinRNIData.months[i];
+          if (ageMonths >= r.min && ageMonths <= r.max) return r.value;
+        }
+        return null;
+      }
+      var ageYears = ageMonths / 12;
+      // Check sex-neutral ranges first (1-10 years)
+      for (var j = 0; j < proteinRNIData.yearsNeutral.length; j++) {
+        var rn = proteinRNIData.yearsNeutral[j];
+        if (ageYears >= rn.min && ageYears <= rn.max) return rn.value;
+      }
+      // Check sex-specific ranges (11+)
+      var sexData = gender === 'male' ? proteinRNIData.yearsMale : proteinRNIData.yearsFemale;
+      for (var k = 0; k < sexData.length; k++) {
+        var rs = sexData[k];
+        if (ageYears >= rs.min && ageYears <= rs.max) return rs.value;
+      }
+      return null;
+    }
+
+    // WHO/FAO/UNU (2007) Safe level of protein intake (g/kg/day)
+    const proteinSafeIntakeData = {
+      months: {
+        1: 1.77, 2: 1.50, 3: 1.36, 4: 1.24, 5: 1.14, 6: 1.14
+        // 7-11 months: 1.14 (not weaned) or 1.31 (weaned)
+      },
+      monthsWeaned: 1.31,   // 7-11 months weaned
+      monthsNotWeaned: 1.14, // 7-11 months not weaned
+      years: {
+        1: 1.14, 1.5: 1.03, 2: 0.97, 3: 0.90,
+        4: 0.86, 5: 0.85, 6: 0.89, 7: 0.91,
+        8: 0.92, 9: 0.92, 10: 0.91
+      },
+      yearsMale: { 11: 0.91, 12: 0.90, 13: 0.90, 14: 0.89, 15: 0.88, 16: 0.87, 17: 0.86, 18: 0.85 },
+      yearsFemale: { 11: 0.90, 12: 0.89, 13: 0.88, 14: 0.87, 15: 0.85, 16: 0.84, 17: 0.83, 18: 0.82 }
+    };
+
+    // Returns { factor, factorWeaned?, isWeaning? } or null
+    function getProteinSafeIntake(ageMonths, gender) {
+      if (ageMonths >= 7 && ageMonths <= 11) {
+        return { factor: proteinSafeIntakeData.monthsNotWeaned, factorWeaned: proteinSafeIntakeData.monthsWeaned, isWeaning: true };
+      }
+      if (ageMonths >= 1 && ageMonths <= 6) {
+        var mKey = Math.round(ageMonths);
+        if (proteinSafeIntakeData.months[mKey] != null) {
+          return { factor: proteinSafeIntakeData.months[mKey] };
+        }
+        return null;
+      }
+      // 12 months = 1 year
+      var ageYears = ageMonths / 12;
+      if (ageYears <= 10) {
+        // Find closest year key
+        var bestKey = null, bestDist = 999;
+        var keys = Object.keys(proteinSafeIntakeData.years);
+        for (var i = 0; i < keys.length; i++) {
+          var k = parseFloat(keys[i]);
+          var dist = Math.abs(k - ageYears);
+          if (dist < bestDist) { bestDist = dist; bestKey = k; }
+        }
+        if (bestKey != null) return { factor: proteinSafeIntakeData.years[bestKey] };
+        return null;
+      }
+      // 11+ years: sex-specific
+      var yKey = Math.max(11, Math.min(18, Math.round(ageYears)));
+      var sexData = gender === 'male' ? proteinSafeIntakeData.yearsMale : proteinSafeIntakeData.yearsFemale;
+      if (sexData[yKey] != null) return { factor: sexData[yKey] };
+      return null;
+    }
+
     function getFluidRef(ageMonths, weight) {
       if (ageMonths < 1) return '20-30 mL/kg/d (1st day)';
       if (ageMonths < 6) return '150 mL/kg/d';
@@ -2876,6 +2976,7 @@
       if (ageValue == null || isNaN(ageValue) || ageValue < 0) {
         document.getElementById('ref-energy-val').textContent = '--';
         document.getElementById('ref-protein-val').textContent = '--';
+        document.getElementById('ref-safe-intake-val').textContent = '--';
         document.getElementById('ref-fluid-val').textContent = '--';
         return;
       }
@@ -2920,8 +3021,26 @@
       // Get fluid reference
       const fluid = getFluidRef(ageMonths, weight);
 
+      // Get protein RNI (g/day)
+      const rniVal = getProteinRNI(ageMonths, rv.gender);
+      if (rniVal != null) {
+        protein += (protein !== '--' ? ' | RNI ' : 'RNI ') + rniVal + ' g/d';
+      }
+
+      // Get safe intake reference
+      var safeIntakeText = '--';
+      var safeIntakeObj = getProteinSafeIntake(ageMonths, rv.gender);
+      if (safeIntakeObj) {
+        if (safeIntakeObj.isWeaning) {
+          safeIntakeText = safeIntakeObj.factorWeaned + ' (weaned) / ' + safeIntakeObj.factor + ' (not weaned) g/kg/d';
+        } else {
+          safeIntakeText = safeIntakeObj.factor + ' g/kg/d';
+        }
+      }
+
       document.getElementById('ref-energy-val').textContent = energy;
       document.getElementById('ref-protein-val').textContent = protein;
+      document.getElementById('ref-safe-intake-val').textContent = safeIntakeText;
       document.getElementById('ref-fluid-val').textContent = fluid;
 
       // Auto-populate factor inputs only when age or gender changes
@@ -3020,6 +3139,33 @@
       document.getElementById('ped-energy-result').textContent = rawEnergy != null ? Math.round(rawEnergy * energyAdj) : '--';
       document.getElementById('ped-protein-result').textContent = rawProtein != null ? (rawProtein * proteinAdj).toFixed(1) : '--';
       document.getElementById('ped-fluid-result').textContent = rawFluid != null ? Math.round(rawFluid * fluidAdj) : '--';
+
+      // Show RNI and Safe Intake below protein result
+      var ageMonthsForRNI = rv.ageUnit === 'years' ? rv.ageValue * 12 : rv.ageValue;
+      var hasAge = rv.ageValue != null && !isNaN(rv.ageValue) && rv.ageValue >= 0;
+      var rniValue = hasAge ? getProteinRNI(ageMonthsForRNI, rv.gender) : null;
+      var safeObj = hasAge ? getProteinSafeIntake(ageMonthsForRNI, rv.gender) : null;
+      var rniEl = document.getElementById('ped-protein-rni');
+      if (rniEl) {
+        var lines = [];
+        if (rniValue != null) lines.push('RNI: ' + rniValue + ' g/d');
+        if (safeObj && weight) {
+          if (safeObj.isWeaning) {
+            var valW = (weight * safeObj.factorWeaned).toFixed(1);
+            var valNW = (weight * safeObj.factor).toFixed(1);
+            lines.push('Safe: ' + valW + ' (weaned) / ' + valNW + ' (not weaned)');
+          } else {
+            lines.push('Safe: ' + (weight * safeObj.factor).toFixed(1) + ' g/d');
+          }
+        } else if (safeObj && !weight) {
+          if (safeObj.isWeaning) {
+            lines.push('Safe: ' + safeObj.factorWeaned + ' (weaned) / ' + safeObj.factor + ' (not weaned) g/kg/d');
+          } else {
+            lines.push('Safe: ' + safeObj.factor + ' g/kg/d');
+          }
+        }
+        rniEl.innerHTML = lines.join('<br>');
+      }
     }
 
     function switchTab(tabName) {
