@@ -14,6 +14,8 @@
   <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700&family=SF+Pro+Text:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <!-- PDF.js for rendering growth charts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <!-- SheetJS for Excel import/export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <!-- Firebase SDK (compat for simpler API) -->
@@ -477,36 +479,37 @@
       <div class="section-divider"></div>
       <!-- Growth Charts (HK2020) -->
       <div class="input-group">
-        <label class="input-label">Growth Chart (HK2020)</label>
-        <div class="segment-control" id="gc-type-toggle">
-          <button class="segment-btn active" onclick="setGrowthChartType('weight')" id="gc-type-weight">Weight</button>
-          <button class="segment-btn" onclick="setGrowthChartType('height')" id="gc-type-height">Height</button>
-          <button class="segment-btn" onclick="setGrowthChartType('bmi')" id="gc-type-bmi">BMI</button>
-        </div>
+        <label class="input-label">Growth Charts (HK 2020)</label>
       </div>
       <div id="gc-chart-area" style="min-height:40px;">
         <div id="gc-info" style="text-align:center;font-size:13px;color:var(--text-secondary);padding:12px 0;">
-          Enter age &amp; sex to view chart
+          Enter age &amp; sex to view charts
         </div>
-        <div id="gc-chart-wrapper" style="display:none;">
-          <div id="gc-range-label" style="font-size:13px;font-weight:600;color:var(--accent);text-align:center;padding:2px 0 6px;"></div>
-          <div id="gc-loading" style="text-align:center;padding:40px 0;color:var(--text-secondary);font-size:13px;display:none;">
-            <i class="fas fa-spinner fa-spin" style="font-size:20px;margin-bottom:8px;display:block;"></i>Loading chart...
+        <!-- Weight chart -->
+        <div id="gc-weight-wrapper" style="display:none;margin-bottom:12px;">
+          <div id="gc-weight-label" style="font-size:13px;font-weight:600;color:var(--accent);text-align:center;padding:2px 0 6px;"></div>
+          <div id="gc-weight-loading" style="text-align:center;padding:30px 0;color:var(--text-secondary);font-size:13px;display:none;">
+            <i class="fas fa-spinner fa-spin" style="font-size:18px;margin-bottom:6px;display:block;"></i>Loading weight chart...
           </div>
-          <img id="gc-chart-img" style="width:100%;border-radius:8px;border:1px solid var(--border);display:none;cursor:pointer;" alt="Growth Chart" onclick="openGrowthChartFullscreen()">
-          <div id="gc-error" style="text-align:center;padding:20px 0;display:none;">
-            <p style="color:var(--text-secondary);font-size:13px;margin-bottom:10px;">Could not render chart inline</p>
-            <a id="gc-fallback-link" href="" target="_blank" style="display:inline-block;padding:8px 20px;background:var(--accent);color:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;">Open Chart ↗</a>
+          <canvas id="gc-weight-canvas" style="width:100%;border-radius:8px;border:1px solid var(--border);display:none;cursor:pointer;" onclick="openGrowthChartFullscreen('weight')"></canvas>
+        </div>
+        <!-- Height chart -->
+        <div id="gc-height-wrapper" style="display:none;">
+          <div id="gc-height-label" style="font-size:13px;font-weight:600;color:var(--accent);text-align:center;padding:2px 0 6px;"></div>
+          <div id="gc-height-loading" style="text-align:center;padding:30px 0;color:var(--text-secondary);font-size:13px;display:none;">
+            <i class="fas fa-spinner fa-spin" style="font-size:18px;margin-bottom:6px;display:block;"></i>Loading height chart...
           </div>
+          <canvas id="gc-height-canvas" style="width:100%;border-radius:8px;border:1px solid var(--border);display:none;cursor:pointer;" onclick="openGrowthChartFullscreen('height')"></canvas>
         </div>
       </div>
-      <!-- Fullscreen chart overlay -->
-      <div id="gc-fullscreen" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.92);overflow:auto;-webkit-overflow-scrolling:touch;" onclick="closeGrowthChartFullscreen()">
-        <div style="position:sticky;top:0;display:flex;justify-content:flex-end;padding:12px 16px;z-index:1;">
+      <!-- Fullscreen chart overlay with pinch-to-zoom -->
+      <div id="gc-fullscreen" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.92);overflow:hidden;touch-action:none;">
+        <div style="position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:12px 16px;z-index:2;">
+          <span id="gc-fs-zoom-label" style="color:rgba(255,255,255,0.7);font-size:12px;font-weight:500;">Pinch to zoom • Double-tap to reset</span>
           <button onclick="closeGrowthChartFullscreen()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;">✕</button>
         </div>
-        <div style="display:flex;align-items:flex-start;justify-content:center;padding:0 8px 40px;">
-          <img id="gc-fullscreen-img" style="max-width:100%;height:auto;" alt="Growth Chart">
+        <div id="gc-fs-container" style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;">
+          <img id="gc-fullscreen-img" style="transform-origin:0 0;max-width:100%;max-height:100%;user-select:none;-webkit-user-drag:none;" draggable="false" alt="Growth Chart">
         </div>
       </div>
       <div class="section-divider"></div>
@@ -706,34 +709,65 @@
         </div>
       </div>
       <div class="input-group">
-        <label class="input-label">Select Formula</label>
-        <select class="input-field" id="strength-formula-select" onchange="calculateCustomStrength()">
-          <option value="">-- Select Formula --</option>
-        </select>
-      </div>
-      <div class="input-row">
-        <div class="input-group">
-          <label class="input-label">Target Strength</label>
-          <input type="number" class="input-field" id="target-strength" placeholder="e.g. 1.1" step="0.05" value="1.0" oninput="calculateCustomStrength()">
-        </div>
-        <div class="input-group">
-          <label class="input-label">Target Volume (mL)</label>
-          <input type="number" class="input-field" id="target-volume" placeholder="e.g. 150" step="1" oninput="calculateCustomStrength()">
+        <label class="input-label">Method</label>
+        <div class="segment-control" style="margin-bottom:8px;">
+          <button class="segment-btn active" onclick="setStrengthMethod('scoops')" id="str-method-scoops">Extra Scoops</button>
+          <button class="segment-btn" onclick="setStrengthMethod('concentrate')" id="str-method-concentrate">Concentrate</button>
         </div>
       </div>
       <div class="input-group">
-        <label class="input-label">Dilution Factor (÷)</label>
-        <select class="input-field" id="dilution-factor" onchange="calculateCustomStrength()">
-          <option value="1">None (Standard)</option>
-          <option value="0.9">÷ 0.9</option>
-          <option value="0.84">÷ 0.84</option>
+        <label class="input-label">Select Formula</label>
+        <select class="input-field" id="strength-formula-select" onchange="calculateCustomStrength();updateReverseSyncBtn()">
+          <option value="">-- Select Formula --</option>
         </select>
+      </div>
+      <!-- Extra Scoops method inputs -->
+      <div id="str-scoops-inputs">
+        <div class="input-row">
+          <div class="input-group">
+            <label class="input-label">Target Strength</label>
+            <input type="number" class="input-field" id="target-strength" placeholder="e.g. 1.1" step="0.05" value="1.0" oninput="calculateCustomStrength()">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Target Volume (mL)</label>
+            <input type="number" class="input-field" id="target-volume" placeholder="e.g. 150" step="1" oninput="calculateCustomStrength()">
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Expansion Factor</label>
+          <select class="input-field" id="dilution-factor" onchange="calculateCustomStrength()">
+            <option value="1">None (1.0)</option>
+            <option value="0.9">0.9</option>
+            <option value="0.84">0.84</option>
+          </select>
+        </div>
+      </div>
+      <!-- Concentrate method inputs -->
+      <div id="str-concentrate-inputs" style="display:none;">
+        <div class="input-row">
+          <div class="input-group">
+            <label class="input-label">Target Strength</label>
+            <input type="number" class="input-field" id="conc-target-strength" placeholder="e.g. 1.1" step="0.05" value="1.1" oninput="calculateCustomStrength()">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Usual Scoops</label>
+            <input type="number" class="input-field" id="conc-usual-scoops" placeholder="e.g. 5" step="0.5" oninput="calculateCustomStrength()">
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Expansion Factor</label>
+          <select class="input-field" id="conc-expansion-factor" onchange="calculateCustomStrength()">
+            <option value="1">None (1.0)</option>
+            <option value="0.9" selected>0.9</option>
+            <option value="0.84">0.84</option>
+          </select>
+        </div>
       </div>
       <div id="custom-strength-result" class="result-box" style="display: none;">
         <div class="highlight-box" id="strength-instruction">--</div>
         <div class="ref-display" style="margin-top: 12px;">
           <div class="ref-header">Calculation Details</div>
-          <div class="ref-grid">
+          <div class="ref-grid" id="strength-details-grid">
             <div class="ref-item"><span class="ref-label">Scoops needed:</span><span class="ref-value" id="scoops-needed">--</span></div>
             <div class="ref-item"><span class="ref-label">Water (mL):</span><span class="ref-value" id="water-needed">--</span></div>
             <div class="ref-item"><span class="ref-label">Final kcal/100mL:</span><span class="ref-value" id="final-kcal">--</span></div>
@@ -741,7 +775,7 @@
         </div>
       </div>
       <div class="formula-note" style="margin-top: 12px;">
-        <small><i class="fas fa-info-circle"></i> Standard dilution: 1 scoop powder + water to make final volume</small>
+        <small><i class="fas fa-info-circle"></i> Standard dilution: 1 scoop powder + water (not final volume)</small>
       </div>
     </div>
 
@@ -755,9 +789,12 @@
       </div>
       <div class="input-group">
         <label class="input-label">Select Formula</label>
-        <select class="input-field" id="reverse-formula-select" onchange="calculateReverseNutrition()">
-          <option value="">-- Select Formula --</option>
-        </select>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <select class="input-field" id="reverse-formula-select" onchange="calculateReverseNutrition();updateReverseSyncBtn()" style="flex:1;">
+            <option value="">-- Select Formula --</option>
+          </select>
+          <button class="supp-add-btn" id="reverse-sync-btn" onclick="syncReverseFromStrength()" style="display:none;white-space:nowrap;padding:8px 10px;font-size:11px;background:var(--accent-light);color:var(--accent);"><i class="fas fa-sync-alt" style="font-size:9px;"></i> Sync</button>
+        </div>
       </div>
       <div class="input-row">
         <div class="input-group">
@@ -1641,8 +1678,8 @@
               <th style="min-width:56px;">Starch</th>
               <th style="min-width:56px;">Meat</th>
               <th style="min-width:56px;">Veg</th>
-              <th style="min-width:56px;">Fruit</th>
               <th style="min-width:56px;">Fat</th>
+              <th style="min-width:56px;">Fruit</th>
             </tr>
           </thead>
           <tbody>
@@ -1651,48 +1688,48 @@
               <td><input type="number" class="input-field" id="dd-b-starch" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
               <td><input type="number" class="input-field" id="dd-b-meat" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
               <td><input type="number" class="input-field" id="dd-b-veg" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
-              <td><input type="number" class="input-field" id="dd-b-fruit" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
               <td><input type="number" class="input-field" id="dd-b-fat" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-b-fruit" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
             </tr>
             <tr>
               <td style="text-align:left;font-weight:600;">MS</td>
               <td><input type="number" class="input-field" id="dd-ms-starch" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
               <td><input type="number" class="input-field" id="dd-ms-meat" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
               <td><input type="number" class="input-field" id="dd-ms-veg" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
-              <td><input type="number" class="input-field" id="dd-ms-fruit" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
               <td><input type="number" class="input-field" id="dd-ms-fat" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-ms-fruit" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
             </tr>
             <tr>
               <td style="text-align:left;font-weight:600;">L</td>
               <td><input type="number" class="input-field" id="dd-l-starch" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
               <td><input type="number" class="input-field" id="dd-l-meat" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
               <td><input type="number" class="input-field" id="dd-l-veg" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
-              <td><input type="number" class="input-field" id="dd-l-fruit" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
               <td><input type="number" class="input-field" id="dd-l-fat" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-l-fruit" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
             </tr>
             <tr>
               <td style="text-align:left;font-weight:600;">AS</td>
               <td><input type="number" class="input-field" id="dd-as-starch" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
               <td><input type="number" class="input-field" id="dd-as-meat" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
               <td><input type="number" class="input-field" id="dd-as-veg" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
-              <td><input type="number" class="input-field" id="dd-as-fruit" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
               <td><input type="number" class="input-field" id="dd-as-fat" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-as-fruit" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
             </tr>
             <tr>
               <td style="text-align:left;font-weight:600;">D</td>
               <td><input type="number" class="input-field" id="dd-d-starch" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
               <td><input type="number" class="input-field" id="dd-d-meat" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
               <td><input type="number" class="input-field" id="dd-d-veg" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
-              <td><input type="number" class="input-field" id="dd-d-fruit" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
               <td><input type="number" class="input-field" id="dd-d-fat" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-d-fruit" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
             </tr>
             <tr>
               <td style="text-align:left;font-weight:600;">NS</td>
               <td><input type="number" class="input-field" id="dd-ns-starch" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
               <td><input type="number" class="input-field" id="dd-ns-meat" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
               <td><input type="number" class="input-field" id="dd-ns-veg" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
-              <td><input type="number" class="input-field" id="dd-ns-fruit" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
               <td><input type="number" class="input-field" id="dd-ns-fat" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
+              <td><input type="number" class="input-field" id="dd-ns-fruit" min="0" step="0.5" value="" placeholder="0" style="width:48px;text-align:center;padding:6px 2px;font-size:15px;" oninput="calcDraftDiet()" onfocus="this.select()"></td>
             </tr>
           </tbody>
           <tfoot>
@@ -1701,15 +1738,15 @@
               <td id="dd-total-starch">0</td>
               <td id="dd-total-meat">0</td>
               <td id="dd-total-veg">0</td>
-              <td id="dd-total-fruit">0</td>
               <td id="dd-total-fat">0</td>
+              <td id="dd-total-fruit">0</td>
             </tr>
           </tfoot>
         </table>
       </div>
       <div class="formula-note" style="margin-top:10px;margin-bottom:0;font-size:11px;line-height:1.5;">
         <i class="fas fa-info-circle"></i>
-        Starch = 10g CHO + 1g Pro &nbsp;|&nbsp; Meat = 7g Pro + 5g Fat &nbsp;|&nbsp; Veg = 5g CHO &nbsp;|&nbsp; Fruit = 10g CHO &nbsp;|&nbsp; Fat = 5g Fat
+        Starch = 10g CHO + 1g Pro &nbsp;|&nbsp; Meat = 7g Pro + 5g Fat &nbsp;|&nbsp; Veg = 0g CHO &nbsp;|&nbsp; Fat = 5g Fat &nbsp;|&nbsp; Fruit = 10g CHO
       </div>
       <div id="dd-results" class="result-box" style="margin-top:12px;">
         <div style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text-primary);">
@@ -2601,45 +2638,21 @@
     let pedClinicalMode = 'normal'; // 'normal' or 'critical'
     let pedDobAgeMonths = null; // age in months computed from DOB
     let critPhase = 'acute'; // 'acute', 'stable', 'recovery'
-    let growthChartType = 'weight'; // 'weight', 'height', 'bmi'
-
-    // HK2020 Growth Chart image paths (relative to index.html)
-    var growthChartURLs = {
-      female: {
-        weight: {
-          '0-2': './charts/girls_weight_0-2.png',
-          '0-5': './charts/girls_weight_0-5.png',
-          '0-18': './charts/girls_weight_0-18.png'
-        },
-        height: {
-          '0-2': './charts/girls_height_0-2.png',
-          '0-5': './charts/girls_height_0-5.png',
-          '0-18': './charts/girls_height_0-18.png'
-        },
-        bmi: {
-          '0-2': './charts/girls_bmi_0-2.png',
-          '0-5': './charts/girls_bmi_0-5.png',
-          '0-18': './charts/girls_bmi_0-18.png'
-        }
-      },
+    // HK2020 Growth Chart PDF page mapping (1-indexed)
+    // PDF: https://pfst.cf2.poecdn.net/base/application/86b8536b52800d63ed16b8c70c683a4e6e61e96f4ca75ae36cf5dbfd46230899
+    var gcPdfUrl = 'https://pfst.cf2.poecdn.net/base/application/86b8536b52800d63ed16b8c70c683a4e6e61e96f4ca75ae36cf5dbfd46230899';
+    var gcPageMap = {
       male: {
-        weight: {
-          '0-2': './charts/boys_weight_0-2.png',
-          '0-5': './charts/boys_weight_0-5.png',
-          '0-18': './charts/boys_weight_0-18.png'
-        },
-        height: {
-          '0-2': './charts/boys_height_0-2.png',
-          '0-5': './charts/boys_height_0-5.png',
-          '0-18': './charts/boys_height_0-18.png'
-        },
-        bmi: {
-          '0-2': './charts/boys_bmi_0-2.png',
-          '0-5': './charts/boys_bmi_0-5.png',
-          '0-18': './charts/boys_bmi_0-18.png'
-        }
+        weight: { '0-2': 4, '2-18': 5 },
+        height: { '0-2': 6, '2-18': 7 }
+      },
+      female: {
+        weight: { '0-2': 14, '2-18': 15 },
+        height: { '0-2': 16, '2-18': 17 }
       }
     };
+    var gcPdfDoc = null;
+    var gcRenderedKey = ''; // track what's currently rendered to avoid re-renders
 
     function setPedAgeMethod(method) {
       pedAgeMethod = method;
@@ -2736,94 +2749,118 @@
       }
     }
 
-    var gcCurrentUrl = null;
-
-    function setGrowthChartType(type) {
-      growthChartType = type;
-      document.getElementById('gc-type-weight').classList.toggle('active', type === 'weight');
-      document.getElementById('gc-type-height').classList.toggle('active', type === 'height');
-      document.getElementById('gc-type-bmi').classList.toggle('active', type === 'bmi');
-      updateGrowthChart();
+    // Initialize PDF.js worker
+    if (typeof pdfjsLib !== 'undefined') {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     }
 
-    function getGrowthChartRange(ageYears) {
-      if (ageYears <= 2) return '0-2';
-      if (ageYears <= 5) return '0-5';
-      return '0-18';
+    function getGcRange(ageYears) {
+      return ageYears <= 2 ? '0-2' : '2-18';
     }
 
-    function updateGrowthChart() {
+    async function loadGcPdf() {
+      if (gcPdfDoc) return gcPdfDoc;
+      gcPdfDoc = await pdfjsLib.getDocument(gcPdfUrl).promise;
+      return gcPdfDoc;
+    }
+
+    async function renderPdfPageToCanvas(pageNum, canvas) {
+      var pdf = await loadGcPdf();
+      var page = await pdf.getPage(pageNum);
+      var scale = 2; // render at 2x for sharpness
+      var viewport = page.getViewport({ scale: scale });
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      var ctx = canvas.getContext('2d');
+      await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+    }
+
+    async function updateGrowthChart() {
       var rv = getPedReqValues();
       var infoEl = document.getElementById('gc-info');
-      var wrapperEl = document.getElementById('gc-chart-wrapper');
-      var imgEl = document.getElementById('gc-chart-img');
-      var loadingEl = document.getElementById('gc-loading');
-      var errorEl = document.getElementById('gc-error');
+      var weightWrapper = document.getElementById('gc-weight-wrapper');
+      var heightWrapper = document.getElementById('gc-height-wrapper');
 
       if (rv.ageValue == null || isNaN(rv.ageValue) || rv.ageValue < 0) {
         infoEl.style.display = '';
-        infoEl.textContent = 'Enter age & sex to view chart';
-        wrapperEl.style.display = 'none';
+        infoEl.textContent = 'Enter age & sex to view charts';
+        weightWrapper.style.display = 'none';
+        heightWrapper.style.display = 'none';
+        gcRenderedKey = '';
         return;
       }
 
       var ageYears = rv.ageUnit === 'years' ? rv.ageValue : rv.ageValue / 12;
       var sex = rv.gender === 'male' ? 'male' : 'female';
-      var range = getGrowthChartRange(ageYears);
+      var range = getGcRange(ageYears);
 
-      var sexData = growthChartURLs[sex];
-      if (!sexData || !sexData[growthChartType]) {
-        infoEl.style.display = '';
-        infoEl.textContent = 'Chart data not available';
-        wrapperEl.style.display = 'none';
-        return;
-      }
+      // Build key to avoid unnecessary re-renders
+      var newKey = sex + '-' + range;
+      if (newKey === gcRenderedKey) return;
+      gcRenderedKey = newKey;
 
-      var url = sexData[growthChartType][range];
-      if (!url) {
-        var sexLabel = sex === 'male' ? 'Boys' : 'Girls';
-        var typeLabel = { weight: 'Weight', height: 'Height', bmi: 'BMI' }[growthChartType];
-        infoEl.style.display = '';
-        infoEl.textContent = sexLabel + ' ' + typeLabel + ' chart (' + range + 'y) not yet uploaded';
-        wrapperEl.style.display = 'none';
-        return;
-      }
-
-      // Skip if same URL already displayed
-      if (url === gcCurrentUrl) return;
-      gcCurrentUrl = url;
+      var sexLabel = sex === 'male' ? 'Boys' : 'Girls';
+      var rangeLabel = range === '0-2' ? '0–2 years' : '2–18 years';
+      var heightTypeLabel = range === '0-2' ? 'Length' : 'Height';
 
       infoEl.style.display = 'none';
-      wrapperEl.style.display = '';
+      weightWrapper.style.display = '';
+      heightWrapper.style.display = '';
 
-      var typeLabels = { weight: 'Weight', height: 'Length/Height', bmi: 'BMI' };
-      var sexLbl = sex === 'male' ? 'Boys' : 'Girls';
-      document.getElementById('gc-range-label').textContent = sexLbl + ' ' + typeLabels[growthChartType] + ' (' + range + ' years)';
+      // Set labels
+      document.getElementById('gc-weight-label').textContent = sexLabel + ' Weight (' + rangeLabel + ')';
+      document.getElementById('gc-height-label').textContent = sexLabel + ' ' + heightTypeLabel + ' (' + rangeLabel + ')';
 
-      // Show loading while image loads
-      loadingEl.style.display = '';
-      imgEl.style.display = 'none';
-      errorEl.style.display = 'none';
+      // Show loading states
+      var weightLoading = document.getElementById('gc-weight-loading');
+      var heightLoading = document.getElementById('gc-height-loading');
+      var weightCanvas = document.getElementById('gc-weight-canvas');
+      var heightCanvas = document.getElementById('gc-height-canvas');
 
-      imgEl.onload = function() {
-        if (imgEl.src.indexOf(url) === -1 && !imgEl.src.endsWith(url)) return;
-        loadingEl.style.display = 'none';
-        imgEl.style.display = '';
-        errorEl.style.display = 'none';
-      };
-      imgEl.onerror = function() {
-        loadingEl.style.display = 'none';
-        imgEl.style.display = 'none';
-        errorEl.style.display = '';
-        document.getElementById('gc-fallback-link').href = url;
-      };
-      imgEl.src = url;
+      weightLoading.style.display = '';
+      heightLoading.style.display = '';
+      weightCanvas.style.display = 'none';
+      heightCanvas.style.display = 'none';
+
+      try {
+        var pages = gcPageMap[sex];
+        var weightPage = pages.weight[range];
+        var heightPage = pages.height[range];
+
+        // Render both charts in parallel
+        await Promise.all([
+          renderPdfPageToCanvas(weightPage, weightCanvas).then(function() {
+            weightLoading.style.display = 'none';
+            weightCanvas.style.display = '';
+          }),
+          renderPdfPageToCanvas(heightPage, heightCanvas).then(function() {
+            heightLoading.style.display = 'none';
+            heightCanvas.style.display = '';
+          })
+        ]);
+      } catch (e) {
+        weightLoading.style.display = 'none';
+        heightLoading.style.display = 'none';
+        infoEl.style.display = '';
+        infoEl.textContent = 'Could not load growth charts';
+        weightWrapper.style.display = 'none';
+        heightWrapper.style.display = 'none';
+        gcRenderedKey = '';
+        console.log('Growth chart error: ' + e.message);
+      }
     }
 
-    function openGrowthChartFullscreen() {
-      var img = document.getElementById('gc-chart-img');
-      if (!img.src) return;
-      document.getElementById('gc-fullscreen-img').src = img.src;
+    // Pinch-to-zoom state
+    var gcZoom = { scale: 1, x: 0, y: 0, startDist: 0, startScale: 1, startX: 0, startY: 0, panStartX: 0, panStartY: 0, isPinching: false, isPanning: false, lastTap: 0 };
+
+    function openGrowthChartFullscreen(chartType) {
+      var srcCanvas = document.getElementById('gc-' + chartType + '-canvas');
+      if (!srcCanvas || srcCanvas.width === 0) return;
+      // Convert canvas to data URL for img element
+      var img = document.getElementById('gc-fullscreen-img');
+      img.src = srcCanvas.toDataURL();
+      gcZoom.scale = 1; gcZoom.x = 0; gcZoom.y = 0;
+      applyGcZoomTransform();
       document.getElementById('gc-fullscreen').style.display = '';
       document.body.style.overflow = 'hidden';
     }
@@ -2831,7 +2868,118 @@
     function closeGrowthChartFullscreen() {
       document.getElementById('gc-fullscreen').style.display = 'none';
       document.body.style.overflow = '';
+      gcZoom.scale = 1; gcZoom.x = 0; gcZoom.y = 0;
     }
+
+    function applyGcZoomTransform() {
+      var img = document.getElementById('gc-fullscreen-img');
+      if (gcZoom.scale <= 1) {
+        img.style.transform = '';
+        img.style.transformOrigin = 'center center';
+        gcZoom.x = 0; gcZoom.y = 0;
+      } else {
+        img.style.transformOrigin = '0 0';
+        img.style.transform = 'translate(' + gcZoom.x + 'px, ' + gcZoom.y + 'px) scale(' + gcZoom.scale + ')';
+      }
+    }
+
+    function getTouchDist(t1, t2) {
+      var dx = t1.clientX - t2.clientX;
+      var dy = t1.clientY - t2.clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function getTouchMid(t1, t2) {
+      return { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 };
+    }
+
+    (function() {
+      var container = null;
+
+      function getContainer() {
+        if (!container) container = document.getElementById('gc-fs-container');
+        return container;
+      }
+
+      document.addEventListener('touchstart', function(e) {
+        var el = getContainer();
+        if (!el || document.getElementById('gc-fullscreen').style.display === 'none') return;
+        if (!el.contains(e.target)) return;
+
+        if (e.touches.length === 2) {
+          e.preventDefault();
+          gcZoom.isPinching = true;
+          gcZoom.isPanning = false;
+          gcZoom.startDist = getTouchDist(e.touches[0], e.touches[1]);
+          gcZoom.startScale = gcZoom.scale;
+          gcZoom.startX = gcZoom.x;
+          gcZoom.startY = gcZoom.y;
+          var mid = getTouchMid(e.touches[0], e.touches[1]);
+          gcZoom.panStartX = mid.x;
+          gcZoom.panStartY = mid.y;
+        } else if (e.touches.length === 1) {
+          // Double-tap detection
+          var now = Date.now();
+          if (now - gcZoom.lastTap < 300) {
+            e.preventDefault();
+            if (gcZoom.scale > 1) {
+              gcZoom.scale = 1; gcZoom.x = 0; gcZoom.y = 0;
+            } else {
+              gcZoom.scale = 2.5;
+              // Zoom toward tap point
+              var rect = el.getBoundingClientRect();
+              var tapX = e.touches[0].clientX - rect.left;
+              var tapY = e.touches[0].clientY - rect.top;
+              var img = document.getElementById('gc-fullscreen-img');
+              var imgRect = img.getBoundingClientRect();
+              gcZoom.x = -(tapX - rect.width / 2) * 1.5;
+              gcZoom.y = -(tapY - rect.height / 2) * 1.5;
+            }
+            applyGcZoomTransform();
+            gcZoom.lastTap = 0;
+            return;
+          }
+          gcZoom.lastTap = now;
+
+          if (gcZoom.scale > 1) {
+            e.preventDefault();
+            gcZoom.isPanning = true;
+            gcZoom.panStartX = e.touches[0].clientX;
+            gcZoom.panStartY = e.touches[0].clientY;
+            gcZoom.startX = gcZoom.x;
+            gcZoom.startY = gcZoom.y;
+          }
+        }
+      }, { passive: false });
+
+      document.addEventListener('touchmove', function(e) {
+        if (document.getElementById('gc-fullscreen').style.display === 'none') return;
+
+        if (gcZoom.isPinching && e.touches.length === 2) {
+          e.preventDefault();
+          var dist = getTouchDist(e.touches[0], e.touches[1]);
+          var newScale = gcZoom.startScale * (dist / gcZoom.startDist);
+          newScale = Math.max(1, Math.min(5, newScale));
+          gcZoom.scale = newScale;
+
+          // Pan while pinching
+          var mid = getTouchMid(e.touches[0], e.touches[1]);
+          gcZoom.x = gcZoom.startX + (mid.x - gcZoom.panStartX);
+          gcZoom.y = gcZoom.startY + (mid.y - gcZoom.panStartY);
+          applyGcZoomTransform();
+        } else if (gcZoom.isPanning && e.touches.length === 1) {
+          e.preventDefault();
+          gcZoom.x = gcZoom.startX + (e.touches[0].clientX - gcZoom.panStartX);
+          gcZoom.y = gcZoom.startY + (e.touches[0].clientY - gcZoom.panStartY);
+          applyGcZoomTransform();
+        }
+      }, { passive: false });
+
+      document.addEventListener('touchend', function(e) {
+        if (e.touches.length < 2) gcZoom.isPinching = false;
+        if (e.touches.length < 1) gcZoom.isPanning = false;
+      });
+    })();
 
     function buildSchofieldEqStr(gender, ageYears, weight, heightM, ree) {
       var hasHeight = heightM && !isNaN(heightM) && heightM > 0;
@@ -4344,6 +4492,48 @@
       return null;
     }
 
+    function buildAdultDropdownHTML(selectedVal) {
+      var html = '<option value="">-- Select --</option>';
+      var suppGroups = {};
+      suppDB.forEach(function(s) {
+        var cat = s.category || 'Adult Formula';
+        if (!suppGroups[cat]) suppGroups[cat] = [];
+        suppGroups[cat].push(s);
+      });
+      Object.keys(suppGroups).sort(function(a,b) {
+        if (a === 'Adult Formula') return -1;
+        if (b === 'Adult Formula') return 1;
+        return a.localeCompare(b);
+      }).forEach(function(cat) {
+        html += '<optgroup label="' + cat + '">';
+        suppGroups[cat].forEach(function(s) {
+          var key = 's:' + s.id;
+          var sel = (selectedVal === key) ? ' selected' : '';
+          html += '<option value="' + key + '"' + sel + '>' + s.name + '</option>';
+        });
+        html += '</optgroup>';
+      });
+      return html;
+    }
+
+    function buildPedDropdownHTML(selectedVal) {
+      var html = '<option value="">-- Select --</option>';
+      var currentCat = '';
+      formulaDatabase.forEach(function(f) {
+        if (f.category !== currentCat) {
+          if (currentCat !== '') html += '</optgroup>';
+          html += '<optgroup label="' + f.category + '">';
+          currentCat = f.category;
+        }
+        var displayName = f.nameCN ? f.name + ' (' + f.nameCN + ')' : f.name;
+        var key = 'f:' + f.id;
+        var sel = (selectedVal === key) ? ' selected' : '';
+        html += '<option value="' + key + '"' + sel + '>' + displayName + '</option>';
+      });
+      if (currentCat !== '') html += '</optgroup>';
+      return html;
+    }
+
     function buildCombinedDropdownHTML(selectedVal) {
       var html = '<option value="">-- Select --</option>';
       // Adult formulas grouped by category
@@ -4389,7 +4579,7 @@
         var sel = document.getElementById('supp-sel-' + i);
         if (sel) {
           var curVal = sel.value;
-          sel.innerHTML = buildCombinedDropdownHTML(curVal);
+          sel.innerHTML = buildAdultDropdownHTML(curVal);
         }
       }
     }
@@ -4645,12 +4835,12 @@
         var sel = document.getElementById('fm-sel-' + i);
         if (sel) {
           var curVal = sel.value;
-          sel.innerHTML = buildCombinedDropdownHTML(curVal);
+          sel.innerHTML = buildPedDropdownHTML(curVal);
         }
       }
-      // Populate calculator dropdowns
-      document.getElementById('strength-formula-select').innerHTML = buildCombinedDropdownHTML('');
-      document.getElementById('reverse-formula-select').innerHTML = buildCombinedDropdownHTML('');
+      // Populate calculator dropdowns (paediatric formulas only)
+      document.getElementById('strength-formula-select').innerHTML = buildPedDropdownHTML('');
+      document.getElementById('reverse-formula-select').innerHTML = buildPedDropdownHTML('');
     }
 
     // === Formula CRUD ===
@@ -5309,7 +5499,24 @@
       return null;
     }
 
+    let strengthMethod = 'scoops'; // 'scoops' or 'concentrate'
+
+    function setStrengthMethod(method) {
+      strengthMethod = method;
+      document.getElementById('str-method-scoops').classList.toggle('active', method === 'scoops');
+      document.getElementById('str-method-concentrate').classList.toggle('active', method === 'concentrate');
+      document.getElementById('str-scoops-inputs').style.display = method === 'scoops' ? '' : 'none';
+      document.getElementById('str-concentrate-inputs').style.display = method === 'concentrate' ? '' : 'none';
+      document.getElementById('custom-strength-result').style.display = 'none';
+      calculateCustomStrength();
+    }
+
     function calculateCustomStrength() {
+      if (strengthMethod === 'concentrate') {
+        calculateConcentrateStrength();
+        return;
+      }
+
       const formula = findProductByKey(document.getElementById('strength-formula-select').value);
       const strength = parseFloat(document.getElementById('target-strength').value);
       const targetVol = parseFloat(document.getElementById('target-volume').value);
@@ -5327,15 +5534,15 @@
         document.getElementById('strength-instruction').innerHTML = formula.dilution === 'RTF'
           ? '<i class="fas fa-info-circle"></i> This is a Ready-To-Feed formula (no mixing required)'
           : '<i class="fas fa-exclamation-circle"></i> Dilution info not available for this formula';
-        document.getElementById('scoops-needed').textContent = '--';
-        document.getElementById('water-needed').textContent = '--';
-        document.getElementById('final-kcal').textContent = '--';
+        document.getElementById('strength-details-grid').innerHTML =
+          '<div class="ref-item"><span class="ref-label">Scoops needed:</span><span class="ref-value">--</span></div>' +
+          '<div class="ref-item"><span class="ref-label">Water (mL):</span><span class="ref-value">--</span></div>' +
+          '<div class="ref-item"><span class="ref-label">Final kcal/100mL:</span><span class="ref-value">--</span></div>';
         resultDiv.style.display = 'block';
         return;
       }
 
       // Water needed = target volume × expansion factor (0.9 or 0.84)
-      // When water is divided by expansion factor, it gives the final target volume
       const waterNeeded = targetVol * dilutionFactor;
 
       // Calculate scoops needed based on water amount
@@ -5351,16 +5558,91 @@
       const waterRounded = Math.round(waterNeeded);
 
       // Generate instruction
-      let instruction = `<i class="fas fa-spoon"></i> ${scoopsRounded} scoop${scoopsRounded !== 1 ? 's' : ''} + ${waterRounded}mL water`;
+      let instruction = '<i class="fas fa-spoon"></i> ' + scoopsRounded + ' scoop' + (scoopsRounded !== 1 ? 's' : '') + ' + ' + waterRounded + 'mL water';
       if (strength !== 1) {
-        instruction += ` (${strength}× strength)`;
+        instruction += ' (' + strength + '\u00d7 strength)';
       }
 
       document.getElementById('strength-instruction').innerHTML = instruction;
-      document.getElementById('scoops-needed').textContent = scoopsRounded;
-      document.getElementById('water-needed').textContent = waterRounded + ' mL';
-      document.getElementById('final-kcal').textContent = Math.round(finalKcal) + ' kcal';
+      document.getElementById('strength-details-grid').innerHTML =
+        '<div class="ref-item"><span class="ref-label">Scoops needed:</span><span class="ref-value">' + scoopsRounded + '</span></div>' +
+        '<div class="ref-item"><span class="ref-label">Water (mL):</span><span class="ref-value">' + waterRounded + ' mL</span></div>' +
+        '<div class="ref-item"><span class="ref-label">Final kcal/100mL:</span><span class="ref-value">' + Math.round(finalKcal) + ' kcal</span></div>';
       resultDiv.style.display = 'block';
+    }
+
+    function calculateConcentrateStrength() {
+      const formula = findProductByKey(document.getElementById('strength-formula-select').value);
+      const targetStrength = parseFloat(document.getElementById('conc-target-strength').value);
+      const usualScoops = parseFloat(document.getElementById('conc-usual-scoops').value);
+      const expansionFactor = parseFloat(document.getElementById('conc-expansion-factor').value);
+      const resultDiv = document.getElementById('custom-strength-result');
+
+      if (!formula || !targetStrength || !usualScoops || targetStrength <= 0 || usualScoops <= 0) {
+        resultDiv.style.display = 'none';
+        return;
+      }
+
+      const mlPerScoop = parseDilution(formula.dilution);
+
+      if (!mlPerScoop) {
+        document.getElementById('strength-instruction').innerHTML = formula.dilution === 'RTF'
+          ? '<i class="fas fa-info-circle"></i> RTF formula cannot be concentrated'
+          : '<i class="fas fa-exclamation-circle"></i> Dilution info not available for this formula';
+        document.getElementById('strength-details-grid').innerHTML = '';
+        resultDiv.style.display = 'block';
+        return;
+      }
+
+      // Standard: usualScoops × mlPerScoop = total water at standard
+      var standardWater = usualScoops * mlPerScoop;
+      // Standard final volume = water / expansion factor
+      var standardFinalVol = standardWater / expansionFactor;
+      // For desired strength: new final volume = standard final / target strength
+      var newFinalVol = standardFinalVol / targetStrength;
+      // Final kcal per 100mL
+      var finalKcal = formula.kcal * targetStrength;
+
+      // Instruction: use same scoops, add water to make up to newFinalVol
+      var newFinalRounded = Math.round(newFinalVol * 10) / 10;
+      var standardFinalRounded = Math.round(standardFinalVol * 10) / 10;
+
+      var instruction = '<i class="fas fa-tint-slash"></i> ' + usualScoops + ' scoop' + (usualScoops !== 1 ? 's' : '') +
+        ', add water to <strong>' + newFinalRounded + ' mL</strong> total';
+      instruction += ' (' + targetStrength + '\u00d7 strength)';
+
+      // Water to add = new final volume × expansion factor
+      var waterToAdd = newFinalVol * expansionFactor;
+      var waterToAddRounded = Math.round(waterToAdd * 10) / 10;
+
+      document.getElementById('strength-instruction').innerHTML = instruction;
+      document.getElementById('strength-details-grid').innerHTML =
+        '<div class="ref-item"><span class="ref-label">Usual scoops:</span><span class="ref-value">' + usualScoops + '</span></div>' +
+        '<div class="ref-item"><span class="ref-label">Standard water:</span><span class="ref-value">' + Math.round(standardWater) + ' mL</span></div>' +
+        '<div class="ref-item"><span class="ref-label">Standard final vol:</span><span class="ref-value">' + standardFinalRounded + ' mL</span></div>' +
+        '<div class="ref-item"><span class="ref-label">New final vol:</span><span class="ref-value">' + newFinalRounded + ' mL</span></div>' +
+        '<div class="ref-item"><span class="ref-label">Water to add:</span><span class="ref-value">' + waterToAddRounded + ' mL</span></div>' +
+        '<div class="ref-item"><span class="ref-label">Volume reduced:</span><span class="ref-value">' + Math.round(standardFinalVol - newFinalVol) + ' mL less</span></div>' +
+        '<div class="ref-item"><span class="ref-label">Final kcal/100mL:</span><span class="ref-value">' + Math.round(finalKcal) + ' kcal</span></div>';
+      resultDiv.style.display = 'block';
+    }
+
+    function updateReverseSyncBtn() {
+      var strVal = document.getElementById('strength-formula-select').value;
+      var revVal = document.getElementById('reverse-formula-select').value;
+      var btn = document.getElementById('reverse-sync-btn');
+      if (btn) {
+        btn.style.display = (strVal && strVal !== revVal) ? '' : 'none';
+      }
+    }
+
+    function syncReverseFromStrength() {
+      var strVal = document.getElementById('strength-formula-select').value;
+      if (strVal) {
+        document.getElementById('reverse-formula-select').value = strVal;
+        calculateReverseNutrition();
+        updateReverseSyncBtn();
+      }
     }
 
     function calculateReverseNutrition() {
@@ -5694,10 +5976,10 @@
       // Nutrition per exchange:
       // Starch: 10g CHO + 1g Pro
       // Meat:   7g Pro + 5g Fat
-      // Veg:    5g CHO
+      // Veg:    0g CHO (keto assumption)
       // Fruit:  10g CHO
       // Fat:    5g Fat
-      var cho = totals.starch * 10 + totals.veg * 5 + totals.fruit * 10;
+      var cho = totals.starch * 10 + totals.fruit * 10;
       var pro = totals.starch * 1 + totals.meat * 7;
       var fat = totals.meat * 5 + totals.fat * 5;
 
