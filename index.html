@@ -717,7 +717,7 @@
       </div>
       <div class="input-group">
         <label class="input-label">Select Formula</label>
-        <select class="input-field" id="strength-formula-select" onchange="calculateCustomStrength();updateReverseSyncBtn()">
+        <select class="input-field" id="strength-formula-select" onchange="setPref('pref_strength_formula',this.value);calculateCustomStrength();updateReverseSyncBtn()">
           <option value="">-- Select Formula --</option>
         </select>
       </div>
@@ -790,7 +790,7 @@
       <div class="input-group">
         <label class="input-label">Select Formula</label>
         <div style="display:flex;gap:6px;align-items:center;">
-          <select class="input-field" id="reverse-formula-select" onchange="calculateReverseNutrition();updateReverseSyncBtn()" style="flex:1;">
+          <select class="input-field" id="reverse-formula-select" onchange="setPref('pref_reverse_formula',this.value);calculateReverseNutrition();updateReverseSyncBtn()" style="flex:1;">
             <option value="">-- Select Formula --</option>
           </select>
           <button class="supp-add-btn" id="reverse-sync-btn" onclick="syncReverseFromStrength()" style="display:none;white-space:nowrap;padding:8px 10px;font-size:11px;background:var(--accent-light);color:var(--accent);"><i class="fas fa-sync-alt" style="font-size:9px;"></i> Sync</button>
@@ -2128,6 +2128,25 @@
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       document.documentElement.classList.toggle('dark', e.matches);
     });
+
+    // ===== Cookie helpers for persisting user preferences =====
+    function setPref(key, value) {
+      try {
+        var d = new Date(); d.setTime(d.getTime() + 365 * 24 * 60 * 60 * 1000);
+        document.cookie = encodeURIComponent(key) + '=' + encodeURIComponent(value) + ';expires=' + d.toUTCString() + ';path=/;SameSite=Lax';
+      } catch (e) { /* ignore */ }
+    }
+    function getPref(key) {
+      try {
+        var name = encodeURIComponent(key) + '=';
+        var parts = document.cookie.split(';');
+        for (var i = 0; i < parts.length; i++) {
+          var c = parts[i].trim();
+          if (c.indexOf(name) === 0) return decodeURIComponent(c.substring(name.length));
+        }
+      } catch (e) { /* ignore */ }
+      return '';
+    }
 
     // ========== Firebase Configuration ==========
     // INSTRUCTIONS:
@@ -4839,8 +4858,21 @@
         }
       }
       // Populate calculator dropdowns (paediatric formulas only)
-      document.getElementById('strength-formula-select').innerHTML = buildPedDropdownHTML('');
-      document.getElementById('reverse-formula-select').innerHTML = buildPedDropdownHTML('');
+      // Restore saved selections from cookies
+      var savedStrength = getPref('pref_strength_formula');
+      var savedReverse = getPref('pref_reverse_formula');
+      document.getElementById('strength-formula-select').innerHTML = buildPedDropdownHTML(savedStrength);
+      document.getElementById('reverse-formula-select').innerHTML = buildPedDropdownHTML(savedReverse);
+      if (savedStrength) {
+        document.getElementById('strength-formula-select').value = savedStrength;
+        calculateCustomStrength();
+        updateReverseSyncBtn();
+      }
+      if (savedReverse) {
+        document.getElementById('reverse-formula-select').value = savedReverse;
+        calculateReverseNutrition();
+        updateReverseSyncBtn();
+      }
     }
 
     // === Formula CRUD ===
