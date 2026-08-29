@@ -2165,12 +2165,12 @@
   </div>
 
   <div class="tab-bar">
-    <div class="tab-item active" onclick="switchTab('adult')"><i class="fas fa-user"></i><span>Adult</span></div>
-    <div class="tab-item" onclick="switchTab('peds')"><i class="fas fa-child"></i><span>Peds</span></div>
-    <div class="tab-item" onclick="switchTab('supplements')"><i class="fas fa-prescription-bottle"></i><span>Formula</span></div>
-    <div class="tab-item" onclick="switchTab('stock')"><i class="fas fa-boxes-stacked"></i><span>Stock</span></div>
-    <div class="tab-item" onclick="switchTab('keto')"><i class="fas fa-fire-flame-curved"></i><span>Keto</span></div>
-    <div class="tab-item" onclick="switchTab('pregnancy')"><i class="fas fa-person-pregnant"></i><span>Preg.</span></div>
+    <div class="tab-item active" onclick="switchTab('adult', this)"><i class="fas fa-user"></i><span>Adult</span></div>
+    <div class="tab-item" onclick="switchTab('peds', this)"><i class="fas fa-child"></i><span>Peds</span></div>
+    <div class="tab-item" onclick="switchTab('supplements', this)"><i class="fas fa-prescription-bottle"></i><span>Formula</span></div>
+    <div class="tab-item" onclick="switchTab('stock', this)"><i class="fas fa-boxes-stacked"></i><span>Stock</span></div>
+    <div class="tab-item" onclick="switchTab('keto', this)"><i class="fas fa-fire-flame-curved"></i><span>Keto</span></div>
+    <div class="tab-item" onclick="switchTab('pregnancy', this)"><i class="fas fa-person-pregnant"></i><span>Preg.</span></div>
   </div>
 
   <script>
@@ -3444,11 +3444,11 @@
       }
     }
 
-    function switchTab(tabName) {
+    function switchTab(tabName, el) {
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
       document.getElementById(`tab-${tabName}`).classList.add('active');
-      event.currentTarget.classList.add('active');
+      if (el) el.classList.add('active');
     }
 
     // Adult calculations
@@ -4177,100 +4177,4 @@
 
     // Show popup for missing nutrient info
     function showNutrientMissingPopup(evt, label, namesStr) {
-      // Remove any existing popup
-      closeNutrientMissingPopup();
-      var names = namesStr.split('|||');
-      var popup = document.createElement('div');
-      popup.className = 'nutrient-missing-popup';
-      popup.id = 'nutrient-missing-popup';
-      var listItems = names.map(function(n) { return '<li>' + n + '</li>'; }).join('');
-      popup.innerHTML = '<button class="nmp-close" onclick="closeNutrientMissingPopup()">&times;</button>' +
-        '<div class="nmp-title"><i class="fas fa-exclamation-triangle"></i> Incomplete Data</div>' +
-        '<div style="margin-bottom:6px;color:var(--text-secondary);"><strong>' + label + '</strong> is missing from:</div>' +
-        '<ul class="nmp-list">' + listItems + '</ul>';
-      document.body.appendChild(popup);
-      // Position near the click
-      var rect = popup.getBoundingClientRect();
-      var x = Math.min(evt.clientX, window.innerWidth - rect.width - 12);
-      var y = evt.clientY + 8;
-      if (y + rect.height > window.innerHeight - 12) { y = evt.clientY - rect.height - 8; }
-      if (x < 8) x = 8;
-      if (y < 8) y = 8;
-      popup.style.left = x + 'px';
-      popup.style.top = y + 'px';
-      // Close on outside click
-      setTimeout(function() {
-        document.addEventListener('click', closeNutrientMissingOnOutside);
-      }, 50);
-    }
-    function closeNutrientMissingPopup() {
-      var el = document.getElementById('nutrient-missing-popup');
-      if (el) el.remove();
-      document.removeEventListener('click', closeNutrientMissingOnOutside);
-    }
-    function closeNutrientMissingOnOutside(e) {
-      var popup = document.getElementById('nutrient-missing-popup');
-      if (popup && !popup.contains(e.target) && !e.target.closest('.nutrient-flag')) {
-        closeNutrientMissingPopup();
-      }
-    }
-
-    // === Build results table HTML (always visible) ===
-    function buildSuppResultsHTML(totals, totalVol, bw, hasAny, missingMap, noDataSet) {
-      var cid = 'supp';
-      var mm = missingMap || {};
-      var nd = noDataSet || {};
-      // Blank out fields where no product has any data
-      Object.keys(nd).forEach(function(f) { totals[f] = null; });
-      function fmtV(v, dp) { return (hasAny && v) ? v.toFixed(dp !== undefined ? dp : 1) : ''; }
-      function fmtPkg(v) { return (hasAny && bw && v) ? (v / bw).toFixed(1) : ''; }
-      function oL(field, fallback) { return getOutputLabel(cid, field, fallback); }
-      function oV(field, dp) { return fmtOutputVal(cid, field, totals[field], hasAny, dp); }
-      function flag(field, label) { return nutrientFlagHTML(field, mm, label); }
-
-      var kcal = totals.kcal;
-      var pro = totals.protein;
-      var carbs = totals.carbs;
-      var fat = totals.fat;
-      var pTE = kcal > 0 ? ((pro * 4) / kcal * 100) : 0;
-      var cTE = kcal > 0 ? ((carbs * 4) / kcal * 100) : 0;
-      var fTE = kcal > 0 ? ((fat * 9) / kcal * 100) : 0;
-
-      var html = '<table class="supp-result-table">';
-      html += '<tr class="supp-section-row macro"><td colspan="4">Macronutrients</td></tr>';
-      html += '<tr><td>Energy (kcal)</td><td>' + (hasAny && kcal != null ? Math.round(kcal) : '') + flag('kcal','Energy (kcal)') + '</td><td>Vol (mL)</td><td>' + (hasAny && totalVol ? Math.round(totalVol) : '') + '</td></tr>';
-      html += '<tr><td>kcal/kg</td><td>' + fmtPkg(kcal) + '</td><td>mL/kg</td><td>' + fmtPkg(totalVol) + '</td></tr>';
-      html += '<tr><td>Protein (g)</td><td>' + fmtV(pro) + flag('protein','Protein (g)') + '</td><td>%TE Pro</td><td>' + (hasAny && pTE > 0 ? pTE.toFixed(1) : '') + '</td></tr>';
-      html += '<tr><td>Pro g/kg</td><td>' + fmtPkg(pro) + '</td><td>%TE CHO</td><td>' + (hasAny && cTE > 0 ? cTE.toFixed(1) : '') + '</td></tr>';
-      html += '<tr><td>CHO (g)</td><td>' + fmtV(carbs) + flag('carbs','CHO (g)') + '</td><td>%TE Fat</td><td>' + (hasAny && fTE > 0 ? fTE.toFixed(1) : '') + '</td></tr>';
-      html += '<tr><td>Fat (g)</td><td>' + fmtV(fat) + flag('fat','Fat (g)') + '</td><td>Fibre (g)</td><td>' + fmtV(totals.fibre) + flag('fibre','Fibre (g)') + '</td></tr>';
-      html += '<tr><td>Water (mL)</td><td>' + fmtV(totals.water, 0) + flag('water','Water (mL)') + '</td><td>kcal/100mL</td><td>' + (hasAny && totalVol > 0 && kcal != null ? (kcal / totalVol * 100).toFixed(0) : '') + '</td></tr>';
-      html += '<tr class="supp-section-row vitamin"><td colspan="4">Vitamins</td></tr>';
-      html += '<tr><td>' + oL('vitA','Vit A (mcg)') + '</td><td>' + oV('vitA') + flag('vitA','Vit A') + '</td><td>' + oL('vitD','Vit D (mcg)') + '</td><td>' + oV('vitD') + flag('vitD','Vit D') + '</td></tr>';
-      html += '<tr><td>' + oL('vitE','Vit E (mg)') + '</td><td>' + oV('vitE') + flag('vitE','Vit E') + '</td><td>Vit K (mcg)</td><td>' + fmtV(totals.vitK) + flag('vitK','Vit K') + '</td></tr>';
-      html += '<tr><td>Vit C (mg)</td><td>' + fmtV(totals.vitC) + flag('vitC','Vit C') + '</td><td>Thiamin (mg)</td><td>' + oV('thiamin',3) + flag('thiamin','Thiamin') + '</td></tr>';
-      html += '<tr><td>Riboflavin (mg)</td><td>' + fmtV(totals.riboflavin) + flag('riboflavin','Riboflavin') + '</td><td>Niacin (mg)</td><td>' + fmtV(totals.niacin) + flag('niacin','Niacin') + '</td></tr>';
-      html += '<tr><td>Vit B6 (mg)</td><td>' + fmtV(totals.vitB6) + flag('vitB6','Vit B6') + '</td><td>Folate (mcg)</td><td>' + fmtV(totals.folate, 0) + flag('folate','Folate') + '</td></tr>';
-      html += '<tr><td>Vit B12 (mcg)</td><td>' + fmtV(totals.vitB12) + flag('vitB12','Vit B12') + '</td><td>Panto. Acid (mg)</td><td>' + fmtV(totals.pantoAcid) + flag('pantoAcid','Panto. Acid') + '</td></tr>';
-      html += '<tr><td>Biotin (mcg)</td><td>' + fmtV(totals.biotin) + flag('biotin','Biotin') + '</td><td>Choline (mg)</td><td>' + fmtV(totals.choline) + flag('choline','Choline') + '</td></tr>';
-      html += '<tr class="supp-section-row mineral"><td colspan="4">Minerals</td></tr>';
-      html += '<tr><td>' + oL('na','Na (mmol)') + '</td><td>' + oV('na',1) + flag('na','Na') + '</td><td>' + oL('k','K (mmol)') + '</td><td>' + oV('k',1) + flag('k','K') + '</td></tr>';
-      html += '<tr><td>' + oL('p','P (mmol)') + '</td><td>' + oV('p',1) + flag('p','P') + '</td><td>' + oL('ca','Ca (mg)') + '</td><td>' + oV('ca',0) + flag('ca','Ca') + '</td></tr>';
-      html += '<tr><td>' + oL('iron','Iron (mg)') + '</td><td>' + oV('iron') + flag('iron','Iron') + '</td><td>' + oL('zinc','Zinc (mg)') + '</td><td>' + oV('zinc') + flag('zinc','Zinc') + '</td></tr>';
-      html += '<tr><td>' + oL('iodine','Iodine (mcg)') + '</td><td>' + oV('iodine') + flag('iodine','Iodine') + '</td><td>' + oL('selenium','Selenium (mcg)') + '</td><td>' + oV('selenium') + flag('selenium','Selenium') + '</td></tr>';
-      html += '<tr><td>' + oL('copper','Copper (mg)') + '</td><td>' + oV('copper') + flag('copper','Copper') + '</td><td>' + oL('manganese','Manganese (mg)') + '</td><td>' + oV('manganese') + flag('manganese','Manganese') + '</td></tr>';
-      html += '<tr><td>' + oL('chromium','Chromium (mcg)') + '</td><td>' + oV('chromium') + flag('chromium','Chromium') + '</td><td>' + oL('molybdenum','Molybdenum (mcg)') + '</td><td>' + oV('molybdenum') + flag('molybdenum','Molybdenum') + '</td></tr>';
-      html += '<tr><td>' + oL('magnesium','Magnesium (mg)') + '</td><td>' + oV('magnesium',0) + flag('magnesium','Magnesium') + '</td><td>' + oL('chloride','Chloride (mg)') + '</td><td>' + oV('chloride',0) + flag('chloride','Chloride') + '</td></tr>';
-      html += '</table>';
-      return html;
-    }
-
-    // === Calculate combined totals (fixed 5 rows) ===
-    function calcSuppTotals() {
-      var bw = parseFloat(document.getElementById('supp-bw').value);
-      var totals = {};
-      SUPP_FIELDS.forEach(function(f) { totals[f] = 0; });
-      var totalVol = 0;
-      var hasAny = false;
-
-      // Track which products contribute and whic...
+      // Remove any exis...
