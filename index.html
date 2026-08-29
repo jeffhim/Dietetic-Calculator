@@ -198,6 +198,14 @@
     .supp-result-table td:nth-child(1), .supp-result-table td:nth-child(3) { color: var(--text-secondary); }
     .supp-result-table td:nth-child(2), .supp-result-table td:nth-child(4) { font-weight: 600; text-align: right; min-width: 46px; }
     .supp-result-table tr:last-child td { border-bottom: none; }
+    .nutrient-flag { display: inline-block; cursor: pointer; color: #e67e22; font-size: 11px; margin-left: 3px; vertical-align: middle; opacity: 0.85; transition: opacity 0.15s, transform 0.15s; }
+    .nutrient-flag:hover { opacity: 1; transform: scale(1.2); }
+    .nutrient-missing-popup { position: fixed; z-index: 3000; background: var(--bg-secondary); border: 1.5px solid #e67e22; border-radius: 12px; padding: 14px 16px; box-shadow: 0 6px 24px rgba(0,0,0,0.18); max-width: 280px; min-width: 180px; font-size: 12px; line-height: 1.5; }
+    .nutrient-missing-popup .nmp-title { font-weight: 700; font-size: 13px; color: #e67e22; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .nutrient-missing-popup .nmp-title i { font-size: 14px; }
+    .nutrient-missing-popup .nmp-list { margin: 0; padding: 0 0 0 16px; color: var(--text-primary); }
+    .nutrient-missing-popup .nmp-list li { margin-bottom: 3px; }
+    .nutrient-missing-popup .nmp-close { position: absolute; top: 8px; right: 10px; background: none; border: none; font-size: 16px; cursor: pointer; color: var(--text-secondary); padding: 2px; }
     .supp-section-row td { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 6px 4px 3px; border-bottom: 2px solid var(--accent); color: var(--accent); }
     .supp-section-row.vitamin td { border-bottom-color: var(--purple); color: var(--purple); }
     .supp-section-row.mineral td { border-bottom-color: var(--teal); color: var(--teal); }
@@ -4778,13 +4786,102 @@
       document.getElementById('supp-results-container').innerHTML = buildSuppResultsHTML(emptyTotals, 0, 0, false);
     }
 
+    // === Missing nutrient tracking ===
+    // Build a map: field -> [product names missing that field]
+    // Only flags fields where at least one product HAS data and at least one is missing
+    function buildMissingMap(activeProducts) {
+      var map = {};
+      if (activeProducts.length < 1) return map;
+      SUPP_FIELDS.forEach(function(field) {
+        var hasData = [];
+        var missingData = [];
+        activeProducts.forEach(function(p) {
+          if (p.fields[field]) { hasData.push(p.name); }
+          else { missingData.push(p.name); }
+        });
+        if (hasData.length > 0 && missingData.length > 0) {
+          map[field] = missingData;
+        }
+      });
+      return map;
+    }
+
+    // Build a set of fields where NO active product has data (all missing)
+    // These fields should display blank instead of 0
+    function buildNoDataSet(activeProducts) {
+      var noData = {};
+      if (activeProducts.length < 1) return noData;
+      SUPP_FIELDS.forEach(function(field) {
+        var anyHas = false;
+        for (var i = 0; i < activeProducts.length; i++) {
+          if (activeProducts[i].fields[field]) { anyHas = true; break; }
+        }
+        if (!anyHas) noData[field] = true;
+      });
+      return noData;
+    }
+
+    // Generate flag icon HTML for a nutrient field if it has missing data
+    function nutrientFlagHTML(field, missingMap, label) {
+      if (!missingMap || !missingMap[field]) return '';
+      var names = missingMap[field];
+      var escapedLabel = (label || SUPP_LABELS[field] || field).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      var escapedNames = names.map(function(n) { return n.replace(/'/g, "\\'").replace(/"/g, '&quot;'); }).join('|||');
+      return ' <span class="nutrient-flag" onclick="showNutrientMissingPopup(event,\'' + escapedLabel + '\',\'' + escapedNames + '\')" title="Some products missing this nutrient"><i class="fas fa-flag"></i></span>';
+    }
+
+    // Show popup for missing nutrient info
+    function showNutrientMissingPopup(evt, label, namesStr) {
+      // Remove any existing popup
+      closeNutrientMissingPopup();
+      var names = namesStr.split('|||');
+      var popup = document.createElement('div');
+      popup.className = 'nutrient-missing-popup';
+      popup.id = 'nutrient-missing-popup';
+      var listItems = names.map(function(n) { return '<li>' + n + '</li>'; }).join('');
+      popup.innerHTML = '<button class="nmp-close" onclick="closeNutrientMissingPopup()">&times;</button>' +
+        '<div class="nmp-title"><i class="fas fa-exclamation-triangle"></i> Incomplete Data</div>' +
+        '<div style="margin-bottom:6px;color:var(--text-secondary);"><strong>' + label + '</strong> is missing from:</div>' +
+        '<ul class="nmp-list">' + listItems + '</ul>';
+      document.body.appendChild(popup);
+      // Position near the click
+      var rect = popup.getBoundingClientRect();
+      var x = Math.min(evt.clientX, window.innerWidth - rect.width - 12);
+      var y = evt.clientY + 8;
+      if (y + rect.height > window.innerHeight - 12) { y = evt.clientY - rect.height - 8; }
+      if (x < 8) x = 8;
+      if (y < 8) y = 8;
+      popup.style.left = x + 'px';
+      popup.style.top = y + 'px';
+      // Close on outside click
+      setTimeout(function() {
+        document.addEventListener('click', closeNutrientMissingOnOutside);
+      }, 50);
+    }
+    function closeNutrientMissingPopup() {
+      var el = document.getElementById('nutrient-missing-popup');
+      if (el) el.remove();
+      document.removeEventListener('click', closeNutrientMissingOnOutside);
+    }
+    function closeNutrientMissingOnOutside(e) {
+      var popup = document.getElementById('nutrient-missing-popup');
+      if (popup && !popup.contains(e.target) && !e.target.closest('.nutrient-flag')) {
+        closeNutrientMissingPopup();
+      }
+    }
+
     // === Build results table HTML (always visible) ===
-    function buildSuppResultsHTML(totals, totalVol, bw, hasAny) {
+    function buildSuppResultsHTML(totals, totalVol, bw, hasAny, missingMap, noDataSet) {
       var cid = 'supp';
+      var mm = missingMap || {};
+      var nd = noDataSet || {};
+      // Blank out fields where no product has any data
+      Object.keys(nd).forEach(function(f) { totals[f] = null; });
       function fmtV(v, dp) { return (hasAny && v) ? v.toFixed(dp !== undefined ? dp : 1) : ''; }
       function fmtPkg(v) { return (hasAny && bw && v) ? (v / bw).toFixed(1) : ''; }
       function oL(field, fallback) { return getOutputLabel(cid, field, fallback); }
       function oV(field, dp) { return fmtOutputVal(cid, field, totals[field], hasAny, dp); }
+      function flag(field, label) { return nutrientFlagHTML(field, mm, label); }
 
       var kcal = totals.kcal;
       var pro = totals.protein;
@@ -4796,29 +4893,29 @@
 
       var html = '<table class="supp-result-table">';
       html += '<tr class="supp-section-row macro"><td colspan="4">Macronutrients</td></tr>';
-      html += '<tr><td>Energy (kcal)</td><td>' + (hasAny ? Math.round(kcal) : '') + '</td><td>Vol (mL)</td><td>' + (hasAny && totalVol ? Math.round(totalVol) : '') + '</td></tr>';
+      html += '<tr><td>Energy (kcal)</td><td>' + (hasAny && kcal != null ? Math.round(kcal) : '') + flag('kcal','Energy (kcal)') + '</td><td>Vol (mL)</td><td>' + (hasAny && totalVol ? Math.round(totalVol) : '') + '</td></tr>';
       html += '<tr><td>kcal/kg</td><td>' + fmtPkg(kcal) + '</td><td>mL/kg</td><td>' + fmtPkg(totalVol) + '</td></tr>';
-      html += '<tr><td>Protein (g)</td><td>' + fmtV(pro) + '</td><td>%TE Pro</td><td>' + (hasAny && pTE > 0 ? pTE.toFixed(1) : '') + '</td></tr>';
+      html += '<tr><td>Protein (g)</td><td>' + fmtV(pro) + flag('protein','Protein (g)') + '</td><td>%TE Pro</td><td>' + (hasAny && pTE > 0 ? pTE.toFixed(1) : '') + '</td></tr>';
       html += '<tr><td>Pro g/kg</td><td>' + fmtPkg(pro) + '</td><td>%TE CHO</td><td>' + (hasAny && cTE > 0 ? cTE.toFixed(1) : '') + '</td></tr>';
-      html += '<tr><td>CHO (g)</td><td>' + fmtV(carbs) + '</td><td>%TE Fat</td><td>' + (hasAny && fTE > 0 ? fTE.toFixed(1) : '') + '</td></tr>';
-      html += '<tr><td>Fat (g)</td><td>' + fmtV(fat) + '</td><td>Fibre (g)</td><td>' + fmtV(totals.fibre) + '</td></tr>';
-      html += '<tr><td>Water (mL)</td><td>' + fmtV(totals.water, 0) + '</td><td>kcal/100mL</td><td>' + (hasAny && totalVol > 0 ? (kcal / totalVol * 100).toFixed(0) : '') + '</td></tr>';
+      html += '<tr><td>CHO (g)</td><td>' + fmtV(carbs) + flag('carbs','CHO (g)') + '</td><td>%TE Fat</td><td>' + (hasAny && fTE > 0 ? fTE.toFixed(1) : '') + '</td></tr>';
+      html += '<tr><td>Fat (g)</td><td>' + fmtV(fat) + flag('fat','Fat (g)') + '</td><td>Fibre (g)</td><td>' + fmtV(totals.fibre) + flag('fibre','Fibre (g)') + '</td></tr>';
+      html += '<tr><td>Water (mL)</td><td>' + fmtV(totals.water, 0) + flag('water','Water (mL)') + '</td><td>kcal/100mL</td><td>' + (hasAny && totalVol > 0 && kcal != null ? (kcal / totalVol * 100).toFixed(0) : '') + '</td></tr>';
       html += '<tr class="supp-section-row vitamin"><td colspan="4">Vitamins</td></tr>';
-      html += '<tr><td>' + oL('vitA','Vit A (mcg)') + '</td><td>' + oV('vitA') + '</td><td>' + oL('vitD','Vit D (mcg)') + '</td><td>' + oV('vitD') + '</td></tr>';
-      html += '<tr><td>' + oL('vitE','Vit E (mg)') + '</td><td>' + oV('vitE') + '</td><td>Vit K (mcg)</td><td>' + fmtV(totals.vitK) + '</td></tr>';
-      html += '<tr><td>Vit C (mg)</td><td>' + fmtV(totals.vitC) + '</td><td>Thiamin (mg)</td><td>' + oV('thiamin',3) + '</td></tr>';
-      html += '<tr><td>Riboflavin (mg)</td><td>' + fmtV(totals.riboflavin) + '</td><td>Niacin (mg)</td><td>' + fmtV(totals.niacin) + '</td></tr>';
-      html += '<tr><td>Vit B6 (mg)</td><td>' + fmtV(totals.vitB6) + '</td><td>Folate (mcg)</td><td>' + fmtV(totals.folate, 0) + '</td></tr>';
-      html += '<tr><td>Vit B12 (mcg)</td><td>' + fmtV(totals.vitB12) + '</td><td>Panto. Acid (mg)</td><td>' + fmtV(totals.pantoAcid) + '</td></tr>';
-      html += '<tr><td>Biotin (mcg)</td><td>' + fmtV(totals.biotin) + '</td><td>Choline (mg)</td><td>' + fmtV(totals.choline) + '</td></tr>';
+      html += '<tr><td>' + oL('vitA','Vit A (mcg)') + '</td><td>' + oV('vitA') + flag('vitA','Vit A') + '</td><td>' + oL('vitD','Vit D (mcg)') + '</td><td>' + oV('vitD') + flag('vitD','Vit D') + '</td></tr>';
+      html += '<tr><td>' + oL('vitE','Vit E (mg)') + '</td><td>' + oV('vitE') + flag('vitE','Vit E') + '</td><td>Vit K (mcg)</td><td>' + fmtV(totals.vitK) + flag('vitK','Vit K') + '</td></tr>';
+      html += '<tr><td>Vit C (mg)</td><td>' + fmtV(totals.vitC) + flag('vitC','Vit C') + '</td><td>Thiamin (mg)</td><td>' + oV('thiamin',3) + flag('thiamin','Thiamin') + '</td></tr>';
+      html += '<tr><td>Riboflavin (mg)</td><td>' + fmtV(totals.riboflavin) + flag('riboflavin','Riboflavin') + '</td><td>Niacin (mg)</td><td>' + fmtV(totals.niacin) + flag('niacin','Niacin') + '</td></tr>';
+      html += '<tr><td>Vit B6 (mg)</td><td>' + fmtV(totals.vitB6) + flag('vitB6','Vit B6') + '</td><td>Folate (mcg)</td><td>' + fmtV(totals.folate, 0) + flag('folate','Folate') + '</td></tr>';
+      html += '<tr><td>Vit B12 (mcg)</td><td>' + fmtV(totals.vitB12) + flag('vitB12','Vit B12') + '</td><td>Panto. Acid (mg)</td><td>' + fmtV(totals.pantoAcid) + flag('pantoAcid','Panto. Acid') + '</td></tr>';
+      html += '<tr><td>Biotin (mcg)</td><td>' + fmtV(totals.biotin) + flag('biotin','Biotin') + '</td><td>Choline (mg)</td><td>' + fmtV(totals.choline) + flag('choline','Choline') + '</td></tr>';
       html += '<tr class="supp-section-row mineral"><td colspan="4">Minerals</td></tr>';
-      html += '<tr><td>' + oL('na','Na (mmol)') + '</td><td>' + oV('na',1) + '</td><td>' + oL('k','K (mmol)') + '</td><td>' + oV('k',1) + '</td></tr>';
-      html += '<tr><td>' + oL('p','P (mmol)') + '</td><td>' + oV('p',1) + '</td><td>' + oL('ca','Ca (mg)') + '</td><td>' + oV('ca',0) + '</td></tr>';
-      html += '<tr><td>' + oL('iron','Iron (mg)') + '</td><td>' + oV('iron') + '</td><td>' + oL('zinc','Zinc (mg)') + '</td><td>' + oV('zinc') + '</td></tr>';
-      html += '<tr><td>' + oL('iodine','Iodine (mcg)') + '</td><td>' + oV('iodine') + '</td><td>' + oL('selenium','Selenium (mcg)') + '</td><td>' + oV('selenium') + '</td></tr>';
-      html += '<tr><td>' + oL('copper','Copper (mg)') + '</td><td>' + oV('copper') + '</td><td>' + oL('manganese','Manganese (mg)') + '</td><td>' + oV('manganese') + '</td></tr>';
-      html += '<tr><td>' + oL('chromium','Chromium (mcg)') + '</td><td>' + oV('chromium') + '</td><td>' + oL('molybdenum','Molybdenum (mcg)') + '</td><td>' + oV('molybdenum') + '</td></tr>';
-      html += '<tr><td>' + oL('magnesium','Magnesium (mg)') + '</td><td>' + oV('magnesium',0) + '</td><td>' + oL('chloride','Chloride (mg)') + '</td><td>' + oV('chloride',0) + '</td></tr>';
+      html += '<tr><td>' + oL('na','Na (mmol)') + '</td><td>' + oV('na',1) + flag('na','Na') + '</td><td>' + oL('k','K (mmol)') + '</td><td>' + oV('k',1) + flag('k','K') + '</td></tr>';
+      html += '<tr><td>' + oL('p','P (mmol)') + '</td><td>' + oV('p',1) + flag('p','P') + '</td><td>' + oL('ca','Ca (mg)') + '</td><td>' + oV('ca',0) + flag('ca','Ca') + '</td></tr>';
+      html += '<tr><td>' + oL('iron','Iron (mg)') + '</td><td>' + oV('iron') + flag('iron','Iron') + '</td><td>' + oL('zinc','Zinc (mg)') + '</td><td>' + oV('zinc') + flag('zinc','Zinc') + '</td></tr>';
+      html += '<tr><td>' + oL('iodine','Iodine (mcg)') + '</td><td>' + oV('iodine') + flag('iodine','Iodine') + '</td><td>' + oL('selenium','Selenium (mcg)') + '</td><td>' + oV('selenium') + flag('selenium','Selenium') + '</td></tr>';
+      html += '<tr><td>' + oL('copper','Copper (mg)') + '</td><td>' + oV('copper') + flag('copper','Copper') + '</td><td>' + oL('manganese','Manganese (mg)') + '</td><td>' + oV('manganese') + flag('manganese','Manganese') + '</td></tr>';
+      html += '<tr><td>' + oL('chromium','Chromium (mcg)') + '</td><td>' + oV('chromium') + flag('chromium','Chromium') + '</td><td>' + oL('molybdenum','Molybdenum (mcg)') + '</td><td>' + oV('molybdenum') + flag('molybdenum','Molybdenum') + '</td></tr>';
+      html += '<tr><td>' + oL('magnesium','Magnesium (mg)') + '</td><td>' + oV('magnesium',0) + flag('magnesium','Magnesium') + '</td><td>' + oL('chloride','Chloride (mg)') + '</td><td>' + oV('chloride',0) + flag('chloride','Chloride') + '</td></tr>';
       html += '</table>';
       return html;
     }
@@ -4830,6 +4927,9 @@
       SUPP_FIELDS.forEach(function(f) { totals[f] = 0; });
       var totalVol = 0;
       var hasAny = false;
+
+      // Track which products contribute and which are missing each nutrient
+      var activeProducts = []; // [{name, fields:{field:true/false}}]
 
       for (var i = 1; i <= 5; i++) {
         var selEl = document.getElementById('supp-sel-' + i);
@@ -4848,22 +4948,32 @@
         var supp = findProductByKey(selEl.value);
         if (!supp) continue;
 
+        var prodTrack = { name: supp.name, fields: {} };
         if (supp.unitType === 'persachet') {
-          // vol = number of sachets/packs per feed; nutrition values are per sachet
           var sachets = vol;
           var sachetMl = supp.sachetSize || 0;
           SUPP_FIELDS.forEach(function(key) {
-            if (supp[key] != null) totals[key] += supp[key] * sachets * freq * str;
+            if (supp[key] != null && supp[key] !== '') {
+              totals[key] += supp[key] * sachets * freq * str;
+              prodTrack.fields[key] = true;
+            } else {
+              prodTrack.fields[key] = false;
+            }
           });
           totalVol += sachets * sachetMl * freq;
         } else {
-          // vol = mL per feed; nutrition values are per 100mL
           var f = vol / 100;
           SUPP_FIELDS.forEach(function(key) {
-            if (supp[key] != null) totals[key] += supp[key] * f * freq * str;
+            if (supp[key] != null && supp[key] !== '') {
+              totals[key] += supp[key] * f * freq * str;
+              prodTrack.fields[key] = true;
+            } else {
+              prodTrack.fields[key] = false;
+            }
           });
           totalVol += vol * freq;
         }
+        activeProducts.push(prodTrack);
         hasAny = true;
       }
 
@@ -4877,8 +4987,12 @@
         hasAny = true;
       }
 
+      // Build missingMap: field -> [names of products missing that field]
+      var missingMap = buildMissingMap(activeProducts);
+      var noDataSet = buildNoDataSet(activeProducts);
+
       var container = document.getElementById('supp-results-container');
-      container.innerHTML = buildSuppResultsHTML(totals, totalVol, bw, hasAny);
+      container.innerHTML = buildSuppResultsHTML(totals, totalVol, bw, hasAny, missingMap, noDataSet);
     }
 
     // === Init supplement dropdowns + render blank results on page load ===
@@ -5366,47 +5480,52 @@
     }
 
     // === Ped Milk grid: build results HTML (always visible) ===
-    function buildFormulaResultsHTML(totals, totalVol, bw, hasAny) {
+    function buildFormulaResultsHTML(totals, totalVol, bw, hasAny, missingMap, noDataSet) {
       var cid = 'fm';
+      var mm = missingMap || {};
+      var nd = noDataSet || {};
+      // Blank out fields where no product has any data
+      Object.keys(nd).forEach(function(f) { totals[f] = null; });
       function fmtV(v, dp) { return (hasAny && v) ? v.toFixed(dp !== undefined ? dp : 1) : ''; }
       function fmtPkg(v) { return (hasAny && bw && v) ? (v / bw).toFixed(1) : ''; }
       function oL(field, fallback) { return getOutputLabel(cid, field, fallback); }
       function oV(field, dp) { return fmtOutputVal(cid, field, totals[field], hasAny, dp); }
+      function flag(field, label) { return nutrientFlagHTML(field, mm, label); }
 
-      var kcal = totals.kcal || 0;
-      var pro = totals.protein || 0;
-      var carbs = totals.carbs || 0;
-      var fat = totals.fat || 0;
+      var kcal = totals.kcal;
+      var pro = totals.protein;
+      var carbs = totals.carbs;
+      var fat = totals.fat;
       var pTE = kcal > 0 ? ((pro * 4) / kcal * 100) : 0;
       var cTE = kcal > 0 ? ((carbs * 4) / kcal * 100) : 0;
       var fTE = kcal > 0 ? ((fat * 9) / kcal * 100) : 0;
 
       var html = '<table class="supp-result-table">';
       html += '<tr class="supp-section-row macro"><td colspan="4">Macronutrients</td></tr>';
-      html += '<tr><td>Energy (kcal)</td><td>' + (hasAny ? Math.round(kcal) : '') + '</td><td>Vol (mL)</td><td>' + (hasAny && totalVol ? Math.round(totalVol) : '') + '</td></tr>';
+      html += '<tr><td>Energy (kcal)</td><td>' + (hasAny && kcal != null ? Math.round(kcal) : '') + flag('kcal','Energy (kcal)') + '</td><td>Vol (mL)</td><td>' + (hasAny && totalVol ? Math.round(totalVol) : '') + '</td></tr>';
       html += '<tr><td>kcal/kg</td><td>' + fmtPkg(kcal) + '</td><td>mL/kg</td><td>' + fmtPkg(totalVol) + '</td></tr>';
-      html += '<tr><td>Protein (g)</td><td>' + fmtV(pro) + '</td><td>%TE Pro</td><td>' + (hasAny && pTE > 0 ? pTE.toFixed(1) : '') + '</td></tr>';
+      html += '<tr><td>Protein (g)</td><td>' + fmtV(pro) + flag('protein','Protein (g)') + '</td><td>%TE Pro</td><td>' + (hasAny && pTE > 0 ? pTE.toFixed(1) : '') + '</td></tr>';
       html += '<tr><td>Pro g/kg</td><td>' + fmtPkg(pro) + '</td><td>%TE CHO</td><td>' + (hasAny && cTE > 0 ? cTE.toFixed(1) : '') + '</td></tr>';
-      html += '<tr><td>CHO (g)</td><td>' + fmtV(carbs) + '</td><td>%TE Fat</td><td>' + (hasAny && fTE > 0 ? fTE.toFixed(1) : '') + '</td></tr>';
-      html += '<tr><td>Fat (g)</td><td>' + fmtV(fat) + '</td><td>Fibre (g)</td><td>' + fmtV(totals.fibre) + '</td></tr>';
-      html += '<tr><td>Water (mL)</td><td>' + fmtV(totals.water, 0) + '</td><td>kcal/100mL</td><td>' + (hasAny && totalVol > 0 ? (kcal / totalVol * 100).toFixed(0) : '') + '</td></tr>';
+      html += '<tr><td>CHO (g)</td><td>' + fmtV(carbs) + flag('carbs','CHO (g)') + '</td><td>%TE Fat</td><td>' + (hasAny && fTE > 0 ? fTE.toFixed(1) : '') + '</td></tr>';
+      html += '<tr><td>Fat (g)</td><td>' + fmtV(fat) + flag('fat','Fat (g)') + '</td><td>Fibre (g)</td><td>' + fmtV(totals.fibre) + flag('fibre','Fibre (g)') + '</td></tr>';
+      html += '<tr><td>Water (mL)</td><td>' + fmtV(totals.water, 0) + flag('water','Water (mL)') + '</td><td>kcal/100mL</td><td>' + (hasAny && totalVol > 0 && kcal != null ? (kcal / totalVol * 100).toFixed(0) : '') + '</td></tr>';
       html += '<tr class="supp-section-row vitamin"><td colspan="4">Vitamins</td></tr>';
-      html += '<tr><td>' + oL('vitA','Vit A (mcg)') + '</td><td>' + oV('vitA') + '</td><td>' + oL('vitD','Vit D (mcg)') + '</td><td>' + oV('vitD') + '</td></tr>';
-      html += '<tr><td>' + oL('vitE','Vit E (mg)') + '</td><td>' + oV('vitE') + '</td><td>Vit K (mcg)</td><td>' + fmtV(totals.vitK) + '</td></tr>';
-      html += '<tr><td>Vit C (mg)</td><td>' + fmtV(totals.vitC) + '</td><td>Thiamin (mg)</td><td>' + oV('thiamin',3) + '</td></tr>';
-      html += '<tr><td>Riboflavin (mg)</td><td>' + fmtV(totals.riboflavin) + '</td><td>Niacin (mg)</td><td>' + fmtV(totals.niacin) + '</td></tr>';
-      html += '<tr><td>Vit B6 (mg)</td><td>' + fmtV(totals.vitB6) + '</td><td>Folate (mcg)</td><td>' + fmtV(totals.folate, 0) + '</td></tr>';
-      html += '<tr><td>Vit B12 (mcg)</td><td>' + fmtV(totals.vitB12) + '</td><td>Panto. Acid (mg)</td><td>' + fmtV(totals.pantoAcid) + '</td></tr>';
-      html += '<tr><td>Biotin (mcg)</td><td>' + fmtV(totals.biotin) + '</td><td>Choline (mg)</td><td>' + fmtV(totals.choline) + '</td></tr>';
+      html += '<tr><td>' + oL('vitA','Vit A (mcg)') + '</td><td>' + oV('vitA') + flag('vitA','Vit A') + '</td><td>' + oL('vitD','Vit D (mcg)') + '</td><td>' + oV('vitD') + flag('vitD','Vit D') + '</td></tr>';
+      html += '<tr><td>' + oL('vitE','Vit E (mg)') + '</td><td>' + oV('vitE') + flag('vitE','Vit E') + '</td><td>Vit K (mcg)</td><td>' + fmtV(totals.vitK) + flag('vitK','Vit K') + '</td></tr>';
+      html += '<tr><td>Vit C (mg)</td><td>' + fmtV(totals.vitC) + flag('vitC','Vit C') + '</td><td>Thiamin (mg)</td><td>' + oV('thiamin',3) + flag('thiamin','Thiamin') + '</td></tr>';
+      html += '<tr><td>Riboflavin (mg)</td><td>' + fmtV(totals.riboflavin) + flag('riboflavin','Riboflavin') + '</td><td>Niacin (mg)</td><td>' + fmtV(totals.niacin) + flag('niacin','Niacin') + '</td></tr>';
+      html += '<tr><td>Vit B6 (mg)</td><td>' + fmtV(totals.vitB6) + flag('vitB6','Vit B6') + '</td><td>Folate (mcg)</td><td>' + fmtV(totals.folate, 0) + flag('folate','Folate') + '</td></tr>';
+      html += '<tr><td>Vit B12 (mcg)</td><td>' + fmtV(totals.vitB12) + flag('vitB12','Vit B12') + '</td><td>Panto. Acid (mg)</td><td>' + fmtV(totals.pantoAcid) + flag('pantoAcid','Panto. Acid') + '</td></tr>';
+      html += '<tr><td>Biotin (mcg)</td><td>' + fmtV(totals.biotin) + flag('biotin','Biotin') + '</td><td>Choline (mg)</td><td>' + fmtV(totals.choline) + flag('choline','Choline') + '</td></tr>';
       // Section: Minerals
       html += '<tr class="supp-section-row mineral"><td colspan="4">Minerals</td></tr>';
-      html += '<tr><td>' + oL('na','Na (mmol)') + '</td><td>' + oV('na',1) + '</td><td>' + oL('k','K (mmol)') + '</td><td>' + oV('k',1) + '</td></tr>';
-      html += '<tr><td>' + oL('p','P (mmol)') + '</td><td>' + oV('p',1) + '</td><td>' + oL('ca','Ca (mg)') + '</td><td>' + oV('ca',0) + '</td></tr>';
-      html += '<tr><td>' + oL('iron','Iron (mg)') + '</td><td>' + oV('iron') + '</td><td>' + oL('zinc','Zinc (mg)') + '</td><td>' + oV('zinc') + '</td></tr>';
-      html += '<tr><td>' + oL('iodine','Iodine (mcg)') + '</td><td>' + oV('iodine') + '</td><td>' + oL('selenium','Selenium (mcg)') + '</td><td>' + oV('selenium') + '</td></tr>';
-      html += '<tr><td>' + oL('copper','Copper (mg)') + '</td><td>' + oV('copper') + '</td><td>' + oL('manganese','Manganese (mg)') + '</td><td>' + oV('manganese') + '</td></tr>';
-      html += '<tr><td>' + oL('chromium','Chromium (mcg)') + '</td><td>' + oV('chromium') + '</td><td>' + oL('molybdenum','Molybdenum (mcg)') + '</td><td>' + oV('molybdenum') + '</td></tr>';
-      html += '<tr><td>' + oL('magnesium','Magnesium (mg)') + '</td><td>' + oV('magnesium',0) + '</td><td>' + oL('chloride','Chloride (mg)') + '</td><td>' + oV('chloride',0) + '</td></tr>';
+      html += '<tr><td>' + oL('na','Na (mmol)') + '</td><td>' + oV('na',1) + flag('na','Na') + '</td><td>' + oL('k','K (mmol)') + '</td><td>' + oV('k',1) + flag('k','K') + '</td></tr>';
+      html += '<tr><td>' + oL('p','P (mmol)') + '</td><td>' + oV('p',1) + flag('p','P') + '</td><td>' + oL('ca','Ca (mg)') + '</td><td>' + oV('ca',0) + flag('ca','Ca') + '</td></tr>';
+      html += '<tr><td>' + oL('iron','Iron (mg)') + '</td><td>' + oV('iron') + flag('iron','Iron') + '</td><td>' + oL('zinc','Zinc (mg)') + '</td><td>' + oV('zinc') + flag('zinc','Zinc') + '</td></tr>';
+      html += '<tr><td>' + oL('iodine','Iodine (mcg)') + '</td><td>' + oV('iodine') + flag('iodine','Iodine') + '</td><td>' + oL('selenium','Selenium (mcg)') + '</td><td>' + oV('selenium') + flag('selenium','Selenium') + '</td></tr>';
+      html += '<tr><td>' + oL('copper','Copper (mg)') + '</td><td>' + oV('copper') + flag('copper','Copper') + '</td><td>' + oL('manganese','Manganese (mg)') + '</td><td>' + oV('manganese') + flag('manganese','Manganese') + '</td></tr>';
+      html += '<tr><td>' + oL('chromium','Chromium (mcg)') + '</td><td>' + oV('chromium') + flag('chromium','Chromium') + '</td><td>' + oL('molybdenum','Molybdenum (mcg)') + '</td><td>' + oV('molybdenum') + flag('molybdenum','Molybdenum') + '</td></tr>';
+      html += '<tr><td>' + oL('magnesium','Magnesium (mg)') + '</td><td>' + oV('magnesium',0) + flag('magnesium','Magnesium') + '</td><td>' + oL('chloride','Chloride (mg)') + '</td><td>' + oV('chloride',0) + flag('chloride','Chloride') + '</td></tr>';
       html += '</table>';
       return html;
     }
@@ -5417,6 +5536,7 @@
       SUPP_FIELDS.forEach(function(f) { totals[f] = 0; });
       var totalVol = 0;
       var hasAny = false;
+      var activeProducts = [];
       for (var i = 1; i <= 5; i++) {
         var selEl = document.getElementById('fm-sel-' + i);
         var strEl = document.getElementById('fm-str-' + i);
@@ -5432,10 +5552,17 @@
         var fm = findProductByKey(selEl.value);
         if (!fm) continue;
         var factor = (vol / 100) * freq * str;
+        var prodTrack = { name: fm.name, fields: {} };
         SUPP_FIELDS.forEach(function(key) {
-          if (fm[key] != null) totals[key] += fm[key] * factor;
+          if (fm[key] != null && fm[key] !== '') {
+            totals[key] += fm[key] * factor;
+            prodTrack.fields[key] = true;
+          } else {
+            prodTrack.fields[key] = false;
+          }
         });
         totalVol += vol * freq;
+        activeProducts.push(prodTrack);
         hasAny = true;
       }
       // Water
@@ -5443,7 +5570,9 @@
       var wFreq = parseFloat(document.getElementById('fm-water-freq').value) || 0;
       var dailyWater = wVol * wFreq;
       if (dailyWater > 0) { totalVol += dailyWater; totals.water += dailyWater; hasAny = true; }
-      document.getElementById('fm-results-container').innerHTML = buildFormulaResultsHTML(totals, totalVol, bw, hasAny);
+      var missingMap = buildMissingMap(activeProducts);
+      var noDataSet = buildNoDataSet(activeProducts);
+      document.getElementById('fm-results-container').innerHTML = buildFormulaResultsHTML(totals, totalVol, bw, hasAny, missingMap, noDataSet);
     }
 
     function clearAllFormulaRows() {
