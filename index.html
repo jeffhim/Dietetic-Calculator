@@ -11,17 +11,17 @@
   <meta name="theme-color" content="#059669">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cellipse cx='50' cy='70' rx='40' ry='18' fill='%238B5A2B'/%3E%3Cellipse cx='50' cy='65' rx='38' ry='16' fill='%23A0522D'/%3E%3Cellipse cx='50' cy='50' rx='42' ry='22' fill='%2390EE90'/%3E%3Cellipse cx='50' cy='48' rx='38' ry='18' fill='%2398FB98'/%3E%3Cellipse cx='35' cy='45' rx='12' ry='8' fill='%23228B22'/%3E%3Cellipse cx='55' cy='42' rx='14' ry='9' fill='%2332CD32'/%3E%3Cellipse cx='70' cy='48' rx='10' ry='7' fill='%23228B22'/%3E%3Cellipse cx='45' cy='38' rx='11' ry='7' fill='%233CB371'/%3E%3Ccircle cx='62' cy='40' r='8' fill='%23FF6347'/%3E%3Cellipse cx='62' cy='37' rx='3' ry='1.5' fill='%23228B22'/%3E%3Cellipse cx='30' cy='50' rx='6' ry='3' fill='%23FFA500' transform='rotate(-20 30 50)'/%3E%3Cellipse cx='72' cy='52' rx='5' ry='2.5' fill='%23FFA500' transform='rotate(15 72 52)'/%3E%3Cellipse cx='48' cy='52' rx='7' ry='4' fill='%2390EE90'/%3E%3Cellipse cx='48' cy='52' rx='5' ry='2.5' fill='%23F0FFF0'/%3E%3C/svg%3E">
   <link rel="apple-touch-icon" sizes="180x180" href="https://jeffhim.github.io/Jeff-dietetics/apple-touch-icon.png">
-  <link rel="manifest" href="manifest.json">
+  <!-- <link rel="manifest" href="manifest.json"> -->
   <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700&family=SF+Pro+Text:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <!-- PDF.js for rendering growth charts -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <!-- SheetJS for Excel import/export -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <!-- Firebase SDK (compat for simpler API) -->
-  <script src="https://cdn.jsdelivr.net/npm/firebase@11.7.1/firebase-app-compat.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/firebase@11.7.1/firebase-auth-compat.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/firebase@11.7.1/firebase-database-compat.min.js"></script>
+  <!-- PDF.js for rendering growth charts (async – not needed at startup) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" async></script>
+  <!-- SheetJS for Excel import/export (async – not needed at startup) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" async></script>
+  <!-- Firebase SDK (compat for simpler API) — defer so page renders first -->
+  <script src="https://cdn.jsdelivr.net/npm/firebase@11.7.1/firebase-app-compat.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@11.7.1/firebase-auth-compat.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@11.7.1/firebase-database-compat.min.js" defer></script>
   <style>
     :root {
       --bg-primary: #f0faf6;
@@ -4177,4 +4177,2866 @@
 
     // Show popup for missing nutrient info
     function showNutrientMissingPopup(evt, label, namesStr) {
-      // Remove any exis...
+      // Remove any existing popup
+      closeNutrientMissingPopup();
+      var names = namesStr.split('|||');
+      var popup = document.createElement('div');
+      popup.className = 'nutrient-missing-popup';
+      popup.id = 'nutrient-missing-popup';
+      var listItems = names.map(function(n) { return '<li>' + n + '</li>'; }).join('');
+      popup.innerHTML = '<button class="nmp-close" onclick="closeNutrientMissingPopup()">&times;</button>' +
+        '<div class="nmp-title"><i class="fas fa-exclamation-triangle"></i> Incomplete Data</div>' +
+        '<div style="margin-bottom:6px;color:var(--text-secondary);"><strong>' + label + '</strong> is missing from:</div>' +
+        '<ul class="nmp-list">' + listItems + '</ul>';
+      document.body.appendChild(popup);
+      // Position near the click
+      var rect = popup.getBoundingClientRect();
+      var x = Math.min(evt.clientX, window.innerWidth - rect.width - 12);
+      var y = evt.clientY + 8;
+      if (y + rect.height > window.innerHeight - 12) { y = evt.clientY - rect.height - 8; }
+      if (x < 8) x = 8;
+      if (y < 8) y = 8;
+      popup.style.left = x + 'px';
+      popup.style.top = y + 'px';
+      // Close on outside click
+      setTimeout(function() {
+        document.addEventListener('click', closeNutrientMissingOnOutside);
+      }, 50);
+    }
+    function closeNutrientMissingPopup() {
+      var el = document.getElementById('nutrient-missing-popup');
+      if (el) el.remove();
+      document.removeEventListener('click', closeNutrientMissingOnOutside);
+    }
+    function closeNutrientMissingOnOutside(e) {
+      var popup = document.getElementById('nutrient-missing-popup');
+      if (popup && !popup.contains(e.target) && !e.target.closest('.nutrient-flag')) {
+        closeNutrientMissingPopup();
+      }
+    }
+
+    // === Build results table HTML (always visible) ===
+    function buildSuppResultsHTML(totals, totalVol, bw, hasAny, missingMap, noDataSet) {
+      var cid = 'supp';
+      var mm = missingMap || {};
+      var nd = noDataSet || {};
+      // Blank out fields where no product has any data
+      Object.keys(nd).forEach(function(f) { totals[f] = null; });
+      function fmtV(v, dp) { return (hasAny && v) ? v.toFixed(dp !== undefined ? dp : 1) : ''; }
+      function fmtPkg(v) { return (hasAny && bw && v) ? (v / bw).toFixed(1) : ''; }
+      function oL(field, fallback) { return getOutputLabel(cid, field, fallback); }
+      function oV(field, dp) { return fmtOutputVal(cid, field, totals[field], hasAny, dp); }
+      function flag(field, label) { return nutrientFlagHTML(field, mm, label); }
+
+      var kcal = totals.kcal;
+      var pro = totals.protein;
+      var carbs = totals.carbs;
+      var fat = totals.fat;
+      var pTE = kcal > 0 ? ((pro * 4) / kcal * 100) : 0;
+      var cTE = kcal > 0 ? ((carbs * 4) / kcal * 100) : 0;
+      var fTE = kcal > 0 ? ((fat * 9) / kcal * 100) : 0;
+
+      var html = '<table class="supp-result-table">';
+      html += '<tr class="supp-section-row macro"><td colspan="4">Macronutrients</td></tr>';
+      html += '<tr><td>Energy (kcal)</td><td>' + (hasAny && kcal != null ? Math.round(kcal) : '') + flag('kcal','Energy (kcal)') + '</td><td>Vol (mL)</td><td>' + (hasAny && totalVol ? Math.round(totalVol) : '') + '</td></tr>';
+      html += '<tr><td>kcal/kg</td><td>' + fmtPkg(kcal) + '</td><td>mL/kg</td><td>' + fmtPkg(totalVol) + '</td></tr>';
+      html += '<tr><td>Protein (g)</td><td>' + fmtV(pro) + flag('protein','Protein (g)') + '</td><td>%TE Pro</td><td>' + (hasAny && pTE > 0 ? pTE.toFixed(1) : '') + '</td></tr>';
+      html += '<tr><td>Pro g/kg</td><td>' + fmtPkg(pro) + '</td><td>%TE CHO</td><td>' + (hasAny && cTE > 0 ? cTE.toFixed(1) : '') + '</td></tr>';
+      html += '<tr><td>CHO (g)</td><td>' + fmtV(carbs) + flag('carbs','CHO (g)') + '</td><td>%TE Fat</td><td>' + (hasAny && fTE > 0 ? fTE.toFixed(1) : '') + '</td></tr>';
+      html += '<tr><td>Fat (g)</td><td>' + fmtV(fat) + flag('fat','Fat (g)') + '</td><td>Fibre (g)</td><td>' + fmtV(totals.fibre) + flag('fibre','Fibre (g)') + '</td></tr>';
+      html += '<tr><td>Water (mL)</td><td>' + fmtV(totals.water, 0) + flag('water','Water (mL)') + '</td><td>kcal/100mL</td><td>' + (hasAny && totalVol > 0 && kcal != null ? (kcal / totalVol * 100).toFixed(0) : '') + '</td></tr>';
+      html += '<tr class="supp-section-row vitamin"><td colspan="4">Vitamins</td></tr>';
+      html += '<tr><td>' + oL('vitA','Vit A (mcg)') + '</td><td>' + oV('vitA') + flag('vitA','Vit A') + '</td><td>' + oL('vitD','Vit D (mcg)') + '</td><td>' + oV('vitD') + flag('vitD','Vit D') + '</td></tr>';
+      html += '<tr><td>' + oL('vitE','Vit E (mg)') + '</td><td>' + oV('vitE') + flag('vitE','Vit E') + '</td><td>Vit K (mcg)</td><td>' + fmtV(totals.vitK) + flag('vitK','Vit K') + '</td></tr>';
+      html += '<tr><td>Vit C (mg)</td><td>' + fmtV(totals.vitC) + flag('vitC','Vit C') + '</td><td>Thiamin (mg)</td><td>' + oV('thiamin',3) + flag('thiamin','Thiamin') + '</td></tr>';
+      html += '<tr><td>Riboflavin (mg)</td><td>' + fmtV(totals.riboflavin) + flag('riboflavin','Riboflavin') + '</td><td>Niacin (mg)</td><td>' + fmtV(totals.niacin) + flag('niacin','Niacin') + '</td></tr>';
+      html += '<tr><td>Vit B6 (mg)</td><td>' + fmtV(totals.vitB6) + flag('vitB6','Vit B6') + '</td><td>Folate (mcg)</td><td>' + fmtV(totals.folate, 0) + flag('folate','Folate') + '</td></tr>';
+      html += '<tr><td>Vit B12 (mcg)</td><td>' + fmtV(totals.vitB12) + flag('vitB12','Vit B12') + '</td><td>Panto. Acid (mg)</td><td>' + fmtV(totals.pantoAcid) + flag('pantoAcid','Panto. Acid') + '</td></tr>';
+      html += '<tr><td>Biotin (mcg)</td><td>' + fmtV(totals.biotin) + flag('biotin','Biotin') + '</td><td>Choline (mg)</td><td>' + fmtV(totals.choline) + flag('choline','Choline') + '</td></tr>';
+      html += '<tr class="supp-section-row mineral"><td colspan="4">Minerals</td></tr>';
+      html += '<tr><td>' + oL('na','Na (mmol)') + '</td><td>' + oV('na',1) + flag('na','Na') + '</td><td>' + oL('k','K (mmol)') + '</td><td>' + oV('k',1) + flag('k','K') + '</td></tr>';
+      html += '<tr><td>' + oL('p','P (mmol)') + '</td><td>' + oV('p',1) + flag('p','P') + '</td><td>' + oL('ca','Ca (mg)') + '</td><td>' + oV('ca',0) + flag('ca','Ca') + '</td></tr>';
+      html += '<tr><td>' + oL('iron','Iron (mg)') + '</td><td>' + oV('iron') + flag('iron','Iron') + '</td><td>' + oL('zinc','Zinc (mg)') + '</td><td>' + oV('zinc') + flag('zinc','Zinc') + '</td></tr>';
+      html += '<tr><td>' + oL('iodine','Iodine (mcg)') + '</td><td>' + oV('iodine') + flag('iodine','Iodine') + '</td><td>' + oL('selenium','Selenium (mcg)') + '</td><td>' + oV('selenium') + flag('selenium','Selenium') + '</td></tr>';
+      html += '<tr><td>' + oL('copper','Copper (mg)') + '</td><td>' + oV('copper') + flag('copper','Copper') + '</td><td>' + oL('manganese','Manganese (mg)') + '</td><td>' + oV('manganese') + flag('manganese','Manganese') + '</td></tr>';
+      html += '<tr><td>' + oL('chromium','Chromium (mcg)') + '</td><td>' + oV('chromium') + flag('chromium','Chromium') + '</td><td>' + oL('molybdenum','Molybdenum (mcg)') + '</td><td>' + oV('molybdenum') + flag('molybdenum','Molybdenum') + '</td></tr>';
+      html += '<tr><td>' + oL('magnesium','Magnesium (mg)') + '</td><td>' + oV('magnesium',0) + flag('magnesium','Magnesium') + '</td><td>' + oL('chloride','Chloride (mg)') + '</td><td>' + oV('chloride',0) + flag('chloride','Chloride') + '</td></tr>';
+      html += '</table>';
+      return html;
+    }
+
+    // === Calculate combined totals (fixed 5 rows) ===
+    function calcSuppTotals() {
+      var bw = parseFloat(document.getElementById('supp-bw').value);
+      var totals = {};
+      SUPP_FIELDS.forEach(function(f) { totals[f] = 0; });
+      var totalVol = 0;
+      var hasAny = false;
+
+      // Track which products contribute and which are missing each nutrient
+      var activeProducts = []; // [{name, fields:{field:true/false}}]
+
+      for (var i = 1; i <= 5; i++) {
+        var selEl = document.getElementById('supp-sel-' + i);
+        var strEl = document.getElementById('supp-str-' + i);
+        var volEl = document.getElementById('supp-vol-' + i);
+        var freqEl = document.getElementById('supp-freq-' + i);
+        if (!selEl || !volEl || !freqEl) continue;
+
+        var vol = parseFloat(volEl.value);
+        var freq = parseFloat(freqEl.value);
+        var str = parseFloat(strEl.value);
+        if (isNaN(freq)) freq = 0;
+        if (isNaN(str) || str === 0) str = 1;
+        if (!selEl.value || !vol || freq <= 0) continue;
+
+        var supp = findProductByKey(selEl.value);
+        if (!supp) continue;
+
+        var prodTrack = { name: supp.name, fields: {} };
+        if (supp.unitType === 'persachet') {
+          var sachets = vol;
+          var sachetMl = supp.sachetSize || 0;
+          SUPP_FIELDS.forEach(function(key) {
+            if (supp[key] != null && supp[key] !== '') {
+              totals[key] += supp[key] * sachets * freq * str;
+              prodTrack.fields[key] = true;
+            } else {
+              prodTrack.fields[key] = false;
+            }
+          });
+          totalVol += sachets * sachetMl * freq;
+        } else {
+          var f = vol / 100;
+          SUPP_FIELDS.forEach(function(key) {
+            if (supp[key] != null && supp[key] !== '') {
+              totals[key] += supp[key] * f * freq * str;
+              prodTrack.fields[key] = true;
+            } else {
+              prodTrack.fields[key] = false;
+            }
+          });
+          totalVol += vol * freq;
+        }
+        activeProducts.push(prodTrack);
+        hasAny = true;
+      }
+
+      // Add water volume
+      var waterVol = parseFloat(document.getElementById('supp-water-vol').value) || 0;
+      var waterFreq = parseFloat(document.getElementById('supp-water-freq').value) || 0;
+      var dailyWater = waterVol * waterFreq;
+      if (dailyWater > 0) {
+        totalVol += dailyWater;
+        totals.water += dailyWater;
+        hasAny = true;
+      }
+
+      // Build missingMap: field -> [names of products missing that field]
+      var missingMap = buildMissingMap(activeProducts);
+      var noDataSet = buildNoDataSet(activeProducts);
+      var flagCount = Object.keys(missingMap).length;
+      if (flagCount > 0) console.log('[Adult Supp] Flags for ' + flagCount + ' nutrients: ' + Object.keys(missingMap).join(', '));
+      if (activeProducts.length > 0) console.log('[Adult Supp] Active products: ' + activeProducts.length + ', noData fields: ' + Object.keys(noDataSet).length);
+
+      var container = document.getElementById('supp-results-container');
+      container.innerHTML = buildSuppResultsHTML(totals, totalVol, bw, hasAny, missingMap, noDataSet);
+    }
+
+    // === Init supplement dropdowns + render blank results on page load ===
+    function initSuppDropdowns() {
+      refreshAllSuppDropdowns();
+      // Render blank results table immediately
+      var emptyTotals = {};
+      SUPP_FIELDS.forEach(function(f) { emptyTotals[f] = 0; });
+      document.getElementById('supp-results-container').innerHTML = buildSuppResultsHTML(emptyTotals, 0, 0, false);
+    }
+
+    // =============================================
+    // Category Manager (shared for supp + ped)
+    // =============================================
+    var catMgrType = ''; // 'supp' or 'ped'
+    var catRenameIdx = -1;
+
+    function openCatManager(type) {
+      catMgrType = type;
+      var title = type === 'supp' ? 'Adult Formula Categories' : 'Paediatric Milk Categories';
+      document.getElementById('cat-mgr-title').textContent = title;
+      document.getElementById('cat-mgr-new').value = '';
+      renderCatMgrList();
+      document.getElementById('cat-manager-modal').style.display = '';
+    }
+
+    function closeCatManager() {
+      document.getElementById('cat-manager-modal').style.display = 'none';
+    }
+
+    function getCatList() {
+      return catMgrType === 'supp' ? suppCategories : pedCategories;
+    }
+
+    function renderCatMgrList() {
+      var list = getCatList();
+      var container = document.getElementById('cat-mgr-list');
+      if (list.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-secondary);font-size:13px;">No categories yet. Add one below.</div>';
+        return;
+      }
+      container.innerHTML = list.map(function(cat, idx) {
+        var isFirst = idx === 0;
+        var isLast = idx === list.length - 1;
+        return '<div style="display:flex;align-items:center;gap:6px;padding:8px 4px;border-bottom:1px solid var(--border-color);">' +
+          '<span style="flex:1;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + cat + '</span>' +
+          '<button onclick="moveCat(' + idx + ',-1)" style="background:none;border:none;font-size:13px;cursor:pointer;padding:4px;color:' + (isFirst ? 'var(--text-tertiary)' : 'var(--accent)') + ';" ' + (isFirst ? 'disabled' : '') + '><i class="fas fa-arrow-up"></i></button>' +
+          '<button onclick="moveCat(' + idx + ',1)" style="background:none;border:none;font-size:13px;cursor:pointer;padding:4px;color:' + (isLast ? 'var(--text-tertiary)' : 'var(--accent)') + ';" ' + (isLast ? 'disabled' : '') + '><i class="fas fa-arrow-down"></i></button>' +
+          '<button onclick="openCatRename(' + idx + ')" style="background:none;border:none;font-size:13px;cursor:pointer;padding:4px;color:var(--text-secondary);"><i class="fas fa-pen"></i></button>' +
+          '<button onclick="deleteCat(' + idx + ')" style="background:none;border:none;font-size:13px;cursor:pointer;padding:4px;color:#ef4444;"><i class="fas fa-times"></i></button>' +
+        '</div>';
+      }).join('');
+    }
+
+    function moveCat(idx, direction) {
+      var list = getCatList();
+      var newIdx = idx + direction;
+      if (newIdx < 0 || newIdx >= list.length) return;
+      var temp = list[idx];
+      list[idx] = list[newIdx];
+      list[newIdx] = temp;
+      renderCatMgrList();
+      saveCatList();
+    }
+
+    function openCatRename(idx) {
+      catRenameIdx = idx;
+      var list = getCatList();
+      document.getElementById('cat-rename-input').value = list[idx];
+      document.getElementById('cat-rename-modal').style.display = '';
+      setTimeout(function() { document.getElementById('cat-rename-input').focus(); }, 100);
+    }
+
+    function closeCatRename() {
+      document.getElementById('cat-rename-modal').style.display = 'none';
+      catRenameIdx = -1;
+    }
+
+    function confirmCatRename() {
+      var list = getCatList();
+      var newName = document.getElementById('cat-rename-input').value.trim();
+      if (!newName || catRenameIdx < 0) return;
+      var oldName = list[catRenameIdx];
+      if (newName === oldName) { closeCatRename(); return; }
+      // Check for duplicate
+      if (list.indexOf(newName) >= 0) { closeCatRename(); return; }
+      // Cascade rename to all items
+      list[catRenameIdx] = newName;
+      if (catMgrType === 'supp') {
+        suppDB.forEach(function(s) { if (s.category === oldName) s.category = newName; });
+        saveSuppData();
+      } else {
+        formulaDatabase.forEach(function(f) { if (f.category === oldName) f.category = newName; });
+        saveFormulaData();
+      }
+      closeCatRename();
+      renderCatMgrList();
+      saveCatList();
+    }
+
+    function deleteCat(idx) {
+      var list = getCatList();
+      list.splice(idx, 1);
+      renderCatMgrList();
+      saveCatList();
+    }
+
+    function addCatItem() {
+      var input = document.getElementById('cat-mgr-new');
+      var name = input.value.trim();
+      if (!name) return;
+      var list = getCatList();
+      if (list.indexOf(name) >= 0) { input.value = ''; return; }
+      list.push(name);
+      input.value = '';
+      renderCatMgrList();
+      saveCatList();
+    }
+
+    function rebuildCatSelectOptions(selectId, cats) {
+      var sel = document.getElementById(selectId);
+      if (!sel) return;
+      var curVal = sel.value;
+      var html = '<option value="">-- Select Category --</option>';
+      cats.forEach(function(c) {
+        html += '<option value="' + c + '">' + c + '</option>';
+      });
+      sel.innerHTML = html;
+      // Restore previous value if still in list
+      if (curVal && cats.indexOf(curVal) >= 0) sel.value = curVal;
+    }
+
+    function saveSuppData() {
+      localSave('suppDB', { items: suppDB, nextId: suppNextId });
+      if (fbReady && fbDb) fbDb.ref('supplements').set({ items: suppDB, nextId: suppNextId });
+    }
+
+    function saveFormulaData() {
+      localSave('formulaDB', formulaDatabase);
+      if (fbReady && fbDb) fbDb.ref('formulaDatabase').set(formulaDatabase);
+    }
+
+    function saveCatList() {
+      if (catMgrType === 'supp') {
+        localSave('suppCategories', suppCategories);
+        if (fbReady && fbDb) fbDb.ref('suppCategories').set(suppCategories);
+        rebuildCatSelectOptions('ns-category', suppCategories);
+        refreshAllSuppDropdowns();
+      } else {
+        localSave('pedCategories', pedCategories);
+        if (fbReady && fbDb) fbDb.ref('pedCategories').set(pedCategories);
+        rebuildCatSelectOptions('fm-category', pedCategories);
+        populateFormulaDropdown();
+      }
+    }
+
+    // Close modals on overlay click
+    document.getElementById('cat-manager-modal').addEventListener('click', function(e) { if (e.target === this) closeCatManager(); });
+    document.getElementById('cat-rename-modal').addEventListener('click', function(e) { if (e.target === this) closeCatRename(); });
+    document.getElementById('supp-modal').addEventListener('click', function(e) { if (e.target === this) closeSuppModal(); });
+    document.getElementById('supp-info-modal').addEventListener('click', function(e) { if (e.target === this) closeSuppInfoModal(); });
+    document.getElementById('formula-modal').addEventListener('click', function(e) { if (e.target === this) closeFormulaModal(); });
+    document.getElementById('formula-info-modal').addEventListener('click', function(e) { if (e.target === this) closeFormulaInfoModal(); });
+
+    // Infant Formula Database (from Excel) - includes CHO (carbohydrates)
+    let formulaDatabase = [];
+
+    function buildFormulaOptionsHTML() {
+      return buildCombinedDropdownHTML('');
+    }
+
+    function populateFormulaDropdown() {
+      // Populate grid dropdowns (preserve selections)
+      for (var i = 1; i <= 5; i++) {
+        var sel = document.getElementById('fm-sel-' + i);
+        if (sel) {
+          var curVal = sel.value;
+          sel.innerHTML = buildPedDropdownHTML(curVal);
+        }
+      }
+      // Populate calculator dropdowns (paediatric formulas only)
+      // Restore saved selections from cookies
+      var savedStrength = getPref('pref_strength_formula');
+      var savedReverse = getPref('pref_reverse_formula');
+      document.getElementById('strength-formula-select').innerHTML = buildPedDropdownHTML(savedStrength);
+      document.getElementById('reverse-formula-select').innerHTML = buildPedDropdownHTML(savedReverse);
+      if (savedStrength) {
+        document.getElementById('strength-formula-select').value = savedStrength;
+        calculateCustomStrength();
+        updateReverseSyncBtn();
+      }
+      if (savedReverse) {
+        document.getElementById('reverse-formula-select').value = savedReverse;
+        calculateReverseNutrition();
+        updateReverseSyncBtn();
+      }
+    }
+
+    // === Formula CRUD ===
+    let formulaEditId = null;
+    let formulaNextId = 1;
+
+    function initFormulaNextId() {
+      if (formulaDatabase.length > 0) {
+        var maxId = Math.max.apply(null, formulaDatabase.map(function(f) { return f.id; }));
+        if (maxId >= formulaNextId) formulaNextId = maxId + 1;
+      }
+    }
+
+    function openFormulaModal(mode, id) {
+      formulaEditId = (mode === 'edit') ? id : null;
+      document.getElementById('formula-modal-title').textContent = (mode === 'edit') ? 'Edit Formula' : 'Add Formula';
+      // clear
+      document.getElementById('fm-name').value = '';
+      document.getElementById('fm-nameCN').value = '';
+      document.getElementById('fm-category').value = '';
+      document.getElementById('fm-category-custom').value = '';
+      resetUnitSelectors('fm-');
+      // Default Na, K, P to mg for new entries
+      if (mode !== 'edit') {
+        setUnitToAlt('fm-', ['na','k','p']);
+      }
+      SUPP_FIELDS.forEach(function(f) {
+        var el = document.getElementById('fm-' + f);
+        if (el) el.value = '';
+      });
+      document.getElementById('fm-scoopWeight').value = '';
+      document.getElementById('fm-dilution-scoops').value = '';
+      document.getElementById('fm-dilution-water').value = '';
+      document.getElementById('fm-notes').value = '';
+      // fill if editing
+      if (mode === 'edit') {
+        var f = formulaDatabase.find(function(x) { return x.id === id; });
+        if (f) {
+          document.getElementById('fm-name').value = f.name || '';
+          document.getElementById('fm-nameCN').value = f.nameCN || '';
+          // Try to match category in dropdown
+          var catSelect = document.getElementById('fm-category');
+          var matched = false;
+          for (var i = 0; i < catSelect.options.length; i++) {
+            if (catSelect.options[i].value === f.category) { catSelect.value = f.category; matched = true; break; }
+          }
+          if (!matched) { document.getElementById('fm-category-custom').value = f.category || ''; }
+          SUPP_FIELDS.forEach(function(key) {
+            if (f[key] != null && f[key] !== '') {
+              var el = document.getElementById('fm-' + key);
+              if (el) el.value = f[key];
+            }
+          });
+          if (f.scoopWeight != null) document.getElementById('fm-scoopWeight').value = f.scoopWeight;
+          fillDilutionFields('fm-', f.dilution);
+          document.getElementById('fm-notes').value = f.notes || '';
+        }
+      }
+      document.getElementById('formula-modal').classList.add('active');
+    }
+
+    function closeFormulaModal() { document.getElementById('formula-modal').classList.remove('active'); formulaEditId = null; }
+
+    function saveFormula() {
+      var name = document.getElementById('fm-name').value.trim();
+      if (!name) { document.getElementById('fm-name').style.borderColor = 'var(--danger)'; return; }
+      document.getElementById('fm-name').style.borderColor = '';
+      var category = document.getElementById('fm-category-custom').value.trim() || document.getElementById('fm-category').value || 'Other';
+      var scoopVal = document.getElementById('fm-scoopWeight').value;
+      var obj = {
+        name: name,
+        nameCN: document.getElementById('fm-nameCN').value.trim(),
+        category: category,
+        scoopWeight: scoopVal !== '' ? parseFloat(scoopVal) : null,
+        dilution: buildDilutionString('fm-'),
+        notes: document.getElementById('fm-notes').value.trim()
+      };
+      SUPP_FIELDS.forEach(function(f) {
+        obj[f] = getConvertedNutrientValue('fm-', f);
+      });
+      if (formulaEditId !== null) {
+        var idx = formulaDatabase.findIndex(function(x) { return x.id === formulaEditId; });
+        if (idx >= 0) { obj.id = formulaEditId; formulaDatabase[idx] = obj; }
+      } else {
+        obj.id = formulaNextId++;
+        formulaDatabase.push(obj);
+      }
+      closeFormulaModal();
+      // Sort by category then name
+      formulaDatabase.sort(function(a, b) {
+        if (a.category < b.category) return -1;
+        if (a.category > b.category) return 1;
+        return a.name.localeCompare(b.name);
+      });
+      populateFormulaDropdown();
+      refreshAllSuppDropdowns();
+      renderFormulaManageList();
+      calcFormulaTotals();
+      fbSaveFormulaDB();
+    }
+
+    function deleteFormula(id) {
+      formulaDatabase = formulaDatabase.filter(function(f) { return f.id !== id; });
+      populateFormulaDropdown();
+      refreshAllSuppDropdowns();
+      renderFormulaManageList();
+      calcFormulaTotals();
+      fbSaveFormulaDB();
+    }
+
+    function toggleFormulaManage() {
+      var card = document.getElementById('formula-manage-card');
+      if (!card) return;
+      if (card.style.display === 'none' || !card.style.display) {
+        renderFormulaManageList();
+        card.style.display = 'block';
+      } else {
+        card.style.display = 'none';
+      }
+    }
+
+    function renderFormulaManageList() {
+      var list = document.getElementById('formula-manage-list');
+      if (!list) return;
+      var search = (document.getElementById('formula-manage-search').value || '').toLowerCase();
+      var filtered = formulaDatabase.filter(function(f) {
+        if (!search) return true;
+        return (f.name.toLowerCase().indexOf(search) >= 0) ||
+               (f.nameCN && f.nameCN.toLowerCase().indexOf(search) >= 0) ||
+               (f.category && f.category.toLowerCase().indexOf(search) >= 0);
+      });
+      if (filtered.length === 0) {
+        list.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-secondary);font-size:12px;">' + (formulaDatabase.length === 0 ? 'No formulas yet. Tap "+ New" to add one.' : 'No matches found.') + '</div>';
+        return;
+      }
+      var currentCat = '';
+      var html = '';
+      filtered.forEach(function(f) {
+        if (f.category !== currentCat) {
+          currentCat = f.category;
+          html += '<div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--pink); padding: 8px 4px 3px; border-bottom: 1px solid var(--border-color);">' + (currentCat || 'Uncategorized') + '</div>';
+        }
+        var detail = [];
+        if (f.kcal) detail.push(f.kcal + ' kcal');
+        if (f.protein) detail.push(f.protein + 'g Pro');
+        if (f.dilution) detail.push(f.dilution);
+        html += '<div class="supp-manage-row">' +
+          '<div style="flex:1; min-width:0;">' +
+            '<div class="supp-manage-name">' + f.name + (f.nameCN ? ' <span style="font-weight:400;opacity:0.6;font-size:10px;">' + f.nameCN + '</span>' : '') + '</div>' +
+            (detail.length ? '<div class="supp-manage-detail">' + detail.join(' · ') + ' /100mL</div>' : '') +
+          '</div>' +
+          '<div class="supp-manage-actions">' +
+            '<button class="supp-info-btn" onclick="openFormulaInfo(' + f.id + ')" title="Info"><i class="fas fa-info"></i></button>' +
+            '<button class="supp-info-btn" onclick="openFormulaModal(\'edit\',' + f.id + ')" title="Edit" style="background:rgba(255,149,0,0.1);color:var(--warning);"><i class="fas fa-pen"></i></button>' +
+            '<button class="supp-info-btn" onclick="deleteFormula(' + f.id + ')" title="Delete" style="background:rgba(255,59,48,0.1);color:var(--danger);"><i class="fas fa-trash"></i></button>' +
+          '</div>' +
+        '</div>';
+      });
+      list.innerHTML = html;
+    }
+
+    function openFormulaInfo(id) {
+      var f = formulaDatabase.find(function(x) { return x.id === id; });
+      if (!f) return;
+      document.getElementById('formula-info-title').textContent = f.name;
+      var html = '<table style="width:100%; font-size: 13px; border-collapse: collapse;">';
+      if (f.nameCN) html += '<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 6px 4px; color: var(--text-secondary);">Chinese Name</td><td style="padding: 6px 4px; text-align: right; font-weight: 600;">' + f.nameCN + '</td></tr>';
+      html += '<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 6px 4px; color: var(--text-secondary);">Category</td><td style="padding: 6px 4px; text-align: right; font-weight: 600;">' + (f.category || '--') + '</td></tr>';
+      html += '<tr style="border-bottom: 1px solid var(--border-color);"><td colspan="2" style="padding: 8px 4px; font-weight: 700; color: var(--pink);">Per 100 mL</td></tr>';
+      SUPP_FIELDS.forEach(function(key) {
+        if (f[key] != null) {
+          html += '<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 6px 4px; color: var(--text-secondary);">' + SUPP_LABELS[key] + '</td><td style="padding: 6px 4px; text-align: right; font-weight: 600;">' + f[key] + '</td></tr>';
+        }
+      });
+      html += '<tr style="border-bottom: 1px solid var(--border-color);"><td colspan="2" style="padding: 8px 4px; font-weight: 700; color: var(--accent);">Preparation</td></tr>';
+      html += '<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 6px 4px; color: var(--text-secondary);">Scoop Weight</td><td style="padding: 6px 4px; text-align: right; font-weight: 600;">' + (f.scoopWeight != null ? f.scoopWeight + ' g' : '--') + '</td></tr>';
+      html += '<tr><td style="padding: 6px 4px; color: var(--text-secondary);">Dilution</td><td style="padding: 6px 4px; text-align: right; font-weight: 600;">' + formatDilutionDisplay(f.dilution) + '</td></tr>';
+      if (f.notes) html += '<tr><td colspan="2" style="padding: 8px 4px; color: var(--text-secondary); font-style: italic;">' + f.notes + '</td></tr>';
+      html += '</table>';
+      document.getElementById('formula-info-body').innerHTML = html;
+      document.getElementById('formula-info-modal').classList.add('active');
+    }
+
+    function closeFormulaInfoModal() { document.getElementById('formula-info-modal').classList.remove('active'); }
+
+    function getFormulaById(id) {
+      return formulaDatabase.find(f => f.id === id);
+    }
+
+    // === Ped Milk grid: build results HTML (always visible) ===
+    function buildFormulaResultsHTML(totals, totalVol, bw, hasAny, missingMap, noDataSet) {
+      var cid = 'fm';
+      var mm = missingMap || {};
+      var nd = noDataSet || {};
+      // Blank out fields where no product has any data
+      Object.keys(nd).forEach(function(f) { totals[f] = null; });
+      function fmtV(v, dp) { return (hasAny && v) ? v.toFixed(dp !== undefined ? dp : 1) : ''; }
+      function fmtPkg(v) { return (hasAny && bw && v) ? (v / bw).toFixed(1) : ''; }
+      function oL(field, fallback) { return getOutputLabel(cid, field, fallback); }
+      function oV(field, dp) { return fmtOutputVal(cid, field, totals[field], hasAny, dp); }
+      function flag(field, label) { return nutrientFlagHTML(field, mm, label); }
+
+      var kcal = totals.kcal;
+      var pro = totals.protein;
+      var carbs = totals.carbs;
+      var fat = totals.fat;
+      var pTE = kcal > 0 ? ((pro * 4) / kcal * 100) : 0;
+      var cTE = kcal > 0 ? ((carbs * 4) / kcal * 100) : 0;
+      var fTE = kcal > 0 ? ((fat * 9) / kcal * 100) : 0;
+
+      var html = '<table class="supp-result-table">';
+      html += '<tr class="supp-section-row macro"><td colspan="4">Macronutrients</td></tr>';
+      html += '<tr><td>Energy (kcal)</td><td>' + (hasAny && kcal != null ? Math.round(kcal) : '') + flag('kcal','Energy (kcal)') + '</td><td>Vol (mL)</td><td>' + (hasAny && totalVol ? Math.round(totalVol) : '') + '</td></tr>';
+      html += '<tr><td>kcal/kg</td><td>' + fmtPkg(kcal) + '</td><td>mL/kg</td><td>' + fmtPkg(totalVol) + '</td></tr>';
+      html += '<tr><td>Protein (g)</td><td>' + fmtV(pro) + flag('protein','Protein (g)') + '</td><td>%TE Pro</td><td>' + (hasAny && pTE > 0 ? pTE.toFixed(1) : '') + '</td></tr>';
+      html += '<tr><td>Pro g/kg</td><td>' + fmtPkg(pro) + '</td><td>%TE CHO</td><td>' + (hasAny && cTE > 0 ? cTE.toFixed(1) : '') + '</td></tr>';
+      html += '<tr><td>CHO (g)</td><td>' + fmtV(carbs) + flag('carbs','CHO (g)') + '</td><td>%TE Fat</td><td>' + (hasAny && fTE > 0 ? fTE.toFixed(1) : '') + '</td></tr>';
+      html += '<tr><td>Fat (g)</td><td>' + fmtV(fat) + flag('fat','Fat (g)') + '</td><td>Fibre (g)</td><td>' + fmtV(totals.fibre) + flag('fibre','Fibre (g)') + '</td></tr>';
+      html += '<tr><td>Water (mL)</td><td>' + fmtV(totals.water, 0) + flag('water','Water (mL)') + '</td><td>kcal/100mL</td><td>' + (hasAny && totalVol > 0 && kcal != null ? (kcal / totalVol * 100).toFixed(0) : '') + '</td></tr>';
+      html += '<tr class="supp-section-row vitamin"><td colspan="4">Vitamins</td></tr>';
+      html += '<tr><td>' + oL('vitA','Vit A (mcg)') + '</td><td>' + oV('vitA') + flag('vitA','Vit A') + '</td><td>' + oL('vitD','Vit D (mcg)') + '</td><td>' + oV('vitD') + flag('vitD','Vit D') + '</td></tr>';
+      html += '<tr><td>' + oL('vitE','Vit E (mg)') + '</td><td>' + oV('vitE') + flag('vitE','Vit E') + '</td><td>Vit K (mcg)</td><td>' + fmtV(totals.vitK) + flag('vitK','Vit K') + '</td></tr>';
+      html += '<tr><td>Vit C (mg)</td><td>' + fmtV(totals.vitC) + flag('vitC','Vit C') + '</td><td>Thiamin (mg)</td><td>' + oV('thiamin',3) + flag('thiamin','Thiamin') + '</td></tr>';
+      html += '<tr><td>Riboflavin (mg)</td><td>' + fmtV(totals.riboflavin) + flag('riboflavin','Riboflavin') + '</td><td>Niacin (mg)</td><td>' + fmtV(totals.niacin) + flag('niacin','Niacin') + '</td></tr>';
+      html += '<tr><td>Vit B6 (mg)</td><td>' + fmtV(totals.vitB6) + flag('vitB6','Vit B6') + '</td><td>Folate (mcg)</td><td>' + fmtV(totals.folate, 0) + flag('folate','Folate') + '</td></tr>';
+      html += '<tr><td>Vit B12 (mcg)</td><td>' + fmtV(totals.vitB12) + flag('vitB12','Vit B12') + '</td><td>Panto. Acid (mg)</td><td>' + fmtV(totals.pantoAcid) + flag('pantoAcid','Panto. Acid') + '</td></tr>';
+      html += '<tr><td>Biotin (mcg)</td><td>' + fmtV(totals.biotin) + flag('biotin','Biotin') + '</td><td>Choline (mg)</td><td>' + fmtV(totals.choline) + flag('choline','Choline') + '</td></tr>';
+      // Section: Minerals
+      html += '<tr class="supp-section-row mineral"><td colspan="4">Minerals</td></tr>';
+      html += '<tr><td>' + oL('na','Na (mmol)') + '</td><td>' + oV('na',1) + flag('na','Na') + '</td><td>' + oL('k','K (mmol)') + '</td><td>' + oV('k',1) + flag('k','K') + '</td></tr>';
+      html += '<tr><td>' + oL('p','P (mmol)') + '</td><td>' + oV('p',1) + flag('p','P') + '</td><td>' + oL('ca','Ca (mg)') + '</td><td>' + oV('ca',0) + flag('ca','Ca') + '</td></tr>';
+      html += '<tr><td>' + oL('iron','Iron (mg)') + '</td><td>' + oV('iron') + flag('iron','Iron') + '</td><td>' + oL('zinc','Zinc (mg)') + '</td><td>' + oV('zinc') + flag('zinc','Zinc') + '</td></tr>';
+      html += '<tr><td>' + oL('iodine','Iodine (mcg)') + '</td><td>' + oV('iodine') + flag('iodine','Iodine') + '</td><td>' + oL('selenium','Selenium (mcg)') + '</td><td>' + oV('selenium') + flag('selenium','Selenium') + '</td></tr>';
+      html += '<tr><td>' + oL('copper','Copper (mg)') + '</td><td>' + oV('copper') + flag('copper','Copper') + '</td><td>' + oL('manganese','Manganese (mg)') + '</td><td>' + oV('manganese') + flag('manganese','Manganese') + '</td></tr>';
+      html += '<tr><td>' + oL('chromium','Chromium (mcg)') + '</td><td>' + oV('chromium') + flag('chromium','Chromium') + '</td><td>' + oL('molybdenum','Molybdenum (mcg)') + '</td><td>' + oV('molybdenum') + flag('molybdenum','Molybdenum') + '</td></tr>';
+      html += '<tr><td>' + oL('magnesium','Magnesium (mg)') + '</td><td>' + oV('magnesium',0) + flag('magnesium','Magnesium') + '</td><td>' + oL('chloride','Chloride (mg)') + '</td><td>' + oV('chloride',0) + flag('chloride','Chloride') + '</td></tr>';
+      html += '</table>';
+      return html;
+    }
+
+    function calcFormulaTotals() {
+      var bw = parseFloat(document.getElementById('fm-bw').value);
+      var totals = {};
+      SUPP_FIELDS.forEach(function(f) { totals[f] = 0; });
+      var totalVol = 0;
+      var hasAny = false;
+      var activeProducts = [];
+      for (var i = 1; i <= 5; i++) {
+        var selEl = document.getElementById('fm-sel-' + i);
+        var strEl = document.getElementById('fm-str-' + i);
+        var volEl = document.getElementById('fm-vol-' + i);
+        var freqEl = document.getElementById('fm-freq-' + i);
+        if (!selEl || !volEl || !freqEl) continue;
+        var vol = parseFloat(volEl.value);
+        var freq = parseFloat(freqEl.value);
+        var str = parseFloat(strEl.value);
+        if (isNaN(freq)) freq = 0;
+        if (isNaN(str) || str === 0) str = 1;
+        if (!selEl.value || !vol || freq <= 0) continue;
+        var fm = findProductByKey(selEl.value);
+        if (!fm) continue;
+        var factor = (vol / 100) * freq * str;
+        var prodTrack = { name: fm.name, fields: {} };
+        SUPP_FIELDS.forEach(function(key) {
+          if (fm[key] != null && fm[key] !== '') {
+            totals[key] += fm[key] * factor;
+            prodTrack.fields[key] = true;
+          } else {
+            prodTrack.fields[key] = false;
+          }
+        });
+        totalVol += vol * freq;
+        activeProducts.push(prodTrack);
+        hasAny = true;
+      }
+      // Water
+      var wVol = parseFloat(document.getElementById('fm-water-vol').value) || 0;
+      var wFreq = parseFloat(document.getElementById('fm-water-freq').value) || 0;
+      var dailyWater = wVol * wFreq;
+      if (dailyWater > 0) { totalVol += dailyWater; totals.water += dailyWater; hasAny = true; }
+      var missingMap = buildMissingMap(activeProducts);
+      var noDataSet = buildNoDataSet(activeProducts);
+      var flagCount = Object.keys(missingMap).length;
+      if (flagCount > 0) console.log('[Ped Milk] Flags for ' + flagCount + ' nutrients: ' + Object.keys(missingMap).join(', '));
+      if (activeProducts.length > 0) console.log('[Ped Milk] Active products: ' + activeProducts.length + ', noData fields: ' + Object.keys(noDataSet).length);
+      document.getElementById('fm-results-container').innerHTML = buildFormulaResultsHTML(totals, totalVol, bw, hasAny, missingMap, noDataSet);
+    }
+
+    function clearAllFormulaRows() {
+      for (var i = 1; i <= 5; i++) {
+        var sel = document.getElementById('fm-sel-' + i);
+        var str = document.getElementById('fm-str-' + i);
+        var vol = document.getElementById('fm-vol-' + i);
+        var freq = document.getElementById('fm-freq-' + i);
+        if (sel) sel.selectedIndex = 0;
+        if (str) str.value = '';
+        if (vol) vol.value = '';
+        if (freq) freq.value = '0';
+      }
+      var wv = document.getElementById('fm-water-vol');
+      var wf = document.getElementById('fm-water-freq');
+      if (wv) wv.value = '';
+      if (wf) wf.value = '0';
+      var bwEl = document.getElementById('fm-bw');
+      if (bwEl) bwEl.value = '';
+      var emptyTotals = {};
+      SUPP_FIELDS.forEach(function(f) { emptyTotals[f] = 0; });
+      document.getElementById('fm-results-container').innerHTML = buildFormulaResultsHTML(emptyTotals, 0, 0, false);
+    }
+
+    function initFormulaGrid() {
+      populateFormulaDropdown();
+      var emptyTotals = {};
+      SUPP_FIELDS.forEach(function(f) { emptyTotals[f] = 0; });
+      document.getElementById('fm-results-container').innerHTML = buildFormulaResultsHTML(emptyTotals, 0, 0, false);
+    }
+
+    // =============================================
+    // Excel Import / Export Template Functions
+    // =============================================
+
+    // Column header mapping for Excel: field -> display header
+    var IMPORT_HEADERS = (function() {
+      var h = { id: 'ID', name: 'Product Name' };
+      SUPP_FIELDS.forEach(function(f) { h[f] = SUPP_LABELS[f] || f; });
+      h.dilutionScoops = 'Dilution Scoops';
+      h.dilutionWater = 'Dilution Water (mL)';
+      h.dilution = 'Dilution';
+      h.category = 'Category';
+      h.notes = 'Notes';
+      h.unitType = 'Unit Type';
+      h.sachetSize = 'Sachet Size (mL)';
+      return h;
+    })();
+
+    // Ordered columns for template
+    var IMPORT_COLS = ['name'].concat(SUPP_FIELDS).concat(['dilutionScoops', 'dilutionWater', 'category']);
+
+    function downloadImportTemplate(type) {
+      var wb = XLSX.utils.book_new();
+      // Header row
+      var headers = IMPORT_COLS.map(function(c) { return IMPORT_HEADERS[c]; });
+      // Unit hint row
+      var unitHints = IMPORT_COLS.map(function(c) {
+        if (c === 'name') return '(Required)';
+        if (c === 'category') return '(Optional)';
+        if (c === 'dilutionScoops') return 'e.g. 1';
+        if (c === 'dilutionWater') return 'e.g. 30';
+        // Show stored unit for nutrient fields
+        var opt = UNIT_OPTIONS[c];
+        if (opt) return 'per 100mL, in ' + opt.stored;
+        return 'per 100mL';
+      });
+      // Example row
+      var exampleRow = IMPORT_COLS.map(function(c) {
+        if (c === 'name') return 'Example Product';
+        if (c === 'kcal') return 100;
+        if (c === 'protein') return 4;
+        if (c === 'carbs') return 12.3;
+        if (c === 'fat') return 3.5;
+        if (c === 'na') return 2.8;
+        if (c === 'k') return 3.5;
+        if (c === 'dilutionScoops') return 1;
+        if (c === 'dilutionWater') return 30;
+        if (c === 'category') return '';
+        return '';
+      });
+
+      var wsData = [headers, unitHints, exampleRow];
+      var ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      // Set column widths
+      ws['!cols'] = IMPORT_COLS.map(function(c) {
+        if (c === 'name') return { wch: 22 };
+        if (c === 'category') return { wch: 20 };
+        return { wch: 14 };
+      });
+
+      var sheetName = type === 'formula' ? 'Ped Milk Template' : 'Supplement Template';
+      var fileName = type === 'formula' ? 'PedMilk_Import_Template.xlsx' : 'Supplement_Import_Template.xlsx';
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      XLSX.writeFile(wb, fileName);
+    }
+
+    function exportSuppToExcel(type) {
+      var db = type === 'formula' ? formulaDatabase : suppDB;
+      var label = type === 'formula' ? 'Ped Milk Formulas' : 'Supplements';
+      if (!db || db.length === 0) {
+        showImportResult('No ' + label.toLowerCase() + ' to export.', 'error');
+        return;
+      }
+      var wb = XLSX.utils.book_new();
+      var exportCols = ['id', 'name'].concat(SUPP_FIELDS).concat(['dilution', 'category', 'notes', 'unitType', 'sachetSize']);
+      var exportHeaders = {};
+      exportCols.forEach(function(c) { exportHeaders[c] = IMPORT_HEADERS[c] || c; });
+
+      // Header row
+      var headers = exportCols.map(function(c) { return exportHeaders[c]; });
+      // Unit hints row
+      var unitHints = exportCols.map(function(c) {
+        if (c === 'id') return '(Match ID to update)';
+        if (c === 'name') return '(Required)';
+        if (c === 'category' || c === 'notes' || c === 'dilution') return '(Optional)';
+        if (c === 'unitType') return 'per100ml or persachet';
+        if (c === 'sachetSize') return 'mL per sachet (if persachet)';
+        var opt = UNIT_OPTIONS[c];
+        if (opt) return 'per 100mL, in ' + opt.stored;
+        return 'per 100mL';
+      });
+
+      var wsData = [headers, unitHints];
+      db.forEach(function(item) {
+        var row = exportCols.map(function(c) {
+          if (item[c] !== undefined && item[c] !== null) return item[c];
+          return '';
+        });
+        wsData.push(row);
+      });
+
+      var ws = XLSX.utils.aoa_to_sheet(wsData);
+      // Set column widths
+      ws['!cols'] = exportCols.map(function(c) {
+        if (c === 'name') return { wch: 32 };
+        if (c === 'notes') return { wch: 45 };
+        if (c === 'dilution') return { wch: 28 };
+        if (c === 'category') return { wch: 15 };
+        if (c === 'id') return { wch: 6 };
+        return { wch: 14 };
+      });
+
+      XLSX.utils.book_append_sheet(wb, ws, label);
+      var fileName = label.replace(/\s+/g, '_') + '_Export.xlsx';
+      XLSX.writeFile(wb, fileName);
+      showImportResult('Exported ' + db.length + ' ' + label.toLowerCase() + ' to Excel.', 'success');
+    }
+
+    function handleImportFile(input, type) {
+      var file = input.files[0];
+      if (!file) return;
+      input.value = ''; // reset for re-import
+
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          var data = new Uint8Array(e.target.result);
+          var wb = XLSX.read(data, { type: 'array' });
+          // Prefer "Import Ready" sheet (auto-calculated template), fall back to first sheet
+          var ws = wb.Sheets['Import Ready'] || wb.Sheets[wb.SheetNames[0]];
+          var rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+          if (!rows || rows.length === 0) {
+            showImportResult('No data found in the file.', 'error');
+            return;
+          }
+
+          // Map headers back to field names (reverse lookup)
+          var headerToField = {};
+          Object.keys(IMPORT_HEADERS).forEach(function(f) {
+            headerToField[IMPORT_HEADERS[f].toLowerCase().trim()] = f;
+          });
+          // Also allow direct field names as headers
+          IMPORT_COLS.forEach(function(f) {
+            headerToField[f.toLowerCase()] = f;
+          });
+
+          var imported = 0;
+          var skipped = 0;
+          var newItems = [];
+
+          // Skip the unit hints row (row 2 in template, row 1 in JSON since row 1 = headers)
+          // sheet_to_json uses row 1 as keys; row 2 becomes rows[0]
+          if (rows.length > 0) {
+            var firstRow = rows[0];
+            var firstKeys = Object.keys(firstRow);
+            var firstVal = firstKeys.length > 0 ? String(firstRow[firstKeys[0]] || '').trim().toLowerCase() : '';
+            if (firstVal === '(required)' || firstVal === '(match id to update)' || firstVal === '(do not change)' || firstVal.indexOf('per 100ml') >= 0) {
+              rows = rows.slice(1);
+            }
+          }
+          // Skip the example row if present
+          if (rows.length > 0) {
+            var nameKey = '';
+            Object.keys(rows[0]).forEach(function(k) {
+              if (headerToField[k.toLowerCase().trim()] === 'name') nameKey = k;
+            });
+            if (nameKey && String(rows[0][nameKey] || '').trim().toLowerCase() === 'example product') {
+              rows = rows.slice(1);
+            }
+          }
+
+          rows.forEach(function(row) {
+            // Map row to data object
+            var obj = {};
+            var hasName = false;
+            var importId = 0;
+
+            Object.keys(row).forEach(function(header) {
+              var field = headerToField[header.toLowerCase().trim()];
+              if (!field) return;
+              var val = row[header];
+              if (field === 'id') {
+                importId = parseInt(val) || 0;
+              } else if (field === 'name') {
+                obj.name = String(val || '').trim();
+                if (obj.name && obj.name !== '') hasName = true;
+              } else if (field === 'category') {
+                obj.category = String(val || '').trim();
+              } else if (field === 'notes') {
+                obj.notes = String(val || '').trim();
+              } else if (field === 'dilution') {
+                obj._dilutionStr = String(val || '').trim();
+              } else if (field === 'dilutionScoops') {
+                obj._scoops = parseFloat(val) || 0;
+              } else if (field === 'dilutionWater') {
+                obj._water = parseFloat(val) || 0;
+              } else if (field === 'unitType') {
+                var ut = String(val || '').trim().toLowerCase();
+                obj.unitType = (ut === 'persachet') ? 'persachet' : 'per100ml';
+              } else if (field === 'sachetSize') {
+                var ss = parseFloat(val);
+                obj.sachetSize = (!isNaN(ss) && ss > 0) ? ss : 0;
+              } else {
+                // Nutrient field
+                var numVal = parseFloat(val);
+                obj[field] = isNaN(numVal) ? 0 : numVal;
+              }
+            });
+
+            if (!hasName) {
+              skipped++;
+              return;
+            }
+
+            // Build dilution string: prefer raw dilution string, then scoops:water format
+            if (obj._dilutionStr) {
+              obj.dilution = obj._dilutionStr;
+            } else if (obj._scoops > 0 && obj._water > 0) {
+              obj.dilution = obj._scoops + ':' + obj._water + 'ml';
+            } else {
+              obj.dilution = '';
+            }
+            delete obj._scoops;
+            delete obj._water;
+            delete obj._dilutionStr;
+
+            // Ensure all SUPP_FIELDS exist
+            SUPP_FIELDS.forEach(function(f) {
+              if (obj[f] === undefined) obj[f] = 0;
+            });
+            if (!obj.category) obj.category = '';
+            if (!obj.notes) obj.notes = '';
+
+            // Preserve original ID if present, otherwise assign new one
+            if (importId > 0) {
+              obj.id = importId;
+            } else {
+              obj.id = 0; // will be reassigned below
+            }
+            newItems.push(obj);
+            imported++;
+          });
+
+          // Determine whether the Excel has IDs (i.e. it came from an export)
+          var hasIds = newItems.some(function(item) { return item.id > 0; });
+
+          if (hasIds) {
+            // Full replacement mode: Excel is the source of truth
+            // Reassign IDs for any new rows (id=0) using max existing ID + 1
+            var maxId = 0;
+            newItems.forEach(function(item) { if (item.id > maxId) maxId = item.id; });
+            newItems.forEach(function(item) { if (item.id === 0) item.id = ++maxId; });
+
+            if (type === 'formula') {
+              formulaDatabase.length = 0;
+              newItems.forEach(function(item) { formulaDatabase.push(item); });
+              formulaNextId = maxId + 1;
+            } else {
+              suppDB.length = 0;
+              newItems.forEach(function(item) { suppDB.push(item); });
+              suppNextId = maxId + 1;
+            }
+          } else {
+            // No IDs present: append-only mode (blank template import)
+            if (type === 'formula') {
+              newItems.forEach(function(item) { item.id = formulaNextId++; formulaDatabase.push(item); });
+            } else {
+              newItems.forEach(function(item) { item.id = suppNextId++; suppDB.push(item); });
+            }
+          }
+
+          // Sort and refresh, then sync to Firebase
+          if (type === 'formula') {
+            formulaDatabase.sort(function(a, b) { return a.name.localeCompare(b.name); });
+            populateFormulaDropdown();
+            refreshAllSuppDropdowns();
+            renderFormulaManageList();
+            calcFormulaTotals();
+            fbSaveFormulaDB();
+          } else {
+            suppDB.sort(function(a, b) {
+              var catA = (a.category || 'Other').toLowerCase();
+              var catB = (b.category || 'Other').toLowerCase();
+              if (catA < catB) return -1;
+              if (catA > catB) return 1;
+              return a.name.localeCompare(b.name);
+            });
+            refreshAllSuppDropdowns();
+            populateFormulaDropdown();
+            renderSuppManageList();
+            calcSuppTotals();
+            fbSaveSuppDB();
+          }
+
+          var msg = hasIds
+            ? 'Database replaced with ' + imported + ' item' + (imported !== 1 ? 's' : '') + ' from Excel.'
+            : 'Successfully added ' + imported + ' new item' + (imported !== 1 ? 's' : '') + '.';
+          if (skipped > 0) msg += ' (' + skipped + ' row' + (skipped !== 1 ? 's' : '') + ' skipped — no product name)';
+          showImportResult(msg, 'success');
+
+        } catch (err) {
+          showImportResult('Error reading file: ' + err.message, 'error');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function showImportResult(message, type) {
+      // Find the appropriate manage card that's currently visible
+      var container = document.querySelector('#supp-manage-card[style*="block"], #formula-manage-card[style*="block"]');
+      if (!container) container = document.body;
+
+      // Remove any existing toast
+      var existing = document.getElementById('import-toast');
+      if (existing) existing.remove();
+
+      var toast = document.createElement('div');
+      toast.id = 'import-toast';
+      toast.style.cssText = 'padding:10px 14px;border-radius:8px;font-size:12px;font-weight:600;margin-bottom:8px;animation:fadeIn 0.3s ease;display:flex;align-items:center;gap:8px;';
+      if (type === 'success') {
+        toast.style.background = 'var(--accent-light, rgba(52,199,89,0.12))';
+        toast.style.color = 'var(--accent, #34c759)';
+        toast.innerHTML = '<i class="fas fa-check-circle"></i> ' + message;
+      } else {
+        toast.style.background = 'rgba(255,59,48,0.1)';
+        toast.style.color = 'var(--danger, #ff3b30)';
+        toast.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + message;
+      }
+
+      // Insert before the manage list
+      var list = container.querySelector('[id$="-manage-list"]');
+      if (list) {
+        container.insertBefore(toast, list);
+      } else {
+        container.appendChild(toast);
+      }
+
+      // Auto-remove after 5 seconds
+      setTimeout(function() {
+        if (toast.parentElement) {
+          toast.style.opacity = '0';
+          toast.style.transition = 'opacity 0.3s ease';
+          setTimeout(function() { if (toast.parentElement) toast.remove(); }, 300);
+        }
+      }, 5000);
+    }
+
+    function parseDilution(dilutionStr) {
+      // Parse dilution string to get WATER (ml) per scoop
+      // "1:30ml" means 1 scoop powder + 30ml water (not final volume)
+      if (!dilutionStr || dilutionStr === 'RTF' || dilutionStr === '--') return null;
+
+      // Handle "X:Yml" format (e.g. "1:30ml", "3:90ml")
+      var match1 = dilutionStr.match(/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)ml$/i);
+      if (match1) {
+        var sc = parseFloat(match1[1]);
+        var wt = parseFloat(match1[2]);
+        return sc > 0 ? wt / sc : null;
+      }
+
+      // Handle "X:Yml=Zml" legacy format (e.g. "7:210ml=250ml")
+      var match2 = dilutionStr.match(/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)ml=(\d+(?:\.\d+)?)ml$/i);
+      if (match2) {
+        var sc2 = parseFloat(match2[1]);
+        var wv2 = parseFloat(match2[2]);
+        return sc2 > 0 ? wv2 / sc2 : null;
+      }
+
+      return null;
+    }
+
+    let strengthMethod = 'scoops'; // 'scoops' or 'concentrate'
+
+    function setStrengthMethod(method) {
+      strengthMethod = method;
+      document.getElementById('str-method-scoops').classList.toggle('active', method === 'scoops');
+      document.getElementById('str-method-concentrate').classList.toggle('active', method === 'concentrate');
+      document.getElementById('str-scoops-inputs').style.display = method === 'scoops' ? '' : 'none';
+      document.getElementById('str-concentrate-inputs').style.display = method === 'concentrate' ? '' : 'none';
+      document.getElementById('custom-strength-result').style.display = 'none';
+      calculateCustomStrength();
+    }
+
+    function calculateCustomStrength() {
+      if (strengthMethod === 'concentrate') {
+        calculateConcentrateStrength();
+        return;
+      }
+
+      const formula = findProductByKey(document.getElementById('strength-formula-select').value);
+      const strength = parseFloat(document.getElementById('target-strength').value);
+      const targetVol = parseFloat(document.getElementById('target-volume').value);
+      const dilutionFactor = parseFloat(document.getElementById('dilution-factor').value);
+      const resultDiv = document.getElementById('custom-strength-result');
+
+      if (!formula || !strength || !targetVol) {
+        resultDiv.style.display = 'none';
+        return;
+      }
+
+      const mlPerScoop = parseDilution(formula.dilution);
+
+      if (!mlPerScoop) {
+        document.getElementById('strength-instruction').innerHTML = formula.dilution === 'RTF'
+          ? '<i class="fas fa-info-circle"></i> This is a Ready-To-Feed formula (no mixing required)'
+          : '<i class="fas fa-exclamation-circle"></i> Dilution info not available for this formula';
+        document.getElementById('strength-details-grid').innerHTML =
+          '<div class="ref-item"><span class="ref-label">Scoops needed:</span><span class="ref-value">--</span></div>' +
+          '<div class="ref-item"><span class="ref-label">Water (mL):</span><span class="ref-value">--</span></div>' +
+          '<div class="ref-item"><span class="ref-label">Final kcal/100mL:</span><span class="ref-value">--</span></div>';
+        resultDiv.style.display = 'block';
+        return;
+      }
+
+      // Water needed = target volume × expansion factor (0.9 or 0.84)
+      const waterNeeded = targetVol * dilutionFactor;
+
+      // Calculate scoops needed based on water amount
+      // At standard strength (1.0), waterNeeded ml needs (waterNeeded / mlPerScoop) scoops
+      // For higher strength, multiply scoops by strength factor
+      const scoopsNeeded = (waterNeeded / mlPerScoop) * strength;
+
+      // Final kcal per 100ml
+      const finalKcal = formula.kcal * strength;
+
+      // Round scoops to 1 decimal
+      const scoopsRounded = Math.round(scoopsNeeded * 10) / 10;
+      const waterRounded = Math.round(waterNeeded);
+
+      // Generate instruction
+      let instruction = '<i class="fas fa-spoon"></i> ' + scoopsRounded + ' scoop' + (scoopsRounded !== 1 ? 's' : '') + ' + ' + waterRounded + 'mL water';
+      if (strength !== 1) {
+        instruction += ' (' + strength + '\u00d7 strength)';
+      }
+
+      document.getElementById('strength-instruction').innerHTML = instruction;
+      document.getElementById('strength-details-grid').innerHTML =
+        '<div class="ref-item"><span class="ref-label">Scoops needed:</span><span class="ref-value">' + scoopsRounded + '</span></div>' +
+        '<div class="ref-item"><span class="ref-label">Water (mL):</span><span class="ref-value">' + waterRounded + ' mL</span></div>' +
+        '<div class="ref-item"><span class="ref-label">Final kcal/100mL:</span><span class="ref-value">' + Math.round(finalKcal) + ' kcal</span></div>';
+      resultDiv.style.display = 'block';
+    }
+
+    function calculateConcentrateStrength() {
+      const formula = findProductByKey(document.getElementById('strength-formula-select').value);
+      const targetStrength = parseFloat(document.getElementById('conc-target-strength').value);
+      const usualScoops = parseFloat(document.getElementById('conc-usual-scoops').value);
+      const expansionFactor = parseFloat(document.getElementById('conc-expansion-factor').value);
+      const resultDiv = document.getElementById('custom-strength-result');
+
+      if (!formula || !targetStrength || !usualScoops || targetStrength <= 0 || usualScoops <= 0) {
+        resultDiv.style.display = 'none';
+        return;
+      }
+
+      const mlPerScoop = parseDilution(formula.dilution);
+
+      if (!mlPerScoop) {
+        document.getElementById('strength-instruction').innerHTML = formula.dilution === 'RTF'
+          ? '<i class="fas fa-info-circle"></i> RTF formula cannot be concentrated'
+          : '<i class="fas fa-exclamation-circle"></i> Dilution info not available for this formula';
+        document.getElementById('strength-details-grid').innerHTML = '';
+        resultDiv.style.display = 'block';
+        return;
+      }
+
+      // Standard: usualScoops × mlPerScoop = total water at standard
+      var standardWater = usualScoops * mlPerScoop;
+      // Standard final volume = water / expansion factor
+      var standardFinalVol = standardWater / expansionFactor;
+      // For desired strength: new final volume = standard final / target strength
+      var newFinalVol = standardFinalVol / targetStrength;
+      // Final kcal per 100mL
+      var finalKcal = formula.kcal * targetStrength;
+
+      // Instruction: use same scoops, add water to make up to newFinalVol
+      var newFinalRounded = Math.round(newFinalVol * 10) / 10;
+      var standardFinalRounded = Math.round(standardFinalVol * 10) / 10;
+
+      var instruction = '<i class="fas fa-tint-slash"></i> ' + usualScoops + ' scoop' + (usualScoops !== 1 ? 's' : '') +
+        ', add water to <strong>' + newFinalRounded + ' mL</strong> total';
+      instruction += ' (' + targetStrength + '\u00d7 strength)';
+
+      // Water to add = new final volume × expansion factor
+      var waterToAdd = newFinalVol * expansionFactor;
+      var waterToAddRounded = Math.round(waterToAdd * 10) / 10;
+
+      document.getElementById('strength-instruction').innerHTML = instruction;
+      document.getElementById('strength-details-grid').innerHTML =
+        '<div class="ref-item"><span class="ref-label">Usual scoops:</span><span class="ref-value">' + usualScoops + '</span></div>' +
+        '<div class="ref-item"><span class="ref-label">Standard water:</span><span class="ref-value">' + Math.round(standardWater) + ' mL</span></div>' +
+        '<div class="ref-item"><span class="ref-label">Standard final vol:</span><span class="ref-value">' + standardFinalRounded + ' mL</span></div>' +
+        '<div class="ref-item"><span class="ref-label">New final vol:</span><span class="ref-value">' + newFinalRounded + ' mL</span></div>' +
+        '<div class="ref-item"><span class="ref-label">Water to add:</span><span class="ref-value">' + waterToAddRounded + ' mL</span></div>' +
+        '<div class="ref-item"><span class="ref-label">Volume reduced:</span><span class="ref-value">' + Math.round(standardFinalVol - newFinalVol) + ' mL less</span></div>' +
+        '<div class="ref-item"><span class="ref-label">Final kcal/100mL:</span><span class="ref-value">' + Math.round(finalKcal) + ' kcal</span></div>';
+      resultDiv.style.display = 'block';
+    }
+
+    function updateReverseSyncBtn() {
+      var strVal = document.getElementById('strength-formula-select').value;
+      var revVal = document.getElementById('reverse-formula-select').value;
+      var btn = document.getElementById('reverse-sync-btn');
+      if (btn) {
+        btn.style.display = (strVal && strVal !== revVal) ? '' : 'none';
+      }
+    }
+
+    function syncReverseFromStrength() {
+      var strVal = document.getElementById('strength-formula-select').value;
+      if (strVal) {
+        document.getElementById('reverse-formula-select').value = strVal;
+        calculateReverseNutrition();
+        updateReverseSyncBtn();
+      }
+    }
+
+    function calculateReverseNutrition() {
+      const formula = findProductByKey(document.getElementById('reverse-formula-select').value);
+      const scoops = parseFloat(document.getElementById('reverse-scoops').value);
+      const water = parseFloat(document.getElementById('reverse-water').value);
+      const expansionFactor = parseFloat(document.getElementById('reverse-expansion').value);
+      const resultDiv = document.getElementById('reverse-results');
+
+      if (!formula || !scoops || !water) {
+        resultDiv.style.display = 'none';
+        return;
+      }
+
+      const mlPerScoop = parseDilution(formula.dilution);
+
+      if (!mlPerScoop) {
+        resultDiv.style.display = 'none';
+        return;
+      }
+
+      // Final volume = water ÷ expansion factor
+      const finalVolume = water / expansionFactor;
+
+      // Calculate strength: actual scoops vs expected scoops for water amount
+      // Expected scoops at standard strength = water / mlPerScoop
+      const expectedScoops = water / mlPerScoop;
+      const strength = scoops / expectedScoops;
+
+      // Calculate nutrition based on final volume and strength
+      const factor = (finalVolume / 100) * strength;
+
+      document.getElementById('reverse-volume').textContent = Math.round(finalVolume);
+      document.getElementById('reverse-strength').textContent = strength.toFixed(2) + '×';
+      document.getElementById('reverse-kcal').textContent = Math.round(formula.kcal * factor);
+      document.getElementById('reverse-protein').textContent = (formula.protein * factor).toFixed(1);
+      document.getElementById('reverse-carbs').textContent = (formula.carbs * factor).toFixed(1);
+      document.getElementById('reverse-fat').textContent = (formula.fat * factor).toFixed(1);
+      resultDiv.style.display = 'block';
+    }
+
+    // Ketogenic Diet Calculator (based on Excel formulas)
+    // Ketocal 4:1 per 100ml at 100% strength: 100 kcal, 9.8g fat, 2g protein, 0.4g CHO
+    const ketocalBase = { kcal: 100, fat: 9.8, protein: 2.0, cho: 0.4 };
+    // Nutren Junior Powder per 100ml at standard dilution: 102 kcal, 4.04g fat, 3.04g protein, 13.36g CHO
+    const nutrenBase = { kcal: 102, fat: 4.04, protein: 3.04, cho: 13.36 };
+    let ketoResults = { fat: 0, cho: 0, protein: 0 };
+
+    function updateKetocalInfo() {
+      const strength = parseFloat(document.getElementById('ketocal-strength').value) || 100;
+      const factor = strength / 100;
+      document.getElementById('ketocal-strength-display').textContent = strength;
+      document.getElementById('ketocal-info-kcal').textContent = (ketocalBase.kcal * factor).toFixed(0);
+      document.getElementById('ketocal-info-fat').textContent = (ketocalBase.fat * factor).toFixed(1);
+      document.getElementById('ketocal-info-pro').textContent = (ketocalBase.protein * factor).toFixed(1);
+      document.getElementById('ketocal-info-cho').textContent = (ketocalBase.cho * factor).toFixed(1);
+    }
+
+    function toggleAdjustmentMethod() {
+      const method = document.getElementById('adjustment-method').value;
+      document.getElementById('adjustment-beneprotein').style.display = method === 'beneprotein' ? 'block' : 'none';
+      document.getElementById('adjustment-polycal').style.display = method === 'polycal' ? 'block' : 'none';
+      document.getElementById('adjustment-nutren').style.display = method === 'nutren' ? 'block' : 'none';
+      // Recalculate to update final nutrition
+      calculateKetocal();
+    }
+
+    function updateNutrenInfo() {
+      const strength = parseFloat(document.getElementById('nutren-strength').value) || 100;
+      const factor = strength / 100;
+      document.getElementById('nutren-strength-display').textContent = strength;
+      document.getElementById('nutren-info-kcal').textContent = (nutrenBase.kcal * factor).toFixed(0);
+      document.getElementById('nutren-info-fat').textContent = (nutrenBase.fat * factor).toFixed(2);
+      document.getElementById('nutren-info-pro').textContent = (nutrenBase.protein * factor).toFixed(2);
+      document.getElementById('nutren-info-cho').textContent = (nutrenBase.cho * factor).toFixed(2);
+    }
+
+    function calculateKeto() {
+      const energy = parseFloat(document.getElementById('keto-energy').value);
+      const protein = parseFloat(document.getElementById('keto-protein').value);
+      const ratioFat = parseFloat(document.getElementById('keto-ratio-fat').value);
+      const ratioPro = parseFloat(document.getElementById('keto-ratio-pro').value) || 1;
+      const ratio = ratioFat / ratioPro;
+      const resultDiv = document.getElementById('keto-results');
+      const ketocalResultDiv = document.getElementById('ketocal-results');
+      const stepsDiv = document.getElementById('keto-steps');
+      const warningDiv = document.getElementById('keto-warning');
+
+      if (!energy || !protein || !ratioFat || isNaN(ratio)) {
+        resultDiv.style.display = 'none';
+        ketocalResultDiv.style.display = 'none';
+        return;
+      }
+
+      // Formula from Excel:
+      // Energy per unit = (Fat ratio × 9) + (1 × 4)
+      const energyPerUnit = (ratio * 9) + (1 * 4);
+
+      // No. of units = Energy requirement / Energy per unit
+      const numUnits = energy / energyPerUnit;
+
+      // Amount of fat (g) = No. of units × Fat ratio
+      const fatGrams = numUnits * ratio;
+
+      // Amount of protein (g) = Protein requirement (given)
+      const proteinGrams = protein;
+
+      // Amount of CHO (g) = No. of units - Protein requirement
+      const choGrams = numUnits - protein;
+
+      // Store results
+      ketoResults = { fat: fatGrams, cho: choGrams, protein: proteinGrams };
+
+      // Build calculation steps
+      const steps = `
+        <div style="margin-bottom: 8px;"><strong>1. Energy per unit</strong> = (${ratio} × 9) + (1 × 4) = <strong>${energyPerUnit.toFixed(1)} kcal</strong></div>
+        <div style="margin-bottom: 8px;"><strong>2. No. of units</strong> = ${energy} ÷ ${energyPerUnit.toFixed(1)} = <strong>${numUnits.toFixed(2)} units</strong></div>
+        <div style="margin-bottom: 8px;"><strong>3. Fat</strong> = ${numUnits.toFixed(2)} × ${ratio} = <strong>${fatGrams.toFixed(2)}g</strong></div>
+        <div style="margin-bottom: 8px;"><strong>4. Protein</strong> = <strong>${proteinGrams}g</strong> (given)</div>
+        <div><strong>5. CHO</strong> = ${numUnits.toFixed(2)} − ${protein} = <strong>${choGrams.toFixed(2)}g</strong></div>
+      `;
+      stepsDiv.innerHTML = steps;
+
+      // Display results
+      document.getElementById('keto-result-fat').textContent = fatGrams.toFixed(1);
+      document.getElementById('keto-result-protein').textContent = proteinGrams;
+      document.getElementById('keto-result-cho').textContent = choGrams.toFixed(1);
+
+      // Show warning if CHO is negative
+      if (choGrams < 0) {
+        warningDiv.style.display = 'block';
+        document.getElementById('keto-warning-text').textContent =
+          `Negative CHO (${choGrams.toFixed(1)}g) - protein requirement may be too high for this ratio. Consider lower ratio or lower protein.`;
+      } else {
+        warningDiv.style.display = 'none';
+      }
+
+      resultDiv.style.display = 'block';
+      calculateKetocal();
+    }
+
+    function calculateKetocal() {
+      const ketocalResultDiv = document.getElementById('ketocal-results');
+
+      if (!ketoResults.fat) {
+        ketocalResultDiv.style.display = 'none';
+        return;
+      }
+
+      const ratioFat = parseFloat(document.getElementById('keto-ratio-fat').value);
+      const ratioPro = parseFloat(document.getElementById('keto-ratio-pro').value) || 1;
+      const ratio = ratioFat / ratioPro;
+
+      // Get Ketocal strength and calculate actual values per 100ml
+      const ketocalStrength = parseFloat(document.getElementById('ketocal-strength').value) || 100;
+      const ketocalFactor = ketocalStrength / 100;
+      const ketocal = {
+        kcal: ketocalBase.kcal * ketocalFactor,
+        fat: ketocalBase.fat * ketocalFactor,
+        protein: ketocalBase.protein * ketocalFactor,
+        cho: ketocalBase.cho * ketocalFactor
+      };
+
+      // Amount of Ketocal to fulfill fat (ml) = Fat needed / Ketocal fat per 100ml × 100
+      const ketocalAmount = (ketoResults.fat / ketocal.fat) * 100;
+
+      // Nutrients from Ketocal
+      const fatFromKetocal = (ketocalAmount * ketocal.fat) / 100;
+      const proteinFromKetocal = (ketocalAmount * ketocal.protein) / 100;
+      const choFromKetocal = (ketocalAmount * ketocal.cho) / 100;
+
+      // Current KD ratio from Ketocal = Fat / (Protein + CHO)
+      const currentRatio = fatFromKetocal / (proteinFromKetocal + choFromKetocal);
+
+      // Extra protein/CHO to add = (Fat from Ketocal / KD ratio) - (Protein from Ketocal + CHO from Ketocal)
+      const extraProCho = (fatFromKetocal / ratio) - (proteinFromKetocal + choFromKetocal);
+
+      // Option A: Use EITHER Beneprotein OR Polycal (not both!)
+      // Beneprotein: provides Extra grams of protein (7g powder = 6g protein)
+      const beneprotein = extraProCho * 7 / 6;
+      // Polycal: provides Extra grams of CHO (1g powder = 0.96g CHO)
+      const polycal = extraProCho / 0.96;
+
+      // Option B: Nutren Junior Powder calculation
+      // Nutren adds fat too, so we need a different formula to achieve target ratio
+      // Formula: x = 100 × (F - R × (P + C)) / (R × (n_p + n_c) - n_f)
+      // where x = ml of Nutren, F = fat from Ketocal, R = target ratio
+      const nutrenStrength = parseFloat(document.getElementById('nutren-strength').value) || 100;
+      const nutrenFactor = nutrenStrength / 100;
+      const nutren = {
+        fat: nutrenBase.fat * nutrenFactor,
+        protein: nutrenBase.protein * nutrenFactor,
+        cho: nutrenBase.cho * nutrenFactor
+      };
+      updateNutrenInfo();
+
+      // Calculate Nutren amount accounting for its fat content
+      const nutrenProChoPer100ml = nutren.protein + nutren.cho;
+      const nutrenFatPer100ml = nutren.fat;
+      const denominator = (ratio * nutrenProChoPer100ml) - nutrenFatPer100ml;
+      let nutrenAmount = 0;
+      if (denominator > 0) {
+        nutrenAmount = 100 * (fatFromKetocal - ratio * (proteinFromKetocal + choFromKetocal)) / denominator;
+      }
+
+      // Display results
+      document.getElementById('ketocal-amount').textContent = ketocalAmount.toFixed(1);
+      document.getElementById('ketocal-fat').textContent = fatFromKetocal.toFixed(1);
+      document.getElementById('ketocal-protein').textContent = proteinFromKetocal.toFixed(1);
+      document.getElementById('ketocal-cho').textContent = choFromKetocal.toFixed(1);
+      document.getElementById('ketocal-ratio').textContent = currentRatio.toFixed(2) + ':1';
+      document.getElementById('ketocal-extra').textContent = extraProCho.toFixed(1);
+      document.getElementById('ketocal-beneprotein').textContent = beneprotein.toFixed(1);
+      document.getElementById('ketocal-polycal').textContent = polycal.toFixed(1);
+      document.getElementById('ketocal-nutren').textContent = nutrenAmount.toFixed(1);
+
+      ketocalResultDiv.style.display = 'block';
+
+      // Calculate final combined nutrition based on selected adjustment method
+      const adjustmentMethod = document.getElementById('adjustment-method').value;
+      let finalKcal = (ketocalAmount * ketocal.kcal) / 100;
+      let finalFat = fatFromKetocal;
+      let finalProtein = proteinFromKetocal;
+      let finalCho = choFromKetocal;
+      let finalVolume = ketocalAmount;
+      let compositionText = '';
+
+      if (adjustmentMethod === 'beneprotein') {
+        // Beneprotein: 7g powder = 6g protein, ~25 kcal per 7g (3.6 kcal/g)
+        const beneproteinKcal = beneprotein * 3.6;
+        const beneproteinProtein = beneprotein * 6 / 7;
+        finalKcal += beneproteinKcal;
+        finalProtein += beneproteinProtein;
+        compositionText = `Ketocal ${ketocalAmount.toFixed(1)}ml + Beneprotein ${beneprotein.toFixed(1)}g`;
+      } else if (adjustmentMethod === 'polycal') {
+        // Polycal: 1g powder = 0.96g CHO, 3.84 kcal/g
+        const polycalKcal = polycal * 3.84;
+        const polycalCho = polycal * 0.96;
+        finalKcal += polycalKcal;
+        finalCho += polycalCho;
+        compositionText = `Ketocal ${ketocalAmount.toFixed(1)}ml + Polycal ${polycal.toFixed(1)}g`;
+      } else if (adjustmentMethod === 'nutren') {
+        // Nutren Junior Powder contributes kcal, fat, protein, CHO
+        const nutrenKcalFactor = nutrenStrength / 100;
+        const nutrenKcalPer100ml = nutrenBase.kcal * nutrenKcalFactor;
+        const nutrenKcalAdded = (nutrenAmount * nutrenKcalPer100ml) / 100;
+        const nutrenFatAdded = (nutrenAmount * nutren.fat) / 100;
+        const nutrenProteinAdded = (nutrenAmount * nutren.protein) / 100;
+        const nutrenChoAdded = (nutrenAmount * nutren.cho) / 100;
+        finalKcal += nutrenKcalAdded;
+        finalFat += nutrenFatAdded;
+        finalProtein += nutrenProteinAdded;
+        finalCho += nutrenChoAdded;
+        finalVolume += nutrenAmount;
+        compositionText = `Ketocal ${ketocalAmount.toFixed(1)}ml + Nutren Junior ${nutrenAmount.toFixed(1)}ml`;
+      }
+
+      // Calculate achieved KD ratio
+      const achievedRatio = finalFat / (finalProtein + finalCho);
+
+      // Display final nutrition
+      document.getElementById('keto-final-kcal').textContent = finalKcal.toFixed(0);
+      document.getElementById('keto-final-fat').textContent = finalFat.toFixed(1);
+      document.getElementById('keto-final-protein').textContent = finalProtein.toFixed(1);
+      document.getElementById('keto-final-cho').textContent = finalCho.toFixed(1);
+      document.getElementById('keto-final-volume').textContent = finalVolume.toFixed(1);
+      document.getElementById('keto-final-ratio').textContent = achievedRatio.toFixed(2) + ':1';
+      document.getElementById('keto-final-composition').textContent = compositionText;
+      document.getElementById('keto-final-nutrition').style.display = 'block';
+
+      // Check if final protein is below requirement
+      const proteinRequirement = ketoResults.protein;
+      const proteinWarningDiv = document.getElementById('keto-protein-warning');
+      if (finalProtein < proteinRequirement) {
+        const deficit = proteinRequirement - finalProtein;
+        document.getElementById('keto-protein-warning-text').textContent =
+          `Protein (${finalProtein.toFixed(1)}g) is below requirement (${proteinRequirement}g) by ${deficit.toFixed(1)}g`;
+        proteinWarningDiv.style.display = 'block';
+      } else {
+        proteinWarningDiv.style.display = 'none';
+      }
+    }
+
+    // Ketocal 4:1 Dilution Calculator
+    // Standard: 14.2g powder + 86ml water = 100ml milk
+    // Powder displacement: 14.2g occupies (100 - 86) = 14ml volume
+    // So displacement factor = 14 / 14.2 ml per gram
+    function calculateDilution() {
+      const strength = parseFloat(document.getElementById('dilution-strength').value);
+      const volume = parseFloat(document.getElementById('dilution-volume').value);
+      const resultsDiv = document.getElementById('dilution-results');
+
+      if (!volume || volume <= 0) {
+        resultsDiv.style.display = 'none';
+        return;
+      }
+
+      const powderPer100 = 14.2; // grams per 100ml at full strength
+      const waterPer100 = 86;    // ml per 100ml at full strength
+      const displacementPerGram = 14 / 14.2; // ml volume per gram of powder
+
+      const powder = powderPer100 * strength * (volume / 100);
+      const powderVolume = powder * displacementPerGram;
+      const water = volume - powderVolume;
+
+      document.getElementById('res-dilution-powder').textContent = powder.toFixed(1);
+      document.getElementById('res-dilution-water').textContent = water.toFixed(1);
+      resultsDiv.style.display = 'block';
+    }
+
+    // ===== Draft Diet Calculator =====
+    function calcDraftDiet() {
+      var meals = ['b', 'ms', 'l', 'as', 'd', 'ns'];
+      var cats = ['starch', 'meat', 'veg', 'fruit', 'fat'];
+      var totals = { starch: 0, meat: 0, veg: 0, fruit: 0, fat: 0 };
+
+      for (var m = 0; m < meals.length; m++) {
+        for (var c = 0; c < cats.length; c++) {
+          var val = parseFloat(document.getElementById('dd-' + meals[m] + '-' + cats[c]).value) || 0;
+          totals[cats[c]] += val;
+        }
+      }
+
+      // Update totals row
+      document.getElementById('dd-total-starch').textContent = totals.starch % 1 === 0 ? totals.starch : totals.starch.toFixed(1);
+      document.getElementById('dd-total-meat').textContent = totals.meat % 1 === 0 ? totals.meat : totals.meat.toFixed(1);
+      document.getElementById('dd-total-veg').textContent = totals.veg % 1 === 0 ? totals.veg : totals.veg.toFixed(1);
+      document.getElementById('dd-total-fruit').textContent = totals.fruit % 1 === 0 ? totals.fruit : totals.fruit.toFixed(1);
+      document.getElementById('dd-total-fat').textContent = totals.fat % 1 === 0 ? totals.fat : totals.fat.toFixed(1);
+
+      // Nutrition per exchange:
+      // Starch: 10g CHO + 1g Pro
+      // Meat:   7g Pro + 5g Fat
+      // Veg:    0g CHO (keto assumption)
+      // Fruit:  10g CHO
+      // Fat:    5g Fat
+      var cho = totals.starch * 10 + totals.fruit * 10;
+      var pro = totals.starch * 1 + totals.meat * 7;
+      var fat = totals.meat * 5 + totals.fat * 5;
+
+      var hasAny = (totals.starch + totals.meat + totals.veg + totals.fruit + totals.fat) > 0;
+
+      document.getElementById('dd-res-cho').textContent = hasAny ? cho.toFixed(1) : '--';
+      document.getElementById('dd-res-pro').textContent = hasAny ? pro.toFixed(1) : '--';
+      document.getElementById('dd-res-fat').textContent = hasAny ? fat.toFixed(1) : '--';
+
+      // KD ratio = Fat / (CHO + Pro)
+      var choPro = cho + pro;
+      if (hasAny && choPro > 0) {
+        var ratio = fat / choPro;
+        document.getElementById('dd-res-ratio').textContent = ratio.toFixed(1) + ' : 1';
+      } else {
+        document.getElementById('dd-res-ratio').textContent = '--';
+      }
+
+      // Calories: CHO=4, Pro=4, Fat=9
+      var kcal = cho * 4 + pro * 4 + fat * 9;
+      document.getElementById('dd-res-kcal').textContent = hasAny ? Math.round(kcal) : '--';
+    }
+
+    // ===== Pregnancy Tab Functions =====
+    let edcMethod = 'naegele';
+
+    function setEDCMethod(method) {
+      edcMethod = method;
+      document.querySelectorAll('#tab-pregnancy .segment-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', (method === 'naegele' && i === 0) || (method === 'conception' && i === 1));
+      });
+      document.getElementById('edc-naegele-input').style.display = method === 'naegele' ? 'block' : 'none';
+      document.getElementById('edc-conception-input').style.display = method === 'conception' ? 'block' : 'none';
+      calculateEDC();
+    }
+
+    function calculateEDC() {
+      let edc = null;
+      const resultsDiv = document.getElementById('edc-results');
+
+      if (edcMethod === 'naegele') {
+        const lmpStr = document.getElementById('lmp-date').value;
+        if (!lmpStr) { resultsDiv.style.display = 'none'; calculatePregnancyWeight(); return; }
+        const lmp = new Date(lmpStr);
+        // Naegele's rule: add 1 year, subtract 3 months, add 7 days
+        edc = new Date(lmp);
+        edc.setFullYear(edc.getFullYear() + 1);
+        edc.setMonth(edc.getMonth() - 3);
+        edc.setDate(edc.getDate() + 7);
+      } else {
+        const concStr = document.getElementById('conception-date').value;
+        if (!concStr) { resultsDiv.style.display = 'none'; calculatePregnancyWeight(); return; }
+        const conc = new Date(concStr);
+        // Conception method: add 266 days
+        edc = new Date(conc);
+        edc.setDate(edc.getDate() + 266);
+      }
+
+      const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' };
+      document.getElementById('res-edc-date').textContent = edc.toLocaleDateString('en-GB', options);
+
+      // Calculate gestation weeks+days and trimester from today
+      // Use local date parts to avoid UTC timezone mismatch
+      const lmpDate = new Date(edc);
+      lmpDate.setDate(lmpDate.getDate() - 280);
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const lmpLocal = new Date(lmpDate.getFullYear(), lmpDate.getMonth(), lmpDate.getDate());
+      const daysDiff = Math.round((today - lmpLocal) / (1000 * 60 * 60 * 24));
+      const gestWeeks = Math.floor(daysDiff / 7);
+      const gestDays = daysDiff % 7;
+
+      if (daysDiff >= 0 && daysDiff <= 294) {
+        document.getElementById('res-edc-gestation').textContent = gestWeeks + '+' + gestDays;
+        let trimester;
+        if (gestWeeks < 13 || (gestWeeks === 13 && gestDays === 0)) trimester = '1st';
+        else if (gestWeeks < 27) trimester = '2nd';
+        else trimester = '3rd';
+        document.getElementById('res-edc-trimester').textContent = trimester;
+      } else {
+        document.getElementById('res-edc-gestation').textContent = daysDiff < 0 ? 'Not yet' : 'Past due';
+        document.getElementById('res-edc-trimester').textContent = '--';
+      }
+
+      resultsDiv.style.display = 'block';
+
+      // Auto-fill check date if empty
+      const checkDateInput = document.getElementById('preg-check-date');
+      if (!checkDateInput.value) {
+        checkDateInput.value = new Date().toISOString().split('T')[0];
+      }
+      calculatePregnancyWeight();
+    }
+
+    function getEDCDate() {
+      if (edcMethod === 'naegele') {
+        const lmpStr = document.getElementById('lmp-date').value;
+        if (!lmpStr) return null;
+        const lmp = new Date(lmpStr);
+        const edc = new Date(lmp);
+        edc.setFullYear(edc.getFullYear() + 1);
+        edc.setMonth(edc.getMonth() - 3);
+        edc.setDate(edc.getDate() + 7);
+        return edc;
+      } else {
+        const concStr = document.getElementById('conception-date').value;
+        if (!concStr) return null;
+        const conc = new Date(concStr);
+        const edc = new Date(conc);
+        edc.setDate(edc.getDate() + 266);
+        return edc;
+      }
+    }
+
+    function calculatePregnancyWeight() {
+      const resultsDiv = document.getElementById('preg-weight-results');
+      const preWeight = parseFloat(document.getElementById('preg-weight').value);
+      const bmi = parseFloat(document.getElementById('preg-bmi').value);
+      const checkDateStr = document.getElementById('preg-check-date').value;
+      const edc = getEDCDate();
+
+      if (!preWeight || !bmi || !checkDateStr || !edc) {
+        resultsDiv.style.display = 'none';
+        return;
+      }
+
+      // LMP = EDC - 280 days
+      const lmpDate = new Date(edc);
+      lmpDate.setDate(lmpDate.getDate() - 280);
+
+      // Parse check date using local timezone to avoid UTC mismatch
+      const cdParts = checkDateStr.split('-');
+      const checkDate = new Date(parseInt(cdParts[0]), parseInt(cdParts[1]) - 1, parseInt(cdParts[2]));
+      const lmpLocal = new Date(lmpDate.getFullYear(), lmpDate.getMonth(), lmpDate.getDate());
+      const daysDiff = Math.round((checkDate - lmpLocal) / (1000 * 60 * 60 * 24));
+      const weeks = daysDiff / 7;
+
+      if (weeks < 0 || weeks > 42) {
+        resultsDiv.style.display = 'none';
+        return;
+      }
+
+      // Determine BMI category (HK Dept of Health cutoffs)
+      // weeklyLow/weeklyHigh = Avg/Week from reference table for T2 & T3
+      let bmiCategory, weeklyLow, weeklyHigh;
+      if (bmi < 19) {
+        bmiCategory = 'Underweight (BMI < 19)';
+        weeklyLow = 0.52; weeklyHigh = 0.67;
+      } else if (bmi <= 23.5) {
+        bmiCategory = 'Normal (BMI 19–23.5)';
+        weeklyLow = 0.44; weeklyHigh = 0.66;
+      } else {
+        bmiCategory = 'Overweight (BMI > 23.5)';
+        weeklyLow = 0.28; weeklyHigh = 0.58;
+      }
+
+      // Calculate expected weight gain at current week
+      // T1 gain (0–2 kg) is EXCLUDED — user adds manually
+      let gainLow, gainHigh;
+      if (weeks <= 13) {
+        // First trimester: no T2/T3 gain yet
+        gainLow = 0;
+        gainHigh = 0;
+      } else {
+        // After T1: (weeks beyond 13) × avg weekly rate from table only
+        const weeksAfterT1 = weeks - 13;
+        gainLow = weeksAfterT1 * weeklyLow;
+        gainHigh = weeksAfterT1 * weeklyHigh;
+      }
+
+      const refWeightLow = preWeight + gainLow;
+      const refWeightHigh = preWeight + gainHigh;
+
+      // Trimester
+      let trimester;
+      if (weeks <= 13) trimester = '1st';
+      else if (weeks <= 26) trimester = '2nd';
+      else trimester = '3rd';
+
+      // Display
+      document.getElementById('res-preg-weeks').textContent = Math.floor(weeks) + '+' + Math.floor(daysDiff % 7);
+      document.getElementById('res-preg-trimester').textContent = trimester;
+
+      // Underweight: show "≥" (no upper limit)
+      if (bmi < 19) {
+        document.getElementById('res-preg-ref-weight').textContent = '≥ ' + refWeightLow.toFixed(1) + ' kg';
+        document.getElementById('res-preg-gain-range').textContent = '≥ +' + gainLow.toFixed(1) + ' kg';
+      } else {
+        document.getElementById('res-preg-ref-weight').textContent = refWeightLow.toFixed(1) + ' – ' + refWeightHigh.toFixed(1) + ' kg';
+        document.getElementById('res-preg-gain-range').textContent = '+' + gainLow.toFixed(1) + ' – +' + gainHigh.toFixed(1) + ' kg';
+      }
+      resultsDiv.style.display = 'block';
+      calculatePregnancyRequirements();
+    }
+
+    let pregTrimesterSource = 'auto';
+
+    function setPregnancyTrimesterSource(source) {
+      pregTrimesterSource = source;
+      document.getElementById('preg-tri-auto-btn').classList.toggle('active', source === 'auto');
+      document.getElementById('preg-tri-manual-btn').classList.toggle('active', source === 'manual');
+      document.getElementById('preg-tri-auto-display').style.display = source === 'auto' ? 'block' : 'none';
+      document.getElementById('preg-tri-manual-input').style.display = source === 'manual' ? 'block' : 'none';
+      calculatePregnancyRequirements();
+    }
+
+    function getPregnancyTrimester() {
+      if (pregTrimesterSource === 'manual') {
+        return parseInt(document.getElementById('preg-req-tri-manual').value);
+      }
+      // Auto: get from EDC calculation
+      const edcTrimesterText = document.getElementById('res-edc-trimester').textContent;
+      if (edcTrimesterText === '1st') return 1;
+      if (edcTrimesterText === '2nd') return 2;
+      if (edcTrimesterText === '3rd') return 3;
+      return null;
+    }
+
+    function updateAutoTrimesterDisplay() {
+      const edcTrimesterText = document.getElementById('res-edc-trimester').textContent;
+      const autoDisplay = document.getElementById('preg-req-tri-auto');
+      if (edcTrimesterText && edcTrimesterText !== '--') {
+        autoDisplay.textContent = edcTrimesterText;
+      } else {
+        autoDisplay.textContent = 'Enter EDC above first';
+      }
+    }
+
+    // Extra energy by trimester: { trimester: [ELNA, WHO] }
+    const extraEnergy = { 1: [0, 0], 2: [340, 285], 3: [452, 475] };
+
+    function calculatePregnancyRequirements() {
+      const preWeight = parseFloat(document.getElementById('preg-weight').value);
+      const energyFactor = parseFloat(document.getElementById('preg-energy-factor').value);
+      const proteinFactor = parseFloat(document.getElementById('preg-protein-factor').value);
+
+      updateAutoTrimesterDisplay();
+
+      const trimester = getPregnancyTrimester();
+
+      // === MACRONUTRIENTS (dynamic – need weight + factors + trimester) ===
+
+      if (preWeight && energyFactor && trimester) {
+        const baseEnergy = preWeight * energyFactor;
+        const [elnaExtra, whoExtra] = extraEnergy[trimester];
+        const totalELNA = Math.round(baseEnergy + elnaExtra);
+        const totalWHO = Math.round(baseEnergy + whoExtra);
+        const extraLow = Math.min(elnaExtra, whoExtra);
+        const extraHigh = Math.max(elnaExtra, whoExtra);
+        const totalLow = Math.min(totalELNA, totalWHO);
+        const totalHigh = Math.max(totalELNA, totalWHO);
+
+        if (extraLow === extraHigh) {
+          document.getElementById('res-preg-energy-range').textContent = totalLow + ' kcal';
+          document.getElementById('res-preg-extra').textContent = '+' + extraLow;
+        } else {
+          document.getElementById('res-preg-energy-range').textContent = totalLow + ' – ' + totalHigh + ' kcal';
+          document.getElementById('res-preg-extra').textContent = '+' + extraLow + ' – +' + extraHigh;
+        }
+        document.getElementById('res-preg-energy-base').textContent = Math.round(baseEnergy);
+
+        // Carbohydrate & Fat
+        const choLow = Math.round((totalLow * 0.45) / 4);
+        const choHigh = Math.round((totalHigh * 0.64) / 4);
+        document.getElementById('res-preg-cho').textContent = choLow + ' – ' + choHigh + ' g';
+
+        const fatLow = Math.round((totalLow * 0.20) / 9);
+        const fatHigh = Math.round((totalHigh * 0.35) / 9);
+        document.getElementById('res-preg-fat').textContent = fatLow + ' – ' + fatHigh + ' g';
+      } else {
+        document.getElementById('res-preg-energy-range').textContent = '--';
+        document.getElementById('res-preg-energy-base').textContent = '--';
+        document.getElementById('res-preg-extra').textContent = '--';
+        document.getElementById('res-preg-cho').textContent = '--';
+        document.getElementById('res-preg-fat').textContent = '--';
+      }
+
+      // Protein (needs weight + protein factor only)
+      if (preWeight && proteinFactor) {
+        document.getElementById('res-preg-protein').textContent = (preWeight * proteinFactor).toFixed(1);
+      } else {
+        document.getElementById('res-preg-protein').textContent = '--';
+      }
+
+      // Fluid (needs weight + trimester)
+      if (preWeight && trimester) {
+        const baselineFluid = preWeight * 30;
+        const fluidLow = Math.round(baselineFluid * 1.1);
+        const fluidHigh = Math.round(baselineFluid + 1000);
+        if (trimester === 1) {
+          document.getElementById('res-preg-fluid').textContent = fluidLow + ' ml';
+        } else {
+          document.getElementById('res-preg-fluid').textContent = fluidLow + ' – ' + fluidHigh + ' ml';
+        }
+      } else {
+        document.getElementById('res-preg-fluid').textContent = '--';
+      }
+
+      // === VITAMINS (trimester-dependent part) ===
+
+      // Folate high-risk warning (trimester-dependent)
+      const highRiskDiv = document.getElementById('preg-folate-highrisk');
+      if (trimester === 1) {
+        highRiskDiv.style.display = 'block';
+        document.getElementById('preg-folate-highrisk-text').textContent = 'If high risk (1st tri): 1000 mcg Folate + 2.6 mcg Vit B12';
+      } else {
+        highRiskDiv.style.display = 'none';
+      }
+
+      // === MINERALS (trimester-dependent) ===
+
+      // Iron by trimester
+      if (trimester) {
+        const ironData = { 1: '18.8', 2: '22 – 23', 3: '24 – 27' };
+        document.getElementById('res-preg-iron').textContent = ironData[trimester] + ' mg';
+      } else {
+        document.getElementById('res-preg-iron').textContent = '--';
+      }
+    }
+
+    // Service Worker disabled in iframe/canvas environments
+    // (sw.js not available, and controllerchange can cause reload loops)
+
+
+    // ========== Stock Tab: Formula Inventory ==========
+    var stockItems = []; // [{id, name, category, status:'green'|'yellow'|'red', notes}]
+    var stockCategories = ['Standard', 'High Protein', 'Renal', 'Diabetic', 'Paediatric', 'Fibre'];
+    var stockFilter = 'all'; // 'all', 'green', 'yellow', 'red'
+    var stockCatFilter = null; // null = all, or category string
+    var stockEditId = null;
+    var stockModalStatus = 'green';
+
+    function setStockFilter(f) {
+      stockFilter = f;
+      document.getElementById('stock-filter-all').classList.toggle('active', f === 'all');
+      document.getElementById('stock-filter-green').classList.toggle('active', f === 'green');
+      document.getElementById('stock-filter-yellow').classList.toggle('active', f === 'yellow');
+      document.getElementById('stock-filter-red').classList.toggle('active', f === 'red');
+      renderStockList();
+    }
+
+    function setStockCatFilter(cat) {
+      stockCatFilter = (stockCatFilter === cat) ? null : cat;
+      renderStockCatFilterBar();
+      renderStockList();
+    }
+
+    function renderStockCatFilterBar() {
+      var container = document.getElementById('stock-cat-filter');
+      if (stockCategories.length === 0) { container.innerHTML = ''; return; }
+      container.innerHTML = stockCategories.map(function(cat) {
+        var isActive = stockCatFilter === cat;
+        return '<button class="segment-btn' + (isActive ? ' active' : '') + '" onclick="setStockCatFilter(\'' + cat.replace(/'/g, "\\'") + '\')" style="font-size:11px;padding:4px 10px;border-radius:14px;">' + cat + '</button>';
+      }).join('');
+    }
+
+    function renderStockList() {
+      var list = document.getElementById('stock-list');
+      var empty = document.getElementById('stock-empty');
+      var filtered = stockItems.filter(function(item) {
+        if (stockFilter !== 'all' && item.status !== stockFilter) return false;
+        if (stockCatFilter && item.category !== stockCatFilter) return false;
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        list.innerHTML = '';
+        empty.style.display = '';
+        if (stockItems.length > 0) {
+          empty.querySelector('p').textContent = 'No products match filter';
+          empty.querySelectorAll('p')[1].textContent = 'Try a different filter';
+        } else {
+          empty.querySelector('p').textContent = 'No products yet';
+          empty.querySelectorAll('p')[1].textContent = 'Tap "+ Add" to add a formula';
+        }
+        return;
+      }
+      empty.style.display = 'none';
+
+      // Sort: green first, yellow, red last; within same status alphabetical
+      var statusOrder = { green: 0, yellow: 1, red: 2 };
+      filtered.sort(function(a, b) {
+        if (statusOrder[a.status] !== statusOrder[b.status]) return statusOrder[a.status] - statusOrder[b.status];
+        return a.name.localeCompare(b.name);
+      });
+
+      var isSignedIn = !!fbUser;
+      list.innerHTML = filtered.map(function(item) {
+        var dotColor = item.status === 'green' ? '#22c55e' : (item.status === 'yellow' ? '#eab308' : '#ef4444');
+        var bgColor = item.status === 'green' ? 'rgba(34,197,94,0.08)' : (item.status === 'yellow' ? 'rgba(234,179,8,0.08)' : 'rgba(239,68,68,0.08)');
+        var borderColor = item.status === 'green' ? 'rgba(34,197,94,0.25)' : (item.status === 'yellow' ? 'rgba(234,179,8,0.25)' : 'rgba(239,68,68,0.25)');
+        var catBadge = item.category ? '<span style="font-size:10px;background:var(--bg-tertiary);padding:2px 7px;border-radius:10px;color:var(--text-secondary);">' + item.category + '</span>' : '';
+        var notesHtml = item.notes ? '<div style="font-size:11px;color:var(--text-secondary);margin-top:3px;">' + item.notes + '</div>' : '';
+        var clickAttr = isSignedIn ? ' onclick="openStockModal(' + item.id + ')"' : '';
+        var cursorStyle = isSignedIn ? 'cursor:pointer;' : '';
+        var deleteBtn = isSignedIn ? '<button onclick="event.stopPropagation();deleteStockItem(' + item.id + ')" style="background:none;border:none;color:var(--text-secondary);font-size:14px;padding:4px;cursor:pointer;opacity:0.5;"><i class="fas fa-trash-alt"></i></button>' : '';
+        return '<div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:' + bgColor + ';border:1px solid ' + borderColor + ';border-radius:10px;' + cursorStyle + '"' + clickAttr + '>' +
+          '<div style="font-size:14px;margin-top:2px;color:' + dotColor + ';">●</div>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span style="font-size:14px;font-weight:600;">' + item.name + '</span>' + catBadge + '</div>' +
+            notesHtml +
+          '</div>' +
+          deleteBtn +
+        '</div>';
+      }).join('');
+    }
+
+    function openStockModal(editId) {
+      stockEditId = editId || null;
+      var modal = document.getElementById('stock-modal');
+      var titleEl = document.getElementById('stock-modal-title');
+      populateStockCategorySelect();
+
+      if (stockEditId) {
+        var item = stockItems.find(function(i) { return i.id === stockEditId; });
+        if (!item) return;
+        titleEl.textContent = 'Edit Product';
+        document.getElementById('stock-name').value = item.name;
+        document.getElementById('stock-category').value = item.category || '';
+        document.getElementById('stock-notes').value = item.notes || '';
+        setStockModalStatus(item.status);
+      } else {
+        titleEl.textContent = 'Add Product';
+        document.getElementById('stock-name').value = '';
+        document.getElementById('stock-category').value = stockCategories[0] || '';
+        document.getElementById('stock-notes').value = '';
+        setStockModalStatus('green');
+      }
+      modal.style.display = '';
+    }
+
+    function closeStockModal() {
+      document.getElementById('stock-modal').style.display = 'none';
+    }
+
+    function setStockModalStatus(status) {
+      stockModalStatus = status;
+      document.getElementById('stock-status-green').classList.toggle('active', status === 'green');
+      document.getElementById('stock-status-yellow').classList.toggle('active', status === 'yellow');
+      document.getElementById('stock-status-red').classList.toggle('active', status === 'red');
+    }
+
+    function populateStockCategorySelect() {
+      var sel = document.getElementById('stock-category');
+      sel.innerHTML = stockCategories.map(function(c) {
+        return '<option value="' + c + '">' + c + '</option>';
+      }).join('');
+    }
+
+    function saveStockItem() {
+      var name = document.getElementById('stock-name').value.trim();
+      if (!name) { document.getElementById('stock-name').focus(); return; }
+      var category = document.getElementById('stock-category').value;
+      var notes = document.getElementById('stock-notes').value.trim();
+
+      if (stockEditId) {
+        var item = stockItems.find(function(i) { return i.id === stockEditId; });
+        if (item) {
+          item.name = name;
+          item.category = category;
+          item.status = stockModalStatus;
+          item.notes = notes;
+        }
+      } else {
+        var newId = stockItems.length > 0 ? Math.max.apply(null, stockItems.map(function(i) { return i.id; })) + 1 : 1;
+        stockItems.push({ id: newId, name: name, category: category, status: stockModalStatus, notes: notes });
+      }
+
+      closeStockModal();
+      renderStockList();
+      saveStockToFirebase();
+    }
+
+    function deleteStockItem(id) {
+      // Custom confirm dialog
+      var modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;';
+      modal.innerHTML = '<div style="background:var(--bg-primary);padding:20px;border-radius:14px;max-width:300px;width:90%;text-align:center;">' +
+        '<p style="font-size:14px;margin-bottom:16px;color:var(--text-primary);">Delete this product?</p>' +
+        '<div style="display:flex;gap:8px;">' +
+          '<button onclick="this.closest(\'div[style*=fixed]\').remove()" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:14px;cursor:pointer;">Cancel</button>' +
+          '<button onclick="confirmDeleteStock(' + id + ');this.closest(\'div[style*=fixed]\').remove()" style="flex:1;padding:10px;border:none;border-radius:8px;background:#ef4444;color:#fff;font-size:14px;cursor:pointer;">Delete</button>' +
+        '</div></div>';
+      document.body.appendChild(modal);
+    }
+
+    function confirmDeleteStock(id) {
+      stockItems = stockItems.filter(function(i) { return i.id !== id; });
+      renderStockList();
+      saveStockToFirebase();
+    }
+
+    // Category manager
+    function openStockCatManager() {
+      renderStockCatList();
+      document.getElementById('stock-cat-modal').style.display = '';
+    }
+
+    function closeStockCatManager() {
+      document.getElementById('stock-cat-modal').style.display = 'none';
+    }
+
+    function renderStockCatList() {
+      var container = document.getElementById('stock-cat-list');
+      if (stockCategories.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-secondary);font-size:13px;">No categories. Add one below.</div>';
+        return;
+      }
+      container.innerHTML = stockCategories.map(function(cat, idx) {
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 4px;border-bottom:1px solid var(--border);">' +
+          '<span style="font-size:14px;">' + cat + '</span>' +
+          '<button onclick="removeStockCategory(' + idx + ')" style="background:none;border:none;color:#ef4444;font-size:13px;cursor:pointer;padding:4px 8px;"><i class="fas fa-times"></i></button>' +
+        '</div>';
+      }).join('');
+    }
+
+    function addStockCategory() {
+      var input = document.getElementById('stock-new-cat');
+      var name = input.value.trim();
+      if (!name) return;
+      if (stockCategories.indexOf(name) >= 0) { input.value = ''; return; }
+      stockCategories.push(name);
+      input.value = '';
+      renderStockCatList();
+      renderStockCatFilterBar();
+      populateStockCategorySelect();
+      saveStockToFirebase();
+    }
+
+    function removeStockCategory(idx) {
+      stockCategories.splice(idx, 1);
+      renderStockCatList();
+      renderStockCatFilterBar();
+      populateStockCategorySelect();
+      saveStockToFirebase();
+    }
+
+    // Persistence for stock (localStorage + Firebase shared path)
+    function saveStockToFirebase() {
+      localSave('stockData', { items: stockItems, categories: stockCategories });
+      if (!fbReady || !fbDb) return;
+      fbDb.ref('stock').set({
+        items: stockItems,
+        categories: stockCategories
+      });
+    }
+
+    function loadStockFromFirebase() {
+      if (!fbDb) return;
+      fbDb.ref('stock').once('value').then(function(snap) {
+        var data = snap.val();
+        if (data) {
+          if (data.items) stockItems = data.items;
+          if (data.categories) stockCategories = data.categories;
+          localSave('stockData', { items: stockItems, categories: stockCategories });
+          renderStockCatFilterBar();
+          renderStockList();
+        }
+      }).catch(function(e) {
+        console.log('Firebase load stock error: ' + e.message);
+      });
+    }
+
+    function initStockTab() {
+      renderStockCatFilterBar();
+      renderStockList();
+    }
+
+    // ========== Food Tab: TMH Food List ==========
+    var tmhFoodDB = [
+      // 穀品 Starch
+      {id:1, cat:'穀品', name:'白粥(飯粥)', portion:'1碗', wt:225, kcal:181, pro:3.0, fat:0.3, cho:40.8, fib:0.2, na:5, k:18, p:26, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['糖尿','腎','低鈉','素食','低渣']},
+      {id:2, cat:'穀品', name:'皮蛋瘦肉粥', portion:'1碗', wt:225, kcal:218, pro:10.2, fat:5.3, cho:31.5, fib:0.3, na:320, k:98, p:85, texture:['糊餐','碎餐','軟餐','普通'], diet:['低渣']},
+      {id:3, cat:'穀品', name:'白飯', portion:'1碗', wt:200, kcal:260, pro:4.8, fat:0.6, cho:57.4, fib:0.6, na:2, k:22, p:34, texture:['軟餐','普通'], diet:['糖尿','腎','低鈉','素食','低渣']},
+      {id:4, cat:'穀品', name:'粉(米粉/河粉)', portion:'1碗', wt:200, kcal:218, pro:3.2, fat:0.8, cho:49.6, fib:0.2, na:150, k:10, p:20, texture:['碎餐','軟餐','普通'], diet:['腎','素食','低渣']},
+      {id:5, cat:'穀品', name:'通粉(macaroni)', portion:'1碗', wt:200, kcal:248, pro:8.6, fat:1.2, cho:50.0, fib:1.8, na:4, k:44, p:76, texture:['碎餐','軟餐','普通'], diet:['糖尿','腎','低鈉','素食']},
+      {id:6, cat:'穀品', name:'意粉(spaghetti)', portion:'1碗', wt:200, kcal:248, pro:8.6, fat:1.2, cho:50.0, fib:1.8, na:4, k:44, p:76, texture:['碎餐','軟餐','普通'], diet:['糖尿','腎','低鈉','素食']},
+      {id:7, cat:'穀品', name:'方包(白)', portion:'1片', wt:40, kcal:103, pro:3.7, fat:1.2, cho:19.6, fib:0.8, na:190, k:38, p:32, texture:['軟餐','普通'], diet:['糖尿','素食','低渣']},
+      {id:8, cat:'穀品', name:'麥包', portion:'1片', wt:40, kcal:95, pro:4.0, fat:1.2, cho:17.4, fib:2.0, na:180, k:82, p:56, texture:['軟餐','普通'], diet:['糖尿','素食','高纖']},
+      {id:9, cat:'穀品', name:'粟米片(corn flakes)', portion:'1碗(30g)', wt:30, kcal:113, pro:2.0, fat:0.2, cho:25.4, fib:0.3, na:200, k:26, p:12, texture:['普通'], diet:['糖尿','素食','低渣']},
+      {id:10, cat:'穀品', name:'芝麻糊', portion:'1碗', wt:250, kcal:175, pro:3.5, fat:5.0, cho:28.0, fib:1.2, na:35, k:50, p:40, texture:['流質','糊餐'], diet:['素食']},
+      // 奶類 Dairy
+      {id:11, cat:'奶類', name:'鮮奶(全脂)', portion:'1杯', wt:240, kcal:149, pro:8.0, fat:8.2, cho:11.4, fib:0, na:105, k:349, p:227, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['糖尿','素食']},
+      {id:12, cat:'奶類', name:'脫脂奶', portion:'1杯', wt:240, kcal:83, pro:8.3, fat:0.2, cho:12.2, fib:0, na:103, k:382, p:247, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['糖尿','素食','低渣']},
+      {id:13, cat:'奶類', name:'低脂奶', portion:'1杯', wt:240, kcal:122, pro:8.1, fat:4.8, cho:11.7, fib:0, na:107, k:366, p:232, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['糖尿','素食']},
+      {id:14, cat:'奶類', name:'豆漿(無糖)', portion:'1杯', wt:240, kcal:80, pro:7.0, fat:4.0, cho:4.0, fib:0.5, na:10, k:118, p:60, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['糖尿','腎','低鈉','素食']},
+      {id:15, cat:'奶類', name:'低鈣奶', portion:'1杯', wt:240, kcal:122, pro:8.1, fat:4.8, cho:11.7, fib:0, na:107, k:200, p:120, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['糖尿','腎','素食']},
+      // 蛋類 Eggs
+      {id:16, cat:'蛋類', name:'烚蛋', portion:'1隻', wt:50, kcal:78, pro:6.3, fat:5.3, cho:0.6, fib:0, na:62, k:63, p:86, texture:['碎餐','軟餐','普通'], diet:['糖尿','低鈉','低渣']},
+      {id:17, cat:'蛋類', name:'蒸水蛋', portion:'1份', wt:65, kcal:85, pro:6.5, fat:6.0, cho:0.8, fib:0, na:150, k:65, p:88, texture:['糊餐','碎餐','軟餐','普通'], diet:['糖尿','低渣']},
+      {id:18, cat:'蛋類', name:'炒蛋', portion:'1份', wt:60, kcal:120, pro:7.0, fat:9.5, cho:1.2, fib:0, na:170, k:70, p:90, texture:['碎餐','軟餐','普通'], diet:['糖尿','低渣']},
+      {id:19, cat:'蛋類', name:'奄列(omelette)', portion:'1份', wt:65, kcal:130, pro:7.5, fat:10.0, cho:1.0, fib:0, na:180, k:72, p:92, texture:['碎餐','軟餐','普通'], diet:['糖尿','低渣']},
+      // 湯 Soup
+      {id:20, cat:'湯', name:'菜湯(clear)', portion:'1碗', wt:240, kcal:30, pro:1.0, fat:0.5, cho:5.0, fib:0.5, na:380, k:120, p:20, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['糖尿','素食']},
+      {id:21, cat:'湯', name:'忌廉湯(cream soup)', portion:'1碗', wt:240, kcal:150, pro:4.0, fat:8.0, cho:15.0, fib:0.5, na:480, k:180, p:85, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:[]},
+      {id:22, cat:'湯', name:'肉碎菜湯', portion:'1碗', wt:240, kcal:80, pro:5.0, fat:3.0, cho:8.0, fib:1.0, na:420, k:160, p:55, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['糖尿']},
+      {id:23, cat:'湯', name:'滾湯(中式)', portion:'1碗', wt:240, kcal:40, pro:2.0, fat:1.0, cho:5.0, fib:0.3, na:450, k:100, p:30, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['糖尿']},
+      {id:24, cat:'湯', name:'老火湯', portion:'1碗', wt:240, kcal:60, pro:3.0, fat:2.0, cho:6.0, fib:0.5, na:500, k:250, p:60, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:[]},
+      // 肉類 Meat
+      {id:25, cat:'肉類', name:'蒸魚(白肉魚)', portion:'1份', wt:100, kcal:105, pro:19.0, fat:2.8, cho:0, fib:0, na:60, k:340, p:200, texture:['碎餐','軟餐','普通'], diet:['糖尿','低鈉','低渣']},
+      {id:26, cat:'肉類', name:'豬肉(瘦/免治)', portion:'1份', wt:100, kcal:143, pro:21.0, fat:6.2, cho:0, fib:0, na:50, k:315, p:190, texture:['碎餐','軟餐','普通'], diet:['糖尿','低鈉','低渣']},
+      {id:27, cat:'肉類', name:'雞肉(去皮)', portion:'1份', wt:100, kcal:165, pro:23.0, fat:7.6, cho:0, fib:0, na:65, k:220, p:180, texture:['碎餐','軟餐','普通'], diet:['糖尿','低鈉','低渣']},
+      {id:28, cat:'肉類', name:'牛肉(瘦)', portion:'1份', wt:100, kcal:155, pro:22.0, fat:7.0, cho:0, fib:0, na:55, k:330, p:200, texture:['碎餐','軟餐','普通'], diet:['糖尿','低鈉','低渣']},
+      {id:29, cat:'肉類', name:'豆腐(硬)', portion:'1磚', wt:150, kcal:108, pro:11.4, fat:6.0, cho:2.4, fib:0.3, na:12, k:150, p:120, texture:['糊餐','碎餐','軟餐','普通'], diet:['糖尿','腎','低鈉','素食']},
+      {id:30, cat:'肉類', name:'蒸肉餅', portion:'1份', wt:100, kcal:180, pro:18.0, fat:11.0, cho:2.0, fib:0, na:350, k:250, p:160, texture:['碎餐','軟餐','普通'], diet:['糖尿','低渣']},
+      {id:31, cat:'肉類', name:'咕嚕肉', portion:'1份', wt:120, kcal:220, pro:14.0, fat:12.0, cho:14.0, fib:0.5, na:420, k:200, p:140, texture:['軟餐','普通'], diet:[]},
+      {id:32, cat:'肉類', name:'滑蛋蝦仁', portion:'1份', wt:120, kcal:155, pro:14.0, fat:9.0, cho:4.0, fib:0, na:380, k:160, p:170, texture:['碎餐','軟餐','普通'], diet:['糖尿']},
+      // 調味醬類 Sauce
+      {id:33, cat:'調味醬類', name:'茄汁', portion:'1湯匙', wt:15, kcal:15, pro:0.2, fat:0, cho:3.6, fib:0, na:170, k:55, p:5, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['素食']},
+      {id:34, cat:'調味醬類', name:'豉油', portion:'1湯匙', wt:18, kcal:8, pro:1.3, fat:0, cho:0.8, fib:0, na:900, k:32, p:15, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['素食']},
+      {id:35, cat:'調味醬類', name:'蠔油', portion:'1湯匙', wt:18, kcal:9, pro:0.2, fat:0, cho:2.0, fib:0, na:490, k:8, p:5, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:[]},
+      {id:36, cat:'調味醬類', name:'花生醬', portion:'1湯匙', wt:16, kcal:94, pro:4.0, fat:8.0, cho:3.0, fib:0.9, na:73, k:103, p:50, texture:['糊餐','普通'], diet:['糖尿','素食']},
+      {id:37, cat:'調味醬類', name:'果醬', portion:'1湯匙', wt:20, kcal:50, pro:0.1, fat:0, cho:13.0, fib:0.2, na:6, k:10, p:2, texture:['糊餐','普通'], diet:['腎','低鈉','素食']},
+      // 主食 Main
+      {id:38, cat:'主食', name:'粟米肉粒飯', portion:'1碟', wt:350, kcal:480, pro:18.0, fat:12.0, cho:72.0, fib:2.0, na:550, k:280, p:180, texture:['軟餐','普通'], diet:['糖尿']},
+      {id:39, cat:'主食', name:'豉汁排骨飯(pork rib)', portion:'1碟', wt:350, kcal:520, pro:22.0, fat:16.0, cho:68.0, fib:1.0, na:600, k:300, p:200, texture:['軟餐','普通'], diet:[]},
+      {id:40, cat:'主食', name:'蒸魚飯', portion:'1碟', wt:350, kcal:420, pro:24.0, fat:6.0, cho:65.0, fib:0.5, na:350, k:350, p:220, texture:['碎餐','軟餐','普通'], diet:['糖尿','低鈉']},
+      {id:41, cat:'主食', name:'菜肉包 (steamed bun)', portion:'1個', wt:80, kcal:170, pro:6.0, fat:4.0, cho:27.0, fib:1.0, na:280, k:60, p:50, texture:['軟餐','普通'], diet:['糖尿']},
+      {id:42, cat:'主食', name:'叉燒飯', portion:'1碟', wt:350, kcal:510, pro:20.0, fat:14.0, cho:72.0, fib:0.5, na:580, k:280, p:190, texture:['軟餐','普通'], diet:[]},
+      {id:43, cat:'主食', name:'湯米粉(plain)', portion:'1碗', wt:300, kcal:250, pro:5.0, fat:1.5, cho:54.0, fib:0.3, na:420, k:30, p:25, texture:['碎餐','軟餐','普通'], diet:['腎','素食','低渣']},
+      {id:44, cat:'主食', name:'炒飯', portion:'1碟', wt:300, kcal:450, pro:12.0, fat:15.0, cho:65.0, fib:1.5, na:650, k:150, p:120, texture:['普通'], diet:[]},
+      {id:45, cat:'主食', name:'粥粉麵套餐', portion:'1份', wt:400, kcal:350, pro:12.0, fat:5.0, cho:62.0, fib:1.0, na:500, k:120, p:80, texture:['碎餐','軟餐','普通'], diet:['糖尿']},
+      // 蔬菜 Vegetables
+      {id:46, cat:'蔬菜', name:'菜心(灼)', portion:'1碗', wt:100, kcal:22, pro:1.8, fat:0.3, cho:3.2, fib:1.5, na:35, k:260, p:38, texture:['碎餐','軟餐','普通'], diet:['糖尿','低鈉','素食','高纖']},
+      {id:47, cat:'蔬菜', name:'白菜(灼)', portion:'1碗', wt:100, kcal:15, pro:1.2, fat:0.2, cho:2.2, fib:1.0, na:40, k:200, p:28, texture:['碎餐','軟餐','普通'], diet:['糖尿','低鈉','素食','高纖']},
+      {id:48, cat:'蔬菜', name:'西蘭花(灼)', portion:'1碗', wt:100, kcal:35, pro:3.0, fat:0.4, cho:5.0, fib:2.6, na:30, k:316, p:66, texture:['碎餐','軟餐','普通'], diet:['糖尿','低鈉','素食','高纖']},
+      {id:49, cat:'蔬菜', name:'冬瓜(煮)', portion:'1碗', wt:100, kcal:12, pro:0.4, fat:0.2, cho:2.4, fib:0.5, na:5, k:108, p:15, texture:['碎餐','軟餐','普通'], diet:['糖尿','腎','低鈉','素食']},
+      {id:50, cat:'蔬菜', name:'蕃茄(生)', portion:'1個', wt:120, kcal:22, pro:1.1, fat:0.2, cho:4.7, fib:1.4, na:6, k:284, p:29, texture:['碎餐','軟餐','普通'], diet:['糖尿','低鈉','素食','高纖']},
+      {id:51, cat:'蔬菜', name:'南瓜(煮)', portion:'1碗', wt:100, kcal:26, pro:1.0, fat:0.1, cho:6.5, fib:0.5, na:1, k:340, p:44, texture:['糊餐','碎餐','軟餐','普通'], diet:['糖尿','低鈉','素食']},
+      {id:52, cat:'蔬菜', name:'紅蘿蔔(煮)', portion:'1碗', wt:100, kcal:35, pro:0.8, fat:0.2, cho:7.6, fib:2.8, na:58, k:235, p:30, texture:['糊餐','碎餐','軟餐','普通'], diet:['糖尿','低鈉','素食','高纖']},
+      {id:53, cat:'蔬菜', name:'菠菜(灼)', portion:'1碗', wt:100, kcal:23, pro:2.9, fat:0.4, cho:1.4, fib:2.2, na:70, k:466, p:40, texture:['碎餐','軟餐','普通'], diet:['糖尿','低鈉','素食','高纖']},
+      // 生果 Fruit
+      {id:54, cat:'生果', name:'蘋果', portion:'1個(中)', wt:150, kcal:78, pro:0.4, fat:0.2, cho:20.7, fib:3.6, na:2, k:160, p:17, texture:['碎餐','軟餐','普通'], diet:['糖尿','腎','低鈉','素食','高纖']},
+      {id:55, cat:'生果', name:'香蕉', portion:'1條(中)', wt:120, kcal:107, pro:1.3, fat:0.4, cho:27.2, fib:3.1, na:1, k:422, p:26, texture:['糊餐','碎餐','軟餐','普通'], diet:['糖尿','低鈉','素食','高纖']},
+      {id:56, cat:'生果', name:'橙', portion:'1個(中)', wt:150, kcal:70, pro:1.3, fat:0.2, cho:17.6, fib:3.6, na:0, k:237, p:21, texture:['碎餐','軟餐','普通'], diet:['糖尿','低鈉','素食','高纖']},
+      {id:57, cat:'生果', name:'西瓜', portion:'1片', wt:200, kcal:60, pro:1.2, fat:0.3, cho:15.2, fib:0.8, na:2, k:224, p:22, texture:['碎餐','軟餐','普通'], diet:['糖尿','腎','低鈉','素食']},
+      {id:58, cat:'生果', name:'木瓜', portion:'1/4個', wt:150, kcal:59, pro:0.9, fat:0.2, cho:14.9, fib:2.7, na:12, k:257, p:8, texture:['糊餐','碎餐','軟餐','普通'], diet:['糖尿','低鈉','素食','高纖']},
+      {id:59, cat:'生果', name:'梨', portion:'1個(中)', wt:170, kcal:96, pro:0.6, fat:0.2, cho:25.7, fib:5.3, na:2, k:206, p:20, texture:['碎餐','軟餐','普通'], diet:['糖尿','腎','低鈉','素食','高纖']},
+      {id:60, cat:'生果', name:'提子', portion:'1碗', wt:80, kcal:55, pro:0.6, fat:0.1, cho:14.4, fib:0.7, na:2, k:152, p:16, texture:['普通'], diet:['糖尿','腎','低鈉','素食']},
+      // 飲品 Drinks
+      {id:61, cat:'飲品', name:'清茶', portion:'1杯', wt:240, kcal:2, pro:0, fat:0, cho:0, fib:0, na:5, k:20, p:2, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['糖尿','腎','低鈉','素食','低渣']},
+      {id:62, cat:'飲品', name:'檸茶(甜)', portion:'1杯', wt:240, kcal:70, pro:0, fat:0, cho:18.0, fib:0, na:5, k:25, p:2, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['腎','低鈉','素食','低渣']},
+      {id:63, cat:'飲品', name:'奶茶', portion:'1杯', wt:240, kcal:100, pro:3.0, fat:4.0, cho:13.0, fib:0, na:50, k:130, p:80, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['低渣']},
+      {id:64, cat:'飲品', name:'咖啡(走)', portion:'1杯', wt:240, kcal:5, pro:0.3, fat:0, cho:0, fib:0, na:5, k:60, p:5, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['糖尿','腎','低鈉','素食','低渣']},
+      {id:65, cat:'飲品', name:'阿華田/好立克', portion:'1杯', wt:250, kcal:160, pro:4.0, fat:3.0, cho:28.0, fib:0, na:100, k:200, p:100, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:[]},
+      {id:66, cat:'飲品', name:'蘋果汁', portion:'1杯', wt:240, kcal:112, pro:0.2, fat:0.3, cho:28.0, fib:0.2, na:7, k:250, p:17, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['低鈉','素食','低渣']},
+      {id:67, cat:'飲品', name:'橙汁', portion:'1杯', wt:240, kcal:110, pro:1.7, fat:0.5, cho:25.8, fib:0.5, na:2, k:496, p:42, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['低鈉','素食','低渣']},
+      // 三文治 Sandwich
+      {id:68, cat:'三文治', name:'雞蛋三文治', portion:'1份', wt:100, kcal:230, pro:10.0, fat:10.0, cho:24.0, fib:1.0, na:400, k:100, p:110, texture:['軟餐','普通'], diet:['糖尿']},
+      {id:69, cat:'三文治', name:'火腿三文治', portion:'1份', wt:100, kcal:240, pro:11.0, fat:9.0, cho:26.0, fib:1.0, na:550, k:120, p:130, texture:['軟餐','普通'], diet:['糖尿']},
+      {id:70, cat:'三文治', name:'吞拿魚三文治', portion:'1份', wt:110, kcal:260, pro:14.0, fat:11.0, cho:24.0, fib:1.0, na:480, k:140, p:140, texture:['軟餐','普通'], diet:['糖尿']},
+      // 營養補充品 Supplement
+      {id:71, cat:'營養補充品', name:'Fresubin Protein Powder (1.5g)', portion:'1包', wt:7.5, kcal:31, pro:6.4, fat:0.1, cho:0.3, fib:0, na:27, k:0, p:0, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['糖尿','腎','低鈉','素食']},
+      {id:72, cat:'營養補充品', name:'Polycal 糖粉', portion:'1湯匙(5g)', wt:5, kcal:19, pro:0, fat:0, cho:4.7, fib:0, na:0, k:0, p:0, texture:['流質','糊餐','碎餐','軟餐','普通'], diet:['腎','低鈉','素食']},
+      {id:73, cat:'營養補充品', name:'Ensure (RTD 237mL)', portion:'1罐', wt:237, kcal:220, pro:9.0, fat:6.0, cho:33.0, fib:0, na:200, k:370, p:200, texture:['流質','糊餐'], diet:['糖尿']}
+    ];
+    var tmhFoodNextId = 74;
+
+    var FOOD_CATEGORIES = ['穀品','奶類','蛋類','湯','肉類','調味醬類','主食','蔬菜','生果','飲品','三文治','營養補充品'];
+    var FOOD_TEXTURES = ['流質','糊餐','碎餐','軟餐','普通'];
+    var FOOD_DIETS = ['糖尿','腎','低鈉','素食','高纖','低渣'];
+    var FOOD_ALLERGENS = ['奶類','蛋','花生','堅果','大豆','小麥/麩質','魚','甲殼類','軟體動物','芝麻','芹菜','芥末','羽扇豆','亞硫酸鹽'];
+
+    var foodEditId = null; // null = add mode, number = edit mode
+
+    // ---- Settings: manage categories / textures / diets ----
+    function toggleFoodSettings() {
+      var body = document.getElementById('food-settings-body');
+      var chevron = document.getElementById('food-settings-chevron');
+      if (body.style.display === 'none') {
+        body.style.display = 'block';
+        chevron.style.transform = 'rotate(180deg)';
+        renderFoodSettingsLists();
+      } else {
+        body.style.display = 'none';
+        chevron.style.transform = '';
+      }
+    }
+
+    function renderFoodSettingsLists() {
+      renderFoodOptionList('food-settings-cats', FOOD_CATEGORIES, 'cat');
+      renderFoodOptionList('food-settings-textures', FOOD_TEXTURES, 'texture');
+      renderFoodOptionList('food-settings-diets', FOOD_DIETS, 'diet');
+      renderFoodOptionList('food-settings-allergens', FOOD_ALLERGENS, 'allergen');
+    }
+
+    function renderFoodOptionList(containerId, arr, type) {
+      var el = document.getElementById(containerId);
+      if (!el) return;
+      el.innerHTML = arr.map(function(item, idx) {
+        var upDisabled = idx === 0 ? ' opacity:0.25; pointer-events:none;' : '';
+        var downDisabled = idx === arr.length - 1 ? ' opacity:0.25; pointer-events:none;' : '';
+        return '<div style="display:flex; align-items:center; gap:4px; padding:7px 0; border-bottom:1px solid var(--border-color);" id="food-opt-' + type + '-' + idx + '">' +
+          '<div style="display:flex; flex-direction:column; gap:0;">' +
+            '<button style="border:none; background:none; color:var(--text-secondary); font-size:11px; cursor:pointer; padding:2px 4px; line-height:1;' + upDisabled + '" onclick="moveFoodOption(\'' + type + '\',' + idx + ',-1)" title="Move up"><i class="fas fa-chevron-up"></i></button>' +
+            '<button style="border:none; background:none; color:var(--text-secondary); font-size:11px; cursor:pointer; padding:2px 4px; line-height:1;' + downDisabled + '" onclick="moveFoodOption(\'' + type + '\',' + idx + ',1)" title="Move down"><i class="fas fa-chevron-down"></i></button>' +
+          '</div>' +
+          '<span style="flex:1; font-size:14px;" id="food-opt-label-' + type + '-' + idx + '">' + item + '</span>' +
+          '<button style="border:none; background:none; color:var(--accent); font-size:15px; cursor:pointer; padding:4px;" onclick="startRenameFoodOption(\'' + type + '\',' + idx + ')" title="Rename"><i class="fas fa-pen"></i></button>' +
+          '<button style="border:none; background:none; color:var(--danger); font-size:15px; cursor:pointer; padding:4px;" onclick="confirmDeleteFoodOption(\'' + type + '\',' + idx + ')" title="Delete"><i class="fas fa-trash"></i></button>' +
+          '</div>';
+      }).join('');
+    }
+
+    function moveFoodOption(type, idx, dir) {
+      var arr = getFoodOptionArr(type);
+      var newIdx = idx + dir;
+      if (newIdx < 0 || newIdx >= arr.length) return;
+      var tmp = arr[idx];
+      arr[idx] = arr[newIdx];
+      arr[newIdx] = tmp;
+      saveFoodOptions();
+      renderFoodSettingsLists();
+      populateFoodCategories();
+    }
+
+    function addFoodOption(type) {
+      var inputId = 'food-new-' + type;
+      var input = document.getElementById(inputId);
+      var val = input.value.trim();
+      if (!val) { input.style.borderColor = 'var(--danger)'; return; }
+      input.style.borderColor = '';
+      var arr = getFoodOptionArr(type);
+      if (arr.indexOf(val) !== -1) { input.style.borderColor = 'var(--warning)'; return; } // duplicate
+      arr.push(val);
+      input.value = '';
+      saveFoodOptions();
+      renderFoodSettingsLists();
+      populateFoodCategories();
+    }
+
+    function startRenameFoodOption(type, idx) {
+      var arr = getFoodOptionArr(type);
+      var oldVal = arr[idx];
+      var labelEl = document.getElementById('food-opt-label-' + type + '-' + idx);
+      var rowEl = document.getElementById('food-opt-' + type + '-' + idx);
+      if (!labelEl || !rowEl) return;
+      // Replace the row content with an inline edit form
+      rowEl.innerHTML = '<input type="text" class="input-field" style="flex:1; padding:8px 10px; font-size:14px;" id="food-rename-input-' + type + '-' + idx + '" value="' + oldVal.replace(/"/g, '&quot;') + '">' +
+        '<button style="border:none; background:var(--accent); color:#fff; border-radius:8px; padding:6px 12px; font-size:13px; cursor:pointer;" onclick="finishRenameFoodOption(\'' + type + '\',' + idx + ')"><i class="fas fa-check"></i></button>' +
+        '<button style="border:none; background:var(--bg-tertiary); color:var(--text-secondary); border-radius:8px; padding:6px 12px; font-size:13px; cursor:pointer;" onclick="renderFoodSettingsLists()"><i class="fas fa-times"></i></button>';
+      var inp = document.getElementById('food-rename-input-' + type + '-' + idx);
+      if (inp) { inp.focus(); inp.select(); }
+    }
+
+    function finishRenameFoodOption(type, idx) {
+      var inp = document.getElementById('food-rename-input-' + type + '-' + idx);
+      if (!inp) return;
+      var newVal = inp.value.trim();
+      if (!newVal) return;
+      var arr = getFoodOptionArr(type);
+      var oldVal = arr[idx];
+      if (newVal === oldVal) { renderFoodSettingsLists(); return; }
+      // Check duplicate
+      if (arr.indexOf(newVal) !== -1 && newVal !== oldVal) { inp.style.borderColor = 'var(--warning)'; return; }
+      arr[idx] = newVal;
+      // Update all food items that reference the old value
+      renameFoodOptionInDB(type, oldVal, newVal);
+      saveFoodOptions();
+      renderFoodSettingsLists();
+      populateFoodCategories();
+    }
+
+    function confirmDeleteFoodOption(type, idx) {
+      var arr = getFoodOptionArr(type);
+      var val = arr[idx];
+      var typeLabel = type === 'cat' ? 'category' : type === 'texture' ? 'texture' : 'diet';
+      var overlay = document.createElement('div');
+      overlay.className = 'modal-overlay active';
+      overlay.style.zIndex = '3000';
+      overlay.innerHTML = '<div class="modal" style="max-width:340px;"><div class="modal-header"><h3 class="modal-title">Delete ' + typeLabel + '</h3></div>' +
+        '<p style="color:var(--text-secondary); margin-bottom:16px; font-size:14px;">Delete <strong>' + val + '</strong>? Foods using this ' + typeLabel + ' will keep their data but it won\'t appear in lists.</p>' +
+        '<div style="display:flex; gap:10px;"><button class="btn btn-secondary" style="flex:1; padding:12px; font-size:14px;" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>' +
+        '<button class="btn" style="flex:1; padding:12px; font-size:14px; background:var(--danger); color:#fff;" onclick="deleteFoodOption(\'' + type + '\',' + idx + '); this.closest(\'.modal-overlay\').remove();">Delete</button></div></div>';
+      document.body.appendChild(overlay);
+    }
+
+    function deleteFoodOption(type, idx) {
+      var arr = getFoodOptionArr(type);
+      arr.splice(idx, 1);
+      saveFoodOptions();
+      renderFoodSettingsLists();
+      populateFoodCategories();
+    }
+
+    function getFoodOptionArr(type) {
+      if (type === 'cat') return FOOD_CATEGORIES;
+      if (type === 'texture') return FOOD_TEXTURES;
+      if (type === 'diet') return FOOD_DIETS;
+      if (type === 'allergen') return FOOD_ALLERGENS;
+      return [];
+    }
+
+    function renameFoodOptionInDB(type, oldVal, newVal) {
+      tmhFoodDB.forEach(function(f) {
+        if (type === 'cat' && f.cat === oldVal) { f.cat = newVal; }
+        if (type === 'texture' && f.texture) {
+          var ti = f.texture.indexOf(oldVal);
+          if (ti !== -1) f.texture[ti] = newVal;
+        }
+        if (type === 'diet' && f.diet) {
+          var di = f.diet.indexOf(oldVal);
+          if (di !== -1) f.diet[di] = newVal;
+        }
+        if (type === 'allergen' && f.allergen) {
+          var ai = f.allergen.indexOf(oldVal);
+          if (ai !== -1) f.allergen[ai] = newVal;
+        }
+      });
+      fbSaveFoodDB();
+    }
+
+    function saveFoodOptions() {
+      localSave('foodOptions', { categories: FOOD_CATEGORIES, textures: FOOD_TEXTURES, diets: FOOD_DIETS, allergens: FOOD_ALLERGENS });
+      if (!fbReady) return;
+      fbDb.ref('foodOptions').set({ categories: FOOD_CATEGORIES, textures: FOOD_TEXTURES, diets: FOOD_DIETS, allergens: FOOD_ALLERGENS });
+    }
+
+    function fbLoadFoodOptions(callback) {
+      if (!fbReady) { callback(); return; }
+      fbDb.ref('foodOptions').once('value').then(function(snap) {
+        var data = snap.val();
+        if (data) {
+          if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) FOOD_CATEGORIES = data.categories;
+          if (data.textures && Array.isArray(data.textures) && data.textures.length > 0) FOOD_TEXTURES = data.textures;
+          if (data.diets && Array.isArray(data.diets) && data.diets.length > 0) FOOD_DIETS = data.diets;
+          if (data.allergens && Array.isArray(data.allergens) && data.allergens.length > 0) FOOD_ALLERGENS = data.allergens;
+          localSave('foodOptions', { categories: FOOD_CATEGORIES, textures: FOOD_TEXTURES, diets: FOOD_DIETS, allergens: FOOD_ALLERGENS });
+        }
+        callback();
+      }).catch(function(e) {
+        console.log('Firebase load food options error: ' + e.message);
+        callback();
+      });
+    }
+
+    // Build modal category select dynamically
+    function buildFoodModalCatSelect(selectedVal) {
+      var sel = document.getElementById('food-m-cat');
+      sel.innerHTML = '';
+      FOOD_CATEGORIES.forEach(function(c) {
+        var opt = document.createElement('option');
+        opt.value = c; opt.textContent = c;
+        if (c === selectedVal) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    }
+
+    // Build modal texture checkboxes dynamically
+    function buildFoodModalTextureCheckboxes(checkedArr) {
+      var container = document.getElementById('food-m-texture');
+      container.innerHTML = FOOD_TEXTURES.map(function(t) {
+        var checked = (checkedArr && checkedArr.indexOf(t) !== -1) ? ' checked' : '';
+        return '<label style="display:flex; align-items:center; gap:4px; font-size:14px;"><input type="checkbox" value="' + t + '"' + checked + '> ' + t + '</label>';
+      }).join('');
+    }
+
+    // Build modal diet checkboxes dynamically
+    function buildFoodModalDietCheckboxes(checkedArr) {
+      var container = document.getElementById('food-m-diet');
+      container.innerHTML = FOOD_DIETS.map(function(d) {
+        var checked = (checkedArr && checkedArr.indexOf(d) !== -1) ? ' checked' : '';
+        return '<label style="display:flex; align-items:center; gap:4px; font-size:14px;"><input type="checkbox" value="' + d + '"' + checked + '> ' + d + '</label>';
+      }).join('');
+    }
+
+    // Build modal allergen checkboxes dynamically
+    function buildFoodModalAllergenCheckboxes(checkedArr) {
+      var container = document.getElementById('food-m-allergen');
+      container.innerHTML = FOOD_ALLERGENS.map(function(a) {
+        var checked = (checkedArr && checkedArr.indexOf(a) !== -1) ? ' checked' : '';
+        return '<label style="display:flex; align-items:center; gap:4px; font-size:14px;"><input type="checkbox" value="' + a + '"' + checked + '> ' + a + '</label>';
+      }).join('');
+    }
+
+    // --- Populate category dropdown ---
+    function populateFoodCategories() {
+      var sel = document.getElementById('food-category');
+      var prev = sel.value;
+      sel.innerHTML = '<option value="">-- Select Category --</option>';
+      // Gather categories present in current DB
+      var cats = [];
+      tmhFoodDB.forEach(function(f) { if (cats.indexOf(f.cat) === -1) cats.push(f.cat); });
+      // Add any from master list not already present
+      FOOD_CATEGORIES.forEach(function(c) { if (cats.indexOf(c) === -1) cats.push(c); });
+      cats.forEach(function(c) {
+        var count = tmhFoodDB.filter(function(f) { return f.cat === c; }).length;
+        sel.innerHTML += '<option value="' + c + '"' + (c === prev ? ' selected' : '') + '>' + c + ' (' + count + ')</option>';
+      });
+    }
+
+    function onFoodCategoryChange() {
+      var cat = document.getElementById('food-category').value;
+      var itemSel = document.getElementById('food-item');
+      itemSel.innerHTML = '<option value="">-- Select Item --</option>';
+      if (!cat) { document.getElementById('food-detail').style.display = 'none'; return; }
+      var items = tmhFoodDB.filter(function(f) { return f.cat === cat; });
+      items.sort(function(a,b) { return a.name.localeCompare(b.name, 'zh'); });
+      items.forEach(function(f) {
+        itemSel.innerHTML += '<option value="' + f.id + '">' + f.name + '</option>';
+      });
+    }
+
+    function onFoodItemChange() {
+      var id = parseInt(document.getElementById('food-item').value);
+      if (isNaN(id)) { document.getElementById('food-detail').style.display = 'none'; return; }
+      var food = tmhFoodDB.find(function(f) { return f.id === id; });
+      if (!food) { document.getElementById('food-detail').style.display = 'none'; return; }
+      displayFoodDetail(food);
+    }
+
+    // --- Quick Search ---
+    function onFoodSearch() {
+      var q = document.getElementById('food-search').value.trim().toLowerCase();
+      var resultsDiv = document.getElementById('food-search-results');
+      if (!q || q.length < 1) { resultsDiv.style.display = 'none'; return; }
+      var matches = tmhFoodDB.filter(function(f) {
+        return f.name.toLowerCase().indexOf(q) !== -1;
+      }).slice(0, 15);
+      if (matches.length === 0) {
+        resultsDiv.innerHTML = '<div style="padding:10px 14px; color:var(--text-secondary); font-size:13px;">No results</div>';
+        resultsDiv.style.display = 'block';
+        return;
+      }
+      resultsDiv.innerHTML = matches.map(function(f) {
+        return '<div style="padding:10px 14px; cursor:pointer; border-bottom:1px solid var(--border-color); font-size:14px;" onclick="selectFoodFromSearch(' + f.id + ')" onmousedown="event.preventDefault()">' +
+          '<strong>' + f.name + '</strong> <span style="color:var(--text-secondary); font-size:12px;">(' + f.cat + ')</span></div>';
+      }).join('');
+      resultsDiv.style.display = 'block';
+    }
+
+    function selectFoodFromSearch(id) {
+      document.getElementById('food-search').value = '';
+      document.getElementById('food-search-results').style.display = 'none';
+      var food = tmhFoodDB.find(function(f) { return f.id === id; });
+      if (!food) return;
+      // Also set the category/item dropdowns
+      document.getElementById('food-category').value = food.cat;
+      onFoodCategoryChange();
+      document.getElementById('food-item').value = String(food.id);
+      displayFoodDetail(food);
+    }
+
+    // Close search dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      var searchBox = document.getElementById('food-search');
+      var resultsDiv = document.getElementById('food-search-results');
+      if (searchBox && resultsDiv && !searchBox.contains(e.target) && !resultsDiv.contains(e.target)) {
+        resultsDiv.style.display = 'none';
+      }
+    });
+
+    // --- Display food detail ---
+    function displayFoodDetail(food) {
+      document.getElementById('food-detail').style.display = 'block';
+      document.getElementById('food-detail-name').textContent = food.name;
+      document.getElementById('food-detail-portion').textContent = (food.portion || '') + (food.wt ? ' (' + food.wt + 'g)' : '');
+
+      var grid = document.getElementById('food-nutrition-grid');
+      var items = [
+        {label: 'Energy', val: food.kcal, unit: 'kcal'},
+        {label: 'Protein', val: food.pro, unit: 'g'},
+        {label: 'Fat', val: food.fat, unit: 'g'},
+        {label: 'Carbs', val: food.cho, unit: 'g'},
+        {label: 'Fibre', val: food.fib, unit: 'g'},
+        {label: 'Na', val: food.na, unit: 'mg'},
+        {label: 'K', val: food.k, unit: 'mg'},
+        {label: 'P', val: food.p, unit: 'mg'}
+      ];
+      grid.innerHTML = items.map(function(it) {
+        var v = (it.val !== undefined && it.val !== null && it.val !== '') ? it.val : '--';
+        return '<div class="result-item"><div class="result-value" style="font-size:17px;">' + v + '</div><div class="result-label">' + it.label + ' (' + it.unit + ')</div></div>';
+      }).join('');
+
+      // Texture tags
+      var texDiv = document.getElementById('food-texture-tags');
+      var textureArr = food.texture || [];
+      texDiv.innerHTML = FOOD_TEXTURES.map(function(t) {
+        var active = textureArr.indexOf(t) !== -1;
+        var bg = active ? 'var(--accent)' : 'var(--bg-tertiary)';
+        var color = active ? '#fff' : 'var(--text-secondary)';
+        return '<span style="padding:4px 10px; border-radius:20px; font-size:13px; font-weight:500; background:' + bg + '; color:' + color + ';">' + t + '</span>';
+      }).join('');
+
+      // Unsuitable diet tags (red/warning when active)
+      var dietDiv = document.getElementById('food-diet-tags');
+      var dietArr = food.diet || [];
+      dietDiv.innerHTML = FOOD_DIETS.map(function(d) {
+        var active = dietArr.indexOf(d) !== -1;
+        var bg = active ? 'var(--danger)' : 'var(--bg-tertiary)';
+        var color = active ? '#fff' : 'var(--text-secondary)';
+        return '<span style="padding:4px 10px; border-radius:20px; font-size:13px; font-weight:500; background:' + bg + '; color:' + color + ';">' + d + '</span>';
+      }).join('');
+
+      // Allergen tags (orange/warning when active)
+      var allergenDiv = document.getElementById('food-allergen-tags');
+      var allergenArr = food.allergen || [];
+      allergenDiv.innerHTML = FOOD_ALLERGENS.map(function(a) {
+        var active = allergenArr.indexOf(a) !== -1;
+        var bg = active ? 'var(--warning)' : 'var(--bg-tertiary)';
+        var color = active ? '#fff' : 'var(--text-secondary)';
+        return '<span style="padding:4px 10px; border-radius:20px; font-size:13px; font-weight:500; background:' + bg + '; color:' + color + ';">' + a + '</span>';
+      }).join('');
+    }
+
+    // --- Alcohol Calculator ---
+    function calcAlcohol() {
+      var vol = parseFloat(document.getElementById('alc-volume').value);
+      var pct = parseFloat(document.getElementById('alc-pct').value);
+      if (!vol || vol <= 0 || isNaN(pct) || pct < 0) {
+        document.getElementById('alc-grams').textContent = '--';
+        document.getElementById('alc-kcal').textContent = '--';
+        return;
+      }
+      var grams = vol * (pct / 100) * 0.789;
+      var kcal = grams * 7;
+      document.getElementById('alc-grams').textContent = grams.toFixed(1);
+      document.getElementById('alc-kcal').textContent = Math.round(kcal);
+    }
+
+    // --- Manage section ---
+    function toggleFoodManage() {
+      var body = document.getElementById('food-manage-body');
+      var chevron = document.getElementById('food-manage-chevron');
+      if (body.style.display === 'none') {
+        body.style.display = 'block';
+        chevron.style.transform = 'rotate(180deg)';
+        renderFoodManageList();
+      } else {
+        body.style.display = 'none';
+        chevron.style.transform = '';
+      }
+    }
+
+    function renderFoodManageList() {
+      var list = document.getElementById('food-manage-list');
+      if (tmhFoodDB.length === 0) {
+        list.innerHTML = '<div style="text-align:center; padding:16px; color:var(--text-secondary); font-size:13px;">No food items yet.</div>';
+        return;
+      }
+      // Group by category
+      var groups = {};
+      tmhFoodDB.forEach(function(f) {
+        if (!groups[f.cat]) groups[f.cat] = [];
+        groups[f.cat].push(f);
+      });
+      var html = '';
+      Object.keys(groups).forEach(function(cat) {
+        html += '<div style="font-size:12px; font-weight:700; color:var(--accent); margin:10px 0 4px; text-transform:uppercase; letter-spacing:0.5px;">' + cat + '</div>';
+        groups[cat].forEach(function(f) {
+          html += '<div style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-color);">';
+          html += '<div style="font-size:14px; flex:1;">' + f.name + ' <span style="font-size:11px; color:var(--text-secondary);">' + (f.portion || '') + '</span></div>';
+          html += '<div style="display:flex; gap:8px;">';
+          html += '<button style="border:none; background:none; color:var(--accent); font-size:16px; cursor:pointer; padding:4px;" onclick="editFoodItem(' + f.id + ')"><i class="fas fa-pen-to-square"></i></button>';
+          html += '<button style="border:none; background:none; color:var(--danger); font-size:16px; cursor:pointer; padding:4px;" onclick="confirmDeleteFood(' + f.id + ')"><i class="fas fa-trash"></i></button>';
+          html += '</div></div>';
+        });
+      });
+      list.innerHTML = html;
+    }
+
+    // --- Modal: Add / Edit food ---
+    function openFoodModal(editId) {
+      foodEditId = editId || null;
+      var modal = document.getElementById('food-modal');
+      document.getElementById('food-modal-title').textContent = foodEditId ? 'Edit Food' : 'Add Food';
+      // Clear fields
+      document.getElementById('food-m-name').value = '';
+      document.getElementById('food-m-portion').value = '';
+      ['wt','kcal','pro','fat','cho','fib','na','k','p'].forEach(function(f) { document.getElementById('food-m-' + f).value = ''; });
+
+      if (foodEditId) {
+        var food = tmhFoodDB.find(function(f) { return f.id === foodEditId; });
+        if (food) {
+          buildFoodModalCatSelect(food.cat);
+          buildFoodModalTextureCheckboxes(food.texture || []);
+          buildFoodModalDietCheckboxes(food.diet || []);
+          buildFoodModalAllergenCheckboxes(food.allergen || []);
+          document.getElementById('food-m-name').value = food.name;
+          document.getElementById('food-m-portion').value = food.portion || '';
+          if (food.wt) document.getElementById('food-m-wt').value = food.wt;
+          if (food.kcal) document.getElementById('food-m-kcal').value = food.kcal;
+          if (food.pro) document.getElementById('food-m-pro').value = food.pro;
+          if (food.fat) document.getElementById('food-m-fat').value = food.fat;
+          if (food.cho) document.getElementById('food-m-cho').value = food.cho;
+          if (food.fib) document.getElementById('food-m-fib').value = food.fib;
+          if (food.na) document.getElementById('food-m-na').value = food.na;
+          if (food.k) document.getElementById('food-m-k').value = food.k;
+          if (food.p) document.getElementById('food-m-p').value = food.p;
+        } else {
+          buildFoodModalCatSelect(FOOD_CATEGORIES[0]);
+          buildFoodModalTextureCheckboxes([]);
+          buildFoodModalDietCheckboxes([]);
+          buildFoodModalAllergenCheckboxes([]);
+        }
+      } else {
+        // Default: set category from current dropdown selection
+        var curCat = document.getElementById('food-category').value || FOOD_CATEGORIES[0];
+        buildFoodModalCatSelect(curCat);
+        buildFoodModalTextureCheckboxes([]);
+        buildFoodModalDietCheckboxes([]);
+        buildFoodModalAllergenCheckboxes([]);
+      }
+      modal.classList.add('active');
+      // Scroll modal to top
+      var modalBox = modal.querySelector('.modal');
+      if (modalBox) modalBox.scrollTop = 0;
+    }
+
+    function closeFoodModal() {
+      document.getElementById('food-modal').classList.remove('active');
+      foodEditId = null;
+    }
+
+    function editFoodItem(id) {
+      openFoodModal(id);
+    }
+
+    function saveFoodItem() {
+      var name = document.getElementById('food-m-name').value.trim();
+      if (!name) { document.getElementById('food-m-name').style.borderColor = 'var(--danger)'; return; }
+      document.getElementById('food-m-name').style.borderColor = '';
+
+      var cat = document.getElementById('food-m-cat').value;
+      var portion = document.getElementById('food-m-portion').value.trim();
+      var wt = parseFloat(document.getElementById('food-m-wt').value) || 0;
+      var kcal = parseFloat(document.getElementById('food-m-kcal').value) || 0;
+      var pro = parseFloat(document.getElementById('food-m-pro').value) || 0;
+      var fat = parseFloat(document.getElementById('food-m-fat').value) || 0;
+      var cho = parseFloat(document.getElementById('food-m-cho').value) || 0;
+      var fib = parseFloat(document.getElementById('food-m-fib').value) || 0;
+      var na = parseFloat(document.getElementById('food-m-na').value) || 0;
+      var k = parseFloat(document.getElementById('food-m-k').value) || 0;
+      var p = parseFloat(document.getElementById('food-m-p').value) || 0;
+
+      var texture = [];
+      document.querySelectorAll('#food-m-texture input:checked').forEach(function(cb) { texture.push(cb.value); });
+      var diet = [];
+      document.querySelectorAll('#food-m-diet input:checked').forEach(function(cb) { diet.push(cb.value); });
+      var allergen = [];
+      document.querySelectorAll('#food-m-allergen input:checked').forEach(function(cb) { allergen.push(cb.value); });
+
+      var item = { id: foodEditId || tmhFoodNextId++, cat: cat, name: name, portion: portion, wt: wt, kcal: kcal, pro: pro, fat: fat, cho: cho, fib: fib, na: na, k: k, p: p, texture: texture, diet: diet, allergen: allergen };
+
+      if (foodEditId) {
+        var idx = tmhFoodDB.findIndex(function(f) { return f.id === foodEditId; });
+        if (idx !== -1) tmhFoodDB[idx] = item;
+      } else {
+        tmhFoodDB.push(item);
+      }
+
+      fbSaveFoodDB();
+      populateFoodCategories();
+      onFoodCategoryChange();
+      renderFoodManageList();
+      closeFoodModal();
+      // Show the newly saved item
+      document.getElementById('food-category').value = cat;
+      onFoodCategoryChange();
+      document.getElementById('food-item').value = String(item.id);
+      displayFoodDetail(item);
+    }
+
+    // --- Delete food (custom confirm) ---
+    function confirmDeleteFood(id) {
+      var food = tmhFoodDB.find(function(f) { return f.id === id; });
+      if (!food) return;
+      var overlay = document.createElement('div');
+      overlay.className = 'modal-overlay active';
+      overlay.style.zIndex = '3000';
+      overlay.innerHTML = '<div class="modal" style="max-width:340px;"><div class="modal-header"><h3 class="modal-title">Delete Food</h3></div>' +
+        '<p style="color:var(--text-secondary); margin-bottom:16px; font-size:14px;">Delete <strong>' + food.name + '</strong>?</p>' +
+        '<div style="display:flex; gap:10px;"><button class="btn btn-secondary" style="flex:1; padding:12px; font-size:14px;" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>' +
+        '<button class="btn" style="flex:1; padding:12px; font-size:14px; background:var(--danger); color:#fff;" onclick="deleteFood(' + id + '); this.closest(\'.modal-overlay\').remove();">Delete</button></div></div>';
+      document.body.appendChild(overlay);
+    }
+
+    function deleteFood(id) {
+      tmhFoodDB = tmhFoodDB.filter(function(f) { return f.id !== id; });
+      fbSaveFoodDB();
+      populateFoodCategories();
+      onFoodCategoryChange();
+      renderFoodManageList();
+      document.getElementById('food-detail').style.display = 'none';
+    }
+
+    // --- Firebase: Food CRUD ---
+    function fbSaveFoodDB() {
+      localSave('tmhFoodDB', { items: tmhFoodDB, nextId: tmhFoodNextId });
+      if (!fbReady) return;
+      fbDb.ref('tmhFoodDB').set({ items: tmhFoodDB, nextId: tmhFoodNextId });
+    }
+
+    function fbLoadFoodDB(callback) {
+      if (!fbReady) { callback(); return; }
+      fbDb.ref('tmhFoodDB').once('value').then(function(snap) {
+        var data = snap.val();
+        if (data && data.items && data.items.length > 0) {
+          tmhFoodDB = data.items;
+          tmhFoodNextId = data.nextId || (tmhFoodDB.length > 0 ? Math.max.apply(null, tmhFoodDB.map(function(f) { return f.id; })) + 1 : 1);
+          localSave('tmhFoodDB', { items: tmhFoodDB, nextId: tmhFoodNextId });
+        }
+        callback();
+      }).catch(function(e) {
+        console.log('Firebase load food error: ' + e.message);
+        callback();
+      });
+    }
+
+    function fbUploadFoodDB() {
+      if (!fbReady) return;
+      fbDb.ref('tmhFoodDB').set({ items: tmhFoodDB, nextId: tmhFoodNextId }).then(function() {
+        console.log('Food database uploaded to Firebase');
+        // Show success feedback
+        var btn = document.querySelector('#food-ie-body .btn-primary');
+        if (btn) { var orig = btn.innerHTML; btn.innerHTML = '<i class="fas fa-check" style="margin-right:4px;"></i>Uploaded!'; setTimeout(function() { btn.innerHTML = orig; }, 2000); }
+      });
+    }
+
+    // --- Import / Export ---
+    function toggleFoodImportExport() {
+      var body = document.getElementById('food-ie-body');
+      var chevron = document.getElementById('food-ie-chevron');
+      if (body.style.display === 'none') {
+        body.style.display = 'block';
+        chevron.style.transform = 'rotate(180deg)';
+      } else {
+        body.style.display = 'none';
+        chevron.style.transform = '';
+      }
+    }
+
+    function exportFoodExcel() {
+      var rows = [['ID','Category','Name','Portion','Weight(g)','Energy(kcal)','Protein(g)','Fat(g)','Carbs(g)','Fibre(g)','Na(mg)','K(mg)','P(mg)','Textures','Diets','Allergens']];
+      tmhFoodDB.forEach(function(f) {
+        rows.push([f.id, f.cat, f.name, f.portion, f.wt, f.kcal, f.pro, f.fat, f.cho, f.fib, f.na, f.k, f.p,
+          (f.texture || []).join(','), (f.diet || []).join(','), (f.allergen || []).join(',')]);
+      });
+      var ws = XLSX.utils.aoa_to_sheet(rows);
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'TMH Food');
+      XLSX.writeFile(wb, 'TMH_FoodList.xlsx');
+    }
+
+    function importFoodExcel(event) {
+      var file = event.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          var wb = XLSX.read(e.target.result, {type:'binary'});
+          var ws = wb.Sheets[wb.SheetNames[0]];
+          var data = XLSX.utils.sheet_to_json(ws);
+          if (!data || data.length === 0) return;
+          // Map columns
+          var imported = [];
+          var maxId = tmhFoodNextId;
+          data.forEach(function(row) {
+            var item = {
+              id: maxId++,
+              cat: row['Category'] || row['category'] || row['cat'] || '穀品',
+              name: row['Name'] || row['name'] || row['Food Name'] || '',
+              portion: row['Portion'] || row['portion'] || '',
+              wt: parseFloat(row['Weight(g)'] || row['wt'] || 0),
+              kcal: parseFloat(row['Energy(kcal)'] || row['kcal'] || 0),
+              pro: parseFloat(row['Protein(g)'] || row['pro'] || 0),
+              fat: parseFloat(row['Fat(g)'] || row['fat'] || 0),
+              cho: parseFloat(row['Carbs(g)'] || row['cho'] || 0),
+              fib: parseFloat(row['Fibre(g)'] || row['fib'] || 0),
+              na: parseFloat(row['Na(mg)'] || row['na'] || 0),
+              k: parseFloat(row['K(mg)'] || row['k'] || 0),
+              p: parseFloat(row['P(mg)'] || row['p'] || 0),
+              texture: (row['Textures'] || row['texture'] || '').split(',').filter(function(t) { return t.trim(); }),
+              diet: (row['Diets'] || row['diet'] || '').split(',').filter(function(d) { return d.trim(); }),
+              allergen: (row['Allergens'] || row['allergen'] || '').split(',').filter(function(a) { return a.trim(); })
+            };
+            if (item.name) imported.push(item);
+          });
+          if (imported.length > 0) {
+            imported.forEach(function(item) { tmhFoodDB.push(item); });
+            tmhFoodNextId = maxId;
+            fbSaveFoodDB();
+            populateFoodCategories();
+            onFoodCategoryChange();
+            renderFoodManageList();
+          }
+        } catch (err) {
+          console.log('Import error: ' + err.message);
+        }
+      };
+      reader.readAsBinaryString(file);
+      event.target.value = '';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      try {
+        // Load cached data from localStorage before anything else
+        // This ensures supplements/formulas from last session are available
+        // even without signing in to Firebase
+        loadLocalCache();
+
+        initFirebase();
+
+        // Inject unit selectors into both modals
+        injectUnitSelectors('ns-');
+        injectUnitSelectors('fm-');
+
+        // Initialize UI with local-cached or hardcoded data immediately
+        // (Firebase data will reload after Google sign-in via onAuthStateChanged)
+        initFormulaNextId();
+        initFormulaGrid();
+        initSuppDropdowns();
+        populateFoodCategories();
+        initStockTab();
+
+        // Set default dates to today
+        var todayStr = new Date().toISOString().split('T')[0];
+        document.getElementById('preg-check-date').value = todayStr;
+        var pedAssessEl = document.getElementById('ped-assess-date');
+        if (pedAssessEl) pedAssessEl.value = todayStr;
+
+        // Auto-select number input content on focus (tap/click) for quick overwrite
+        document.querySelectorAll('.supp-grid-row input[type="number"], .supp-bw-row input[type="number"]').forEach(function(input) {
+          input.addEventListener('focus', function() { this.select(); });
+        });
+      } catch (e) {
+        console.log('DOMContentLoaded init error: ' + e.message + ' | Stack: ' + e.stack);
+      }
+    });
+  </script>
+</body>
+</html>
