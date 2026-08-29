@@ -3612,288 +3612,665 @@
     var pedCategories = ['Amino Acid Formula', 'Extensively Hydrolyzed Formula', 'High Energy Formula (<1 year)', 'High Energy Formula (>1 year)', 'Soy/Lactose-free Formula', 'Stage 1 Formula (0-6m)', 'Stage 2 Formula (6-12m)', 'Stage 3 Formula (1-3y)', 'Preterm Formula', 'Other'];
 
     // Supplements - user-defined (values per 100mL)
-    let suppDB = [
-      { id:1, name:'Isocal HN', category:'', dilution:'', notes:'',
-        kcal:105, protein:4.4, carbs:13.5, fat:3.7, fibre:0,
-        na:4.3478, k:3.0691, p:2.4272, ca:90, water:0,
-        vitA:75, vitD:1.75, vitE:3, vitK:8.5, vitC:20,
-        thiamin:0.2, riboflavin:0.16, niacin:1.7, vitB6:0.18,
-        folate:35, vitB12:0.43, pantoAcid:1, biotin:3.9, choline:45,
-        chromium:8.7, copper:0.11, iodine:10.6, iron:1.3,
-        magnesium:28, manganese:0.3, molybdenum:12, selenium:5.6,
-        zinc:1.1, chloride:100 },
-      { id:2, name:'Beneprotein (per g)', category:'Modular', dilution:'', notes:'Volume = grams of powder. 1 scoop = 7g.',
-        kcal:357.1429, protein:85.7143, carbs:0, fat:0, fibre:0,
-        na:9.3168, k:0, p:0, ca:0, water:0,
-        vitA:0, vitD:0, vitE:0, vitK:0, vitC:0,
-        thiamin:0, riboflavin:0, niacin:0, vitB6:0,
-        folate:0, vitB12:0, pantoAcid:0, biotin:0, choline:0,
-        chromium:0, copper:0, iodine:0, iron:0,
-        magnesium:0, manganese:0, molybdenum:0, selenium:0,
-        zinc:0, chloride:0 },
-      { id:3, name:'Compleat', category:'', dilution:'', notes:'',
-        kcal:106, protein:4, carbs:12.8, fat:4.2, fibre:1,
-        na:4.3478, k:3.9898, p:2.7184, ca:80, water:0,
-        vitA:84, vitD:0.68, vitE:1.2, vitK:6.7, vitC:6.7,
-        thiamin:0.13, riboflavin:0.13, niacin:1.6, vitB6:0.17,
-        folate:27, vitB12:0.27, pantoAcid:0.54, biotin:2.7, choline:34,
-        chromium:2.7, copper:0.09, iodine:10, iron:1.1,
-        magnesium:20, manganese:0.27, molybdenum:6.7, selenium:4.7,
-        zinc:1, chloride:100 },
-      { id:4, name:'Isocal', category:'', dilution:'', notes:'',
-        kcal:105, protein:3.4, carbs:13.9, fat:4, fibre:0,
-        na:4.3478, k:3.0691, p:2.8155, ca:63, water:0,
-        vitA:62, vitD:0.5, vitE:1.8, vitK:5.3, vitC:9,
-        thiamin:0.12, riboflavin:0.13, niacin:1.5, vitB6:0.16,
-        folate:20, vitB12:0.2, pantoAcid:0.5, biotin:4, choline:35,
-        chromium:5, copper:0.13, iodine:7.5, iron:0.9,
-        magnesium:20, manganese:0.3, molybdenum:7.5, selenium:5.3,
-        zinc:0.9, chloride:90 },
-      { id:5, name:'Isosource 1.5 Cal', category:'', dilution:'', notes:'',
-        kcal:156, protein:6.8, carbs:17.3, fat:6.5, fibre:1.5,
-        na:4.3478, k:4.2711, p:2.2654, ca:83, water:0,
-        vitA:83, vitD:0.92, vitE:2.5, vitK:7.5, vitC:15,
-        thiamin:0.15, riboflavin:0.22, niacin:2.1, vitB6:0.25,
-        folate:33, vitB12:0.33, pantoAcid:0.83, biotin:5, choline:37.5,
-        chromium:8.3, copper:0.17, iodine:12.5, iron:1.5,
-        magnesium:28, manganese:0.25, molybdenum:12.5, selenium:7.5,
-        zinc:1.5, chloride:125 },
-      { id:6, name:'Isocal 100 mini (Mocha)', category:'', dilution:'', notes:'',
-        kcal:200, protein:8, carbs:25.5, fat:8, fibre:0,
-        na:7.087, k:4.3478, p:3.8835, ca:100, water:0,
-        vitA:128, vitD:1.8, vitE:1.5, vitK:20, vitC:38,
-        thiamin:0.39, riboflavin:0.43, niacin:4.8, vitB6:0.53,
-        folate:40, vitB12:0.6, pantoAcid:2.5, biotin:7.9, choline:0,
-        chromium:5.5, copper:0.11, iodine:14, iron:2,
-        magnesium:48, manganese:0.4, molybdenum:11, selenium:5,
-        zinc:1.1, chloride:140 },
-      { id:7, name:'Isocal 100 mini (Banana)', category:'', dilution:'', notes:'',
-        kcal:200, protein:8, carbs:25.5, fat:8, fibre:0,
-        na:7.087, k:4.3478, p:3.8835, ca:100, water:0,
-        vitA:128, vitD:1.8, vitE:1.5, vitK:20, vitC:38,
-        thiamin:0.39, riboflavin:0.43, niacin:4.8, vitB6:0.53,
-        folate:40, vitB12:0.6, pantoAcid:2.5, biotin:7.9, choline:0,
-        chromium:5.5, copper:0.11, iodine:14, iron:2,
-        magnesium:48, manganese:0.4, molybdenum:11, selenium:5,
-        zinc:1.1, chloride:140 },
-      { id:8, name:'Isocal 100 mini (Corn Soup)', category:'', dilution:'', notes:'',
-        kcal:200, protein:8, carbs:25.5, fat:8, fibre:0,
-        na:7.6087, k:4.3478, p:3.8835, ca:100, water:0,
-        vitA:128, vitD:1.8, vitE:1.5, vitK:20, vitC:38,
-        thiamin:0.39, riboflavin:0.43, niacin:4.8, vitB6:0.53,
-        folate:40, vitB12:0.6, pantoAcid:2.5, biotin:7.9, choline:0,
-        chromium:5.5, copper:0.11, iodine:14, iron:2,
-        magnesium:48, manganese:0.4, molybdenum:11, selenium:5,
-        zinc:1.1, chloride:157 },
-      { id:9, name:'Isocal 100 mini (Milk Tea)', category:'', dilution:'', notes:'',
-        kcal:200, protein:8, carbs:25.5, fat:8, fibre:0,
-        na:7.087, k:4.3478, p:3.8835, ca:100, water:0,
-        vitA:128, vitD:1.8, vitE:1.5, vitK:20, vitC:38,
-        thiamin:0.39, riboflavin:0.43, niacin:4.8, vitB6:0.53,
-        folate:40, vitB12:0.6, pantoAcid:2.5, biotin:7.9, choline:0,
-        chromium:5.5, copper:0.11, iodine:14, iron:2,
-        magnesium:48, manganese:0.4, molybdenum:11, selenium:5,
-        zinc:1.1, chloride:140 },
-      { id:10, name:'Isosource 1.2 HN', category:'', dilution:'', notes:'',
-        kcal:120, protein:5.4, carbs:15.7, fat:4, fibre:0,
-        na:4.7391, k:4.0921, p:1.9094, ca:91, water:0,
-        vitA:99, vitD:1.4, vitE:1.9, vitK:7, vitC:7.5,
-        thiamin:0.13, riboflavin:0.17, niacin:1.3, vitB6:0.22,
-        folate:22, vitB12:0.4, pantoAcid:0.63, biotin:4.3, choline:32,
-        chromium:6.5, copper:0.18, iodine:12.9, iron:1.5,
-        magnesium:16.8, manganese:0.215, molybdenum:8.6, selenium:6.45,
-        zinc:0.97, chloride:86 },
-      { id:11, name:'Nutren Diabetes', category:'', dilution:'5 scoops (55g) + 210mL water = 250mL', notes:'Powder. Stored as per 100mL reconstituted.',
-        kcal:97.2, protein:5, carbs:9.6, fat:4.28, fibre:1.52,
-        na:4.2087, k:2.8952, p:1.4239, ca:66, water:0,
-        vitA:101.2, vitD:1.72, vitE:2.28, vitK:8, vitC:12.4,
-        thiamin:0.132, riboflavin:0.132, niacin:0.96, vitB6:0.248,
-        folate:27.6, vitB12:0.44, pantoAcid:0.68, biotin:3.16, choline:22.8,
-        chromium:8, copper:0.144, iodine:12, iron:1.2,
-        magnesium:18.4, manganese:0.1864, molybdenum:7.2, selenium:4.4,
-        zinc:0.76, chloride:69.2 },
-      { id:12, name:'Nutren Diabetes Plus', category:'', dilution:'', notes:'',
-        kcal:160, protein:9, carbs:15.7, fat:6.3, fibre:2.5,
-        na:4.5652, k:4.1049, p:2.589, ca:115.5, water:69.5,
-        vitA:84, vitD:1.1, vitE:2.3, vitK:9.6, vitC:19,
-        thiamin:0.14, riboflavin:0.21, niacin:2.4, vitB6:0.17,
-        folate:25, vitB12:0.5, pantoAcid:0.4, biotin:3.5, choline:0,
-        chromium:3.5, copper:0.12, iodine:13, iron:1.05,
-        magnesium:19, manganese:0.1325, molybdenum:7, selenium:5,
-        zinc:1.2, chloride:105 },
-      { id:13, name:'Nutren Fibre', category:'', dilution:'8 scoops (58g) + 210mL water = 250mL', notes:'Powder. Stored as per 100mL reconstituted.',
-        kcal:100.4, protein:4, carbs:12.52, fat:3.8, fibre:1.52,
-        na:4.1913, k:3.2737, p:1.5016, ca:79.6, water:0,
-        vitA:81.2, vitD:0.996, vitE:1.6, vitK:4.44, vitC:8.32,
-        thiamin:0.1112, riboflavin:0.1112, niacin:0.556, vitB6:0.1112,
-        folate:22.24, vitB12:0.204, pantoAcid:0.388, biotin:2.08, choline:37.12,
-        chromium:2.644, copper:0.084, iodine:9.04, iron:1.296,
-        magnesium:17.4, manganese:0.232, molybdenum:5.56, selenium:3,
-        zinc:0.832, chloride:71.6 },
-      { id:14, name:'Nutren Glucosmart (per g)', category:'Modular', dilution:'', notes:'Volume = grams of powder. 1 sachet = 2g.',
-        kcal:0, protein:0, carbs:8, fat:0, fibre:82.5,
-        na:0, k:0, p:0, ca:250, water:0,
-        vitA:0, vitD:37.5, vitE:0, vitK:0, vitC:0,
-        thiamin:0, riboflavin:0, niacin:0, vitB6:0,
-        folate:0, vitB12:0, pantoAcid:0, biotin:0, choline:0,
-        chromium:3750, copper:0, iodine:0, iron:0,
-        magnesium:0, manganese:0, molybdenum:0, selenium:0,
-        zinc:0, chloride:0 },
-      { id:15, name:'Optifast Protein Plus Chocolate (per pack)', category:'', dilution:'', notes:'Volume = number of packs. 1 pack = 63g powder + 200mL water.',
-        kcal:25000, protein:2800, carbs:2000, fat:560, fibre:360,
-        na:1173.913, k:2442.455, p:1100.324, ca:38000, water:0,
-        vitA:32000, vitD:340, vitE:700, vitK:3600, vitC:4000,
-        thiamin:60, riboflavin:80, niacin:1450, vitB6:120,
-        folate:11000, vitB12:150, pantoAcid:300, biotin:3000, choline:0,
-        chromium:2100, copper:90, iodine:7800, iron:770,
-        magnesium:14600, manganese:110, molybdenum:1350, selenium:2700,
-        zinc:450, chloride:32000 },
-      { id:16, name:'Nutren Optimum', category:'', dilution:'7 scoops (55g) + 210mL water = 250mL', notes:'Powder. Stored as per 100mL reconstituted.',
-        kcal:98, protein:4.04, carbs:11.76, fat:3.88, fibre:1.1,
-        na:2.0174, k:3.0793, p:1.5275, ca:85.6, water:0,
-        vitA:97.6, vitD:1.408, vitE:1.54, vitK:8.08, vitC:6.6,
-        thiamin:0.156, riboflavin:0.156, niacin:0.592, vitB6:0.212,
-        folate:38, vitB12:0.22, pantoAcid:0.616, biotin:2.86, choline:50,
-        chromium:4.92, copper:0.08, iodine:10.56, iron:1.276,
-        magnesium:18.68, manganese:0.172, molybdenum:6.16, selenium:3.96,
-        zinc:0.924, chloride:50.4 },
-      { id:17, name:'Optifast Protein Plus Coffee (per pack)', category:'', dilution:'', notes:'Volume = number of packs. 1 pack = 63g powder + 200mL water.',
-        kcal:25000, protein:2800, carbs:2000, fat:560, fibre:360,
-        na:1173.913, k:2442.455, p:1067.961, ca:38000, water:0,
-        vitA:32000, vitD:340, vitE:700, vitK:3150, vitC:4000,
-        thiamin:60, riboflavin:80, niacin:1450, vitB6:120,
-        folate:11000, vitB12:150, pantoAcid:300, biotin:3000, choline:0,
-        chromium:820, copper:80, iodine:7800, iron:720,
-        magnesium:14600, manganese:100, molybdenum:1300, selenium:2700,
-        zinc:440, chloride:32000 },
-      { id:18, name:'Optifast Banana (per pack)', category:'', dilution:'', notes:'Volume = number of packs. 1 pack = 53g powder + 200mL water.',
-        kcal:20200, protein:1760, carbs:2080, fat:540, fibre:360,
-        na:934.783, k:2442.455, p:1165.049, ca:38000, water:0,
-        vitA:32000, vitD:340, vitE:700, vitK:3600, vitC:4000,
-        thiamin:60, riboflavin:80, niacin:1450, vitB6:120,
-        folate:11000, vitB12:150, pantoAcid:300, biotin:3000, choline:0,
-        chromium:2100, copper:90, iodine:7800, iron:770,
-        magnesium:14600, manganese:80, molybdenum:1350, selenium:2700,
-        zinc:450, chloride:28000 },
-      { id:19, name:'Optifast Chocolate (per pack)', category:'', dilution:'', notes:'Volume = number of packs. 1 pack = 53g powder + 200mL water.',
-        kcal:20200, protein:1760, carbs:2030, fat:560, fibre:360,
-        na:1086.957, k:2557.545, p:1132.686, ca:38000, water:0,
-        vitA:32000, vitD:340, vitE:700, vitK:3600, vitC:4000,
-        thiamin:60, riboflavin:80, niacin:1450, vitB6:120,
-        folate:11000, vitB12:150, pantoAcid:300, biotin:3000, choline:0,
-        chromium:2100, copper:90, iodine:7800, iron:770,
-        magnesium:14600, manganese:102, molybdenum:1350, selenium:2700,
-        zinc:450, chloride:32000 },
-      { id:20, name:'Optifast Strawberry (per pack)', category:'', dilution:'', notes:'Volume = number of packs. 1 pack = 53g powder + 200mL water.',
-        kcal:20200, protein:1760, carbs:2080, fat:540, fibre:360,
-        na:934.783, k:2442.455, p:1165.049, ca:38000, water:0,
-        vitA:32000, vitD:340, vitE:700, vitK:3600, vitC:4000,
-        thiamin:60, riboflavin:80, niacin:1450, vitB6:120,
-        folate:11000, vitB12:150, pantoAcid:300, biotin:3000, choline:0,
-        chromium:2100, copper:90, iodine:7800, iron:770,
-        magnesium:14600, manganese:80, molybdenum:1350, selenium:2700,
-        zinc:450, chloride:28000 },
-      { id:21, name:'Optifast Chicken (per pack)', category:'', dilution:'', notes:'Volume = number of packs. 1 pack = 53g powder + 200mL water.',
-        kcal:19700, protein:1760, carbs:1900, fat:580, fibre:360,
-        na:2782.609, k:2122.762, p:1067.961, ca:38000, water:0,
-        vitA:32000, vitD:340, vitE:700, vitK:3600, vitC:4000,
-        thiamin:60, riboflavin:80, niacin:1450, vitB6:120,
-        folate:11000, vitB12:150, pantoAcid:300, biotin:3000, choline:0,
-        chromium:2100, copper:90, iodine:7800, iron:770,
-        magnesium:14600, manganese:90, molybdenum:1350, selenium:2700,
-        zinc:450, chloride:72000 },
-      { id:22, name:'Optifast Potato & Leek (per pack)', category:'', dilution:'', notes:'Volume = number of packs. 1 pack = 53g powder + 200mL water.',
-        kcal:19600, protein:1760, carbs:1880, fat:580, fibre:360,
-        na:2717.391, k:2122.762, p:1067.961, ca:38000, water:0,
-        vitA:32000, vitD:340, vitE:700, vitK:3600, vitC:4000,
-        thiamin:60, riboflavin:80, niacin:1450, vitB6:120,
-        folate:11000, vitB12:150, pantoAcid:300, biotin:3000, choline:0,
-        chromium:2100, copper:90, iodine:7800, iron:770,
-        magnesium:14600, manganese:90, molybdenum:1350, selenium:2700,
-        zinc:450, chloride:70000 },
-      { id:23, name:'Optifast Tomato (per pack)', category:'', dilution:'', notes:'Volume = number of packs. 1 pack = 53g powder + 200mL water.',
-        kcal:19700, protein:1760, carbs:1900, fat:580, fibre:360,
-        na:2826.087, k:2122.762, p:1067.961, ca:38000, water:0,
-        vitA:32000, vitD:340, vitE:700, vitK:3600, vitC:4000,
-        thiamin:60, riboflavin:80, niacin:1450, vitB6:120,
-        folate:11000, vitB12:150, pantoAcid:300, biotin:3000, choline:0,
-        chromium:2100, copper:90, iodine:7800, iron:770,
-        magnesium:14600, manganese:110, molybdenum:1350, selenium:2700,
-        zinc:450, chloride:72000 },
-      { id:24, name:'Oral Impact Tropic Fruit (per pack)', category:'', dilution:'', notes:'Volume = number of packs. 1 pack = 74g powder + 250mL water.',
-        kcal:30300, protein:1680, carbs:3400, fat:960, fibre:0,
-        na:900, k:1373.401, p:699.029, ca:18000, water:0,
-        vitA:17100, vitD:135, vitE:510, vitK:1350, vitC:4500,
-        thiamin:30, riboflavin:30, niacin:360, vitB6:30,
-        folate:6000, vitB12:90, pantoAcid:120, biotin:6000, choline:0,
-        chromium:1200, copper:30, iodine:3000, iron:270,
-        magnesium:6000, manganese:60, molybdenum:1500, selenium:1200,
-        zinc:240, chloride:17100 },
-      { id:25, name:'Oral Impact Citrus (per pack)', category:'', dilution:'', notes:'Volume = number of packs. 1 pack = 74g powder + 250mL water. Same data for Coffee flavour.',
-        kcal:30300, protein:1680, carbs:3400, fat:960, fibre:0,
-        na:1395.652, k:1028.133, p:699.029, ca:18000, water:0,
-        vitA:17100, vitD:135, vitE:510, vitK:1350, vitC:4500,
-        thiamin:30, riboflavin:30, niacin:360, vitB6:30,
-        folate:6000, vitB12:90, pantoAcid:120, biotin:6000, choline:0,
-        chromium:1200, copper:30, iodine:3000, iron:270,
-        magnesium:6000, manganese:60, molybdenum:1500, selenium:1200,
-        zinc:240, chloride:26400 },
-      { id:26, name:'Oral Impact Coffee (per pack)', category:'', dilution:'', notes:'Volume = number of packs. 1 pack = 74g powder + 250mL water. Same data as Citrus flavour.',
-        kcal:30300, protein:1680, carbs:3400, fat:960, fibre:0,
-        na:1395.652, k:1028.133, p:699.029, ca:18000, water:0,
-        vitA:17100, vitD:135, vitE:510, vitK:1350, vitC:4500,
-        thiamin:30, riboflavin:30, niacin:360, vitB6:30,
-        folate:6000, vitB12:90, pantoAcid:120, biotin:6000, choline:0,
-        chromium:1200, copper:30, iodine:3000, iron:270,
-        magnesium:6000, manganese:60, molybdenum:1500, selenium:1200,
-        zinc:240, chloride:26400 },
-      { id:27, name:'Oral Impact RTD (Tropical Fruit)', category:'', dilution:'', notes:'237mL per pack.',
-        kcal:127.848, protein:7.1729, carbs:14.3882, fat:3.7975, fibre:0,
-        na:6.5309, k:4.8561, p:3.2635, ca:84.3882, water:0,
-        vitA:71.7299, vitD:0.5696, vitE:2.1519, vitK:5.6962, vitC:18.9873,
-        thiamin:0.1266, riboflavin:0.1266, niacin:1.5190, vitB6:0.1266,
-        folate:25.3165, vitB12:0.3797, pantoAcid:0.5063, biotin:25.3165, choline:0,
-        chromium:5.0633, copper:0.1266, iodine:12.6582, iron:1.1392,
-        magnesium:25.3165, manganese:0.2996, molybdenum:6.3291, selenium:5.0633,
-        zinc:1.0127, chloride:72.1519 },
-      { id:28, name:'Oral Impact RTD (Coffee)', category:'', dilution:'', notes:'237mL per pack.',
-        kcal:127.848, protein:7.1729, carbs:14.3882, fat:3.7975, fibre:0,
-        na:6.5309, k:4.8561, p:3.2635, ca:84.3882, water:0,
-        vitA:71.7299, vitD:0.5696, vitE:2.1519, vitK:5.6962, vitC:18.9873,
-        thiamin:0.1266, riboflavin:0.1266, niacin:1.5190, vitB6:0.1266,
-        folate:25.3165, vitB12:0.3797, pantoAcid:0.5063, biotin:25.3165, choline:0,
-        chromium:5.0633, copper:0.1266, iodine:12.6582, iron:1.1392,
-        magnesium:25.3165, manganese:0.2996, molybdenum:6.3291, selenium:5.0633,
-        zinc:1.0127, chloride:72.1519 },
-      { id:29, name:'Oral Impact Vanilla (per pack)', category:'', dilution:'', notes:'Volume = number of packs. 1 pack powder + 250mL water.',
-        kcal:34100, protein:1800, carbs:4480, fat:920, fibre:330,
-        na:1547.826, k:1150.895, p:773.463, ca:27000, water:0,
-        vitA:32900, vitD:220, vitE:995, vitK:2230, vitC:7230,
-        thiamin:40, riboflavin:59, niacin:520, vitB6:49,
-        folate:6640, vitB12:190, pantoAcid:270, biotin:2390, choline:9000,
-        chromium:3340, copper:59, iodine:4980, iron:400,
-        magnesium:7580, manganese:71, molybdenum:5330, selenium:1560,
-        zinc:490, chloride:40100 },
-      { id:30, name:'Peptamen with Prebio 1', category:'', dilution:'', notes:'',
-        kcal:100, protein:4, carbs:12.6, fat:3.78, fibre:0.6,
-        na:2.087, k:4.0921, p:2.2654, ca:60, water:0,
-        vitA:88.33, vitD:0.8, vitE:1.2, vitK:6.7, vitC:10,
-        thiamin:0.2, riboflavin:0.2, niacin:1.8, vitB6:0.2,
-        folate:26.8, vitB12:0.4, pantoAcid:0.68, biotin:4, choline:36,
-        chromium:6.68, copper:0.12, iodine:10, iron:1.2,
-        magnesium:22, manganese:0.28, molybdenum:10, selenium:5.6,
-        zinc:1.2, chloride:62.4 },
-      { id:31, name:'Resource Ultra Plus HP Hazelnut', category:'', dilution:'', notes:'',
-        kcal:150, protein:9, carbs:14.75, fat:6, fibre:0,
-        na:1.087, k:2.4936, p:3.1553, ca:130, water:0,
-        vitA:62.5, vitD:2.1, vitE:1.9, vitK:6.5, vitC:12.5,
-        thiamin:0.12, riboflavin:0.17, niacin:1.5, vitB6:0.16,
-        folate:32.5, vitB12:0.32, pantoAcid:0.52, biotin:5, choline:28,
-        chromium:5, copper:0.14, iodine:10, iron:1.2,
-        magnesium:17.5, manganese:0.26, molybdenum:7.5, selenium:5.5,
-        zinc:1.2, chloride:97.5 },
-      { id:32, name:'Resource Ultra HP Clear (Apple)', category:'', dilution:'', notes:'Clear fruit beverage. Unlisted minerals set to 0.',
-        kcal:150, protein:7, carbs:30.5, fat:0, fibre:0,
-        na:0.6522, k:0, p:4.0453, ca:0, water:0,
-        vitA:160, vitD:2, vitE:2.3, vitK:6.5, vitC:17,
-        thiamin:0.25, riboflavin:0....
+    let suppDB = [];
+    let suppNextId = 1;
+    let suppEditId = null;
+    const SUPP_ROWS = 5;
+
+    const SUPP_FIELDS = ['kcal','protein','carbs','fat','fibre','na','k','p','ca','water','vitA','vitD','vitE','vitK','vitC','thiamin','riboflavin','niacin','vitB6','folate','vitB12','pantoAcid','biotin','choline','chromium','copper','iodine','iron','magnesium','manganese','molybdenum','selenium','zinc','chloride'];
+    const SUPP_LABELS = { kcal:'Energy (kcal)', protein:'Protein (g)', carbs:'CHO (g)', fat:'Fat (g)', fibre:'Fibre (g)', na:'Na (mmol)', k:'K (mmol)', p:'P (mmol)', ca:'Ca (mg)', water:'Water (mL)', vitA:'Vit A (mcg RE)', vitD:'Vit D (mcg)', vitE:'Vit E (mg)', vitK:'Vit K (mcg)', vitC:'Vit C (mg)', thiamin:'Thiamin (mg)', riboflavin:'Riboflavin (mg)', niacin:'Niacin (mg NE)', vitB6:'Vit B6 (mg)', folate:'Folate (mcg DFE)', vitB12:'Vit B12 (mcg)', pantoAcid:'Panto. Acid (mg)', biotin:'Biotin (mcg)', choline:'Choline (mg)', chromium:'Chromium (mcg)', copper:'Copper (mg)', iodine:'Iodine (mcg)', iron:'Iron (mg)', magnesium:'Magnesium (mg)', manganese:'Manganese (mg)', molybdenum:'Molybdenum (mcg)', selenium:'Selenium (mcg)', zinc:'Zinc (mg)', chloride:'Chloride (mg)' };
+
+    // Unit conversion options: factor means altValue × factor = storedValue
+    const UNIT_OPTIONS = {
+      vitA:       { name: 'Vit A',       stored: 'mcg RE', alt: 'IU',   factor: 0.3 },
+      vitD:       { name: 'Vit D',       stored: 'mcg',    alt: 'IU',   factor: 0.025 },
+      vitE:       { name: 'Vit E',       stored: 'mg',     alt: 'IU',   factor: 0.45 },
+      na:         { name: 'Na',          stored: 'mmol',   alt: 'mg',   factor: 1/23 },
+      k:          { name: 'K',           stored: 'mmol',   alt: 'mg',   factor: 1/39.1 },
+      ca:         { name: 'Ca',          stored: 'mg',     alt: 'mmol', factor: 40 },
+      p:          { name: 'P',           stored: 'mmol',   alt: 'mg',   factor: 1/30.9 },
+      magnesium:  { name: 'Magnesium',   stored: 'mg',     alt: 'mmol', factor: 24.3 },
+      iron:       { name: 'Iron',        stored: 'mg',     alt: 'mmol', factor: 55.9 },
+      zinc:       { name: 'Zinc',        stored: 'mg',     alt: 'mmol', factor: 65.4 },
+      copper:     { name: 'Copper',      stored: 'mg',     alt: 'mmol', factor: 63.5 },
+      chromium:   { name: 'Chromium',    stored: 'mcg',    alt: 'nmol', factor: 0.052 },
+      molybdenum: { name: 'Molybdenum',  stored: 'mcg',    alt: 'nmol', factor: 0.0959 },
+      manganese:  { name: 'Manganese',   stored: 'mg',     alt: '\u00B5mol', factor: 0.055 },
+      selenium:   { name: 'Selenium',    stored: 'mcg',    alt: '\u00B5mol', factor: 79 },
+      chloride:   { name: 'Chloride',    stored: 'mg',     alt: 'mmol', factor: 35.5 },
+      iodine:     { name: 'Iodine',      stored: 'mcg',    alt: '\u00B5mol', factor: 127 }
+    };
+
+    // Inject single-click toggle buttons for unit switching in modal inputs
+    function injectUnitSelectors(prefix) {
+      Object.keys(UNIT_OPTIONS).forEach(function(field) {
+        var input = document.getElementById(prefix + field);
+        if (!input) return;
+        var label = input.parentElement.querySelector('.input-label');
+        if (!label) return;
+        var opt = UNIT_OPTIONS[field];
+        // Build toggle button (shows current unit, click to switch)
+        var btn = document.createElement('span');
+        btn.className = 'unit-btn';
+        btn.id = prefix + field + '-unit';
+        btn.dataset.state = 'stored';
+        btn.textContent = opt.stored;
+        btn.setAttribute('role', 'button');
+        btn.setAttribute('tabindex', '0');
+        // Replace label text with name + toggle
+        label.textContent = opt.name + ' ';
+        label.appendChild(btn);
+        // Single click toggles between stored and alt unit
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          var isStored = this.dataset.state === 'stored';
+          // Convert displayed value
+          if (input.value !== '') {
+            var v = parseFloat(input.value);
+            if (!isNaN(v)) {
+              if (isStored) {
+                input.value = parseFloat((v / opt.factor).toPrecision(6));
+              } else {
+                input.value = parseFloat((v * opt.factor).toPrecision(6));
+              }
+            }
+          }
+          // Toggle state
+          if (isStored) {
+            this.dataset.state = 'alt';
+            this.textContent = opt.alt;
+            this.classList.add('alt-active');
+          } else {
+            this.dataset.state = 'stored';
+            this.textContent = opt.stored;
+            this.classList.remove('alt-active');
+          }
+        });
+      });
+    }
+
+    // Read input value and convert to stored unit
+    function getConvertedNutrientValue(prefix, field) {
+      var el = document.getElementById(prefix + field);
+      if (!el) return null;
+      var v = el.value;
+      if (v === '') return null;
+      v = parseFloat(v);
+      if (isNaN(v)) return null;
+      var unitOpt = UNIT_OPTIONS[field];
+      if (unitOpt) {
+        var btn = document.getElementById(prefix + field + '-unit');
+        if (btn && btn.dataset.state === 'alt') {
+          v = v * unitOpt.factor;
+        }
+      }
+      return v;
+    }
+
+    // Reset all unit toggles to stored (default) unit
+    function resetUnitSelectors(prefix) {
+      Object.keys(UNIT_OPTIONS).forEach(function(f) {
+        var btn = document.getElementById(prefix + f + '-unit');
+        if (btn) {
+          btn.dataset.state = 'stored';
+          btn.textContent = UNIT_OPTIONS[f].stored;
+          btn.classList.remove('alt-active');
+        }
+      });
+    }
+
+    // Set specific fields to alt unit
+    function setUnitToAlt(prefix, fields) {
+      fields.forEach(function(f) {
+        var btn = document.getElementById(prefix + f + '-unit');
+        if (btn) {
+          btn.dataset.state = 'alt';
+          btn.textContent = UNIT_OPTIONS[f].alt;
+          btn.classList.add('alt-active');
+        }
+      });
+    }
+
+    // === Output unit toggle ===
+    var outputUnitAlt = {}; // tracks which output fields are showing alt units
+
+    function toggleOutputUnit(containerId, field) {
+      var opt = UNIT_OPTIONS[field];
+      if (!opt) return;
+      var key = containerId + '-' + field;
+      var isAlt = outputUnitAlt[key];
+      outputUnitAlt[key] = !isAlt;
+      // Re-render the relevant results table
+      if (containerId === 'supp') {
+        calcSuppTotals();
+      } else if (containerId === 'fm') {
+        calcFormulaTotals();
+      }
+    }
+
+    function getOutputLabel(containerId, field, storedLabel) {
+      var opt = UNIT_OPTIONS[field];
+      if (!opt) return storedLabel;
+      var key = containerId + '-' + field;
+      var isAlt = outputUnitAlt[key];
+      var unitText = isAlt ? opt.alt : opt.stored;
+      var toggledClass = isAlt ? ' toggled' : '';
+      return opt.name + ' <span class="output-unit-toggle' + toggledClass + '" onclick="toggleOutputUnit(\'' + containerId + '\',\'' + field + '\')">' + unitText + '</span>';
+    }
+
+    function fmtOutputVal(containerId, field, storedVal, hasAny, dp) {
+      if (!hasAny || !storedVal) return '';
+      var opt = UNIT_OPTIONS[field];
+      if (opt) {
+        var key = containerId + '-' + field;
+        if (outputUnitAlt[key]) {
+          // Convert stored → alt: divide by factor
+          return parseFloat((storedVal / opt.factor).toPrecision(6)).toFixed(dp !== undefined ? dp : 2);
+        }
+      }
+      return storedVal.toFixed(dp !== undefined ? dp : 2);
+    }
+
+    // === Dilution field helpers ===
+    function formatDilutionDisplay(dilutionStr) {
+      if (!dilutionStr) return '--';
+      var m = dilutionStr.match(/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)ml/i);
+      if (m) return m[1] + ' scoop : ' + m[2] + ' mL water';
+      return dilutionStr;
+    }
+
+    function buildDilutionString(prefix) {
+      var scoops = document.getElementById(prefix + 'dilution-scoops').value.trim();
+      var water = document.getElementById(prefix + 'dilution-water').value.trim();
+      if (!scoops && !water) return '';
+      var s = scoops || '1';
+      var w = water || '0';
+      return s + ':' + w + 'ml';
+    }
+
+    function fillDilutionFields(prefix, dilutionStr) {
+      var scoopsEl = document.getElementById(prefix + 'dilution-scoops');
+      var waterEl = document.getElementById(prefix + 'dilution-water');
+      if (!scoopsEl || !waterEl) return;
+      if (!dilutionStr || dilutionStr === 'RTF' || dilutionStr === '--') return;
+      // Match "X:Yml" or "X:Yml=Zml"
+      var m = dilutionStr.match(/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)ml/i);
+      if (m) {
+        scoopsEl.value = m[1];
+        waterEl.value = m[2];
+      }
+    }
+
+    // === Modal for Add/Edit Supplement ===
+    function setSuppUnitType(type) {
+      document.getElementById('ns-unit-per100ml').classList.toggle('active', type === 'per100ml');
+      document.getElementById('ns-unit-persachet').classList.toggle('active', type === 'persachet');
+      document.getElementById('ns-sachet-size-group').style.display = (type === 'persachet') ? '' : 'none';
+      var label = (type === 'persachet') ? 'Per Sachet / Pack' : 'Per 100 mL';
+      document.getElementById('ns-section-macro').textContent = label + ' (all optional)';
+      document.getElementById('ns-section-vitamins').textContent = 'Vitamins (' + label.toLowerCase() + ')';
+      document.getElementById('ns-section-minerals').textContent = 'Minerals (' + label.toLowerCase() + ')';
+    }
+
+    function openSuppModal(mode, id) {
+      suppEditId = (mode === 'edit') ? id : null;
+      document.getElementById('supp-modal-title').textContent = (mode === 'edit') ? 'Edit Supplement' : 'Add Supplement';
+      // clear fields and reset unit selectors
+      document.getElementById('ns-name').value = '';
+      document.getElementById('ns-category').value = '';
+      document.getElementById('ns-category-custom').value = '';
+      resetUnitSelectors('ns-');
+      // Default Na, K, P to mg for new entries
+      if (mode !== 'edit') {
+        setUnitToAlt('ns-', ['na','k','p']);
+      }
+      SUPP_FIELDS.forEach(function(f) { document.getElementById('ns-' + f).value = ''; });
+      document.getElementById('ns-dilution-scoops').value = '';
+      document.getElementById('ns-dilution-water').value = '';
+      document.getElementById('ns-notes').value = '';
+      // Reset unit type toggle
+      setSuppUnitType('per100ml');
+      document.getElementById('ns-sachet-size').value = '';
+      // fill if editing
+      if (mode === 'edit') {
+        var s = suppDB.find(function(x) { return x.id === id; });
+        if (s) {
+          document.getElementById('ns-name').value = s.name || '';
+          // Try to match category in dropdown
+          var catSelect = document.getElementById('ns-category');
+          var matched = false;
+          if (s.category) {
+            for (var i = 0; i < catSelect.options.length; i++) {
+              if (catSelect.options[i].value === s.category) { catSelect.value = s.category; matched = true; break; }
+            }
+            if (!matched) { document.getElementById('ns-category-custom').value = s.category; }
+          }
+          SUPP_FIELDS.forEach(function(f) { if (s[f] != null && s[f] !== '') document.getElementById('ns-' + f).value = s[f]; });
+          fillDilutionFields('ns-', s.dilution);
+          document.getElementById('ns-notes').value = s.notes || '';
+          // Restore unit type
+          if (s.unitType === 'persachet') {
+            setSuppUnitType('persachet');
+            if (s.sachetSize) document.getElementById('ns-sachet-size').value = s.sachetSize;
+          }
+        }
+      }
+      document.getElementById('supp-modal').classList.add('active');
+    }
+    function closeSuppModal() { document.getElementById('supp-modal').classList.remove('active'); suppEditId = null; }
+
+    function saveSupp() {
+      var name = document.getElementById('ns-name').value.trim() || 'Unnamed Supplement';
+      var category = document.getElementById('ns-category-custom').value.trim() || document.getElementById('ns-category').value || 'Other';
+      var obj = { name: name, category: category, dilution: buildDilutionString('ns-'), notes: document.getElementById('ns-notes').value.trim() };
+      // Unit type: per100ml or persachet
+      var unitType = document.getElementById('ns-unit-persachet').classList.contains('active') ? 'persachet' : 'per100ml';
+      obj.unitType = unitType;
+      if (unitType === 'persachet') {
+        var sachetSize = parseFloat(document.getElementById('ns-sachet-size').value);
+        obj.sachetSize = (!isNaN(sachetSize) && sachetSize > 0) ? sachetSize : 0;
+      }
+      SUPP_FIELDS.forEach(function(f) {
+        obj[f] = getConvertedNutrientValue('ns-', f);
+      });
+      if (suppEditId !== null) {
+        // update existing
+        var idx = suppDB.findIndex(function(x) { return x.id === suppEditId; });
+        if (idx >= 0) { obj.id = suppEditId; suppDB[idx] = obj; }
+      } else {
+        obj.id = suppNextId++;
+        suppDB.push(obj);
+      }
+      // Sort by category then name
+      suppDB.sort(function(a, b) {
+        var catA = (a.category || 'Other').toLowerCase();
+        var catB = (b.category || 'Other').toLowerCase();
+        if (catA < catB) return -1;
+        if (catA > catB) return 1;
+        return a.name.localeCompare(b.name);
+      });
+      closeSuppModal();
+      refreshAllSuppDropdowns();
+      populateFormulaDropdown();
+      renderSuppManageList();
+      calcSuppTotals();
+      fbSaveSuppDB();
+    }
+
+    function deleteSupp(id) {
+      suppDB = suppDB.filter(function(s) { return s.id !== id; });
+      refreshAllSuppDropdowns();
+      populateFormulaDropdown();
+      renderSuppManageList();
+      calcSuppTotals();
+      fbSaveSuppDB();
+    }
+
+    // === Supplement info modal ===
+    function openSuppInfo(id) {
+      var s = suppDB.find(function(x) { return x.id === id; });
+      if (!s) return;
+      document.getElementById('supp-info-title').textContent = s.name;
+      var html = '<table style="width:100%; font-size: 13px; border-collapse: collapse;">';
+      if (s.category) html += '<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 6px 4px; color: var(--text-secondary);">Category</td><td style="padding: 6px 4px; text-align: right; font-weight: 600;">' + s.category + '</td></tr>';
+      var unitLabel = (s.unitType === 'persachet') ? 'Per Sachet / Pack' : 'Per 100 mL';
+      html += '<tr style="border-bottom: 1px solid var(--border-color);"><td colspan="2" style="padding: 8px 4px; font-weight: 700; color: var(--accent);">' + unitLabel + '</td></tr>';
+      if (s.unitType === 'persachet' && s.sachetSize) {
+        html += '<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 6px 4px; color: var(--text-secondary);">Vol / Sachet</td><td style="padding: 6px 4px; text-align: right; font-weight: 600;">' + s.sachetSize + ' mL</td></tr>';
+      }
+      SUPP_FIELDS.forEach(function(f) {
+        if (s[f] != null) {
+          html += '<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 6px 4px; color: var(--text-secondary);">' + SUPP_LABELS[f] + '</td><td style="padding: 6px 4px; text-align: right; font-weight: 600;">' + s[f] + '</td></tr>';
+        }
+      });
+      if (s.dilution) html += '<tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 6px 4px; color: var(--text-secondary);">Dilution</td><td style="padding: 6px 4px; text-align: right;">' + formatDilutionDisplay(s.dilution) + '</td></tr>';
+      if (s.notes) html += '<tr><td colspan="2" style="padding: 8px 4px; color: var(--text-secondary); font-style: italic;">' + s.notes + '</td></tr>';
+      html += '</table>';
+      document.getElementById('supp-info-body').innerHTML = html;
+      document.getElementById('supp-info-modal').classList.add('active');
+    }
+    function closeSuppInfoModal() { document.getElementById('supp-info-modal').classList.remove('active'); }
+
+    // === Manage list ===
+    function renderSuppManageList() {
+      var list = document.getElementById('supp-manage-list');
+      if (!list) return;
+      var search = (document.getElementById('supp-manage-search').value || '').toLowerCase();
+      var filtered = suppDB.filter(function(s) {
+        if (!search) return true;
+        return (s.name.toLowerCase().indexOf(search) >= 0) ||
+               (s.category && s.category.toLowerCase().indexOf(search) >= 0);
+      });
+      if (filtered.length === 0) {
+        list.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-secondary);font-size:12px;">' + (suppDB.length === 0 ? 'No supplements added yet. Tap "+ New" to create one.' : 'No matches found.') + '</div>';
+        return;
+      }
+      var currentCat = '';
+      var html = '';
+      filtered.forEach(function(s) {
+        var cat = s.category || 'Uncategorized';
+        if (cat !== currentCat) {
+          currentCat = cat;
+          html += '<div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--pink); padding: 8px 4px 3px; border-bottom: 1px solid var(--border-color);">' + currentCat + '</div>';
+        }
+        var detail = [];
+        if (s.kcal != null) detail.push(s.kcal + ' kcal');
+        if (s.protein != null) detail.push(s.protein + 'g Pro');
+        html += '<div class="supp-manage-row">' +
+          '<div style="flex:1; min-width:0;">' +
+            '<div class="supp-manage-name">' + s.name + '</div>' +
+            (detail.length ? '<div class="supp-manage-detail">' + detail.join(' · ') + ' /100mL</div>' : '') +
+          '</div>' +
+          '<div class="supp-manage-actions">' +
+            '<button class="supp-info-btn" onclick="openSuppInfo(' + s.id + ')" title="Info"><i class="fas fa-info"></i></button>' +
+            '<button class="supp-info-btn" onclick="openSuppModal(\'edit\',' + s.id + ')" title="Edit" style="background:rgba(255,149,0,0.1);color:var(--warning);"><i class="fas fa-pen"></i></button>' +
+            '<button class="supp-info-btn" onclick="deleteSupp(' + s.id + ')" title="Delete" style="background:rgba(255,59,48,0.1);color:var(--danger);"><i class="fas fa-trash"></i></button>' +
+          '</div>' +
+        '</div>';
+      });
+      list.innerHTML = html;
+    }
+
+    function toggleSuppManage() {
+      var card = document.getElementById('supp-manage-card');
+      if (!card) return;
+      if (card.style.display === 'none' || !card.style.display) {
+        renderSuppManageList();
+        card.style.display = 'block';
+      } else {
+        card.style.display = 'none';
+      }
+    }
+
+    // === Dropdown builder ===
+    // Unified lookup: parse "s:1" or "f:41" key → product object from either database
+    function findProductByKey(key) {
+      if (!key || typeof key !== 'string' || key.indexOf(':') === -1) return null;
+      var parts = key.split(':');
+      var src = parts[0], id = parseInt(parts[1]);
+      if (isNaN(id)) return null;
+      if (src === 's') return suppDB.find(function(s) { return s.id === id; });
+      if (src === 'f') return formulaDatabase.find(function(f) { return f.id === id; });
+      return null;
+    }
+
+    function buildAdultDropdownHTML(selectedVal) {
+      var html = '<option value="">-- Select --</option>';
+      var suppGroups = {};
+      suppDB.forEach(function(s) {
+        var cat = s.category || 'Uncategorized';
+        if (!suppGroups[cat]) suppGroups[cat] = [];
+        suppGroups[cat].push(s);
+      });
+      // Use suppCategories order, then any remaining categories
+      var orderedCats = suppCategories.slice();
+      Object.keys(suppGroups).forEach(function(cat) {
+        if (orderedCats.indexOf(cat) < 0) orderedCats.push(cat);
+      });
+      orderedCats.forEach(function(cat) {
+        if (!suppGroups[cat] || suppGroups[cat].length === 0) return;
+        html += '<optgroup label="' + cat + '">';
+        suppGroups[cat].forEach(function(s) {
+          var key = 's:' + s.id;
+          var sel = (selectedVal === key) ? ' selected' : '';
+          var sachetTag = (s.unitType === 'persachet') ? ' [sachet]' : '';
+          html += '<option value="' + key + '"' + sel + '>' + s.name + sachetTag + '</option>';
+        });
+        html += '</optgroup>';
+      });
+      return html;
+    }
+
+    function buildPedDropdownHTML(selectedVal) {
+      var html = '<option value="">-- Select --</option>';
+      var pedGroups = {};
+      formulaDatabase.forEach(function(f) {
+        var cat = f.category || 'Uncategorized';
+        if (!pedGroups[cat]) pedGroups[cat] = [];
+        pedGroups[cat].push(f);
+      });
+      // Use pedCategories order, then any remaining categories
+      var orderedCats = pedCategories.slice();
+      Object.keys(pedGroups).forEach(function(cat) {
+        if (orderedCats.indexOf(cat) < 0) orderedCats.push(cat);
+      });
+      orderedCats.forEach(function(cat) {
+        if (!pedGroups[cat] || pedGroups[cat].length === 0) return;
+        html += '<optgroup label="' + cat + '">';
+        pedGroups[cat].forEach(function(f) {
+          var displayName = f.nameCN ? f.name + ' (' + f.nameCN + ')' : f.name;
+          var key = 'f:' + f.id;
+          var sel = (selectedVal === key) ? ' selected' : '';
+          html += '<option value="' + key + '"' + sel + '>' + displayName + '</option>';
+        });
+        html += '</optgroup>';
+      });
+      return html;
+    }
+
+    function buildCombinedDropdownHTML(selectedVal) {
+      var html = '<option value="">-- Select --</option>';
+      // Adult formulas grouped by category using suppCategories order
+      var suppGroups = {};
+      suppDB.forEach(function(s) {
+        var cat = s.category || 'Uncategorized';
+        if (!suppGroups[cat]) suppGroups[cat] = [];
+        suppGroups[cat].push(s);
+      });
+      var orderedSuppCats = suppCategories.slice();
+      Object.keys(suppGroups).forEach(function(cat) {
+        if (orderedSuppCats.indexOf(cat) < 0) orderedSuppCats.push(cat);
+      });
+      orderedSuppCats.forEach(function(cat) {
+        if (!suppGroups[cat] || suppGroups[cat].length === 0) return;
+        var label = 'Adult – ' + cat;
+        html += '<optgroup label="' + label + '">';
+        suppGroups[cat].forEach(function(s) {
+          var key = 's:' + s.id;
+          var sel = (selectedVal === key) ? ' selected' : '';
+          html += '<option value="' + key + '"' + sel + '>' + s.name + '</option>';
+        });
+        html += '</optgroup>';
+      });
+      // Ped milk grouped by category using pedCategories order
+      var pedGroups = {};
+      formulaDatabase.forEach(function(f) {
+        var cat = f.category || 'Uncategorized';
+        if (!pedGroups[cat]) pedGroups[cat] = [];
+        pedGroups[cat].push(f);
+      });
+      var orderedPedCats = pedCategories.slice();
+      Object.keys(pedGroups).forEach(function(cat) {
+        if (orderedPedCats.indexOf(cat) < 0) orderedPedCats.push(cat);
+      });
+      orderedPedCats.forEach(function(cat) {
+        if (!pedGroups[cat] || pedGroups[cat].length === 0) return;
+        html += '<optgroup label="' + cat + '">';
+        pedGroups[cat].forEach(function(f) {
+          var displayName = f.nameCN ? f.name + ' (' + f.nameCN + ')' : f.name;
+          var key = 'f:' + f.id;
+          var sel = (selectedVal === key) ? ' selected' : '';
+          html += '<option value="' + key + '"' + sel + '>' + displayName + '</option>';
+        });
+        html += '</optgroup>';
+      });
+      return html;
+    }
+
+    function refreshAllSuppDropdowns() {
+      for (var i = 1; i <= 5; i++) {
+        var sel = document.getElementById('supp-sel-' + i);
+        if (sel) {
+          var curVal = sel.value;
+          sel.innerHTML = buildAdultDropdownHTML(curVal);
+        }
+      }
+    }
+
+    // === Fixed row helpers ===
+    function clearAllSuppRows() {
+      for (var i = 1; i <= 5; i++) {
+        var sel = document.getElementById('supp-sel-' + i);
+        var str = document.getElementById('supp-str-' + i);
+        var vol = document.getElementById('supp-vol-' + i);
+        var freq = document.getElementById('supp-freq-' + i);
+        if (sel) sel.selectedIndex = 0;
+        if (str) str.value = '';
+        if (vol) vol.value = '';
+        if (freq) freq.value = '0';
+      }
+      var wv = document.getElementById('supp-water-vol');
+      var wf = document.getElementById('supp-water-freq');
+      if (wv) wv.value = '';
+      if (wf) wf.value = '0';
+      var bwEl = document.getElementById('supp-bw');
+      if (bwEl) bwEl.value = '';
+      // Show blank results table
+      var emptyTotals = {};
+      SUPP_FIELDS.forEach(function(f) { emptyTotals[f] = 0; });
+      document.getElementById('supp-results-container').innerHTML = buildSuppResultsHTML(emptyTotals, 0, 0, false);
+    }
+
+    // === Missing nutrient tracking ===
+    // Build a map: field -> [product names missing that field]
+    // Only flags fields where at least one product HAS data and at least one is missing
+    function buildMissingMap(activeProducts) {
+      var map = {};
+      if (activeProducts.length < 1) return map;
+      SUPP_FIELDS.forEach(function(field) {
+        var hasData = [];
+        var missingData = [];
+        activeProducts.forEach(function(p) {
+          if (p.fields[field]) { hasData.push(p.name); }
+          else { missingData.push(p.name); }
+        });
+        if (hasData.length > 0 && missingData.length > 0) {
+          map[field] = missingData;
+        }
+      });
+      return map;
+    }
+
+    // Build a set of fields where NO active product has data (all missing)
+    // These fields should display blank instead of 0
+    function buildNoDataSet(activeProducts) {
+      var noData = {};
+      if (activeProducts.length < 1) return noData;
+      SUPP_FIELDS.forEach(function(field) {
+        var anyHas = false;
+        for (var i = 0; i < activeProducts.length; i++) {
+          if (activeProducts[i].fields[field]) { anyHas = true; break; }
+        }
+        if (!anyHas) noData[field] = true;
+      });
+      return noData;
+    }
+
+    // Generate flag icon HTML for a nutrient field if it has missing data
+    function nutrientFlagHTML(field, missingMap, label) {
+      if (!missingMap || !missingMap[field]) return '';
+      var names = missingMap[field];
+      var escapedLabel = (label || SUPP_LABELS[field] || field).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      var escapedNames = names.map(function(n) { return n.replace(/'/g, "\\'").replace(/"/g, '&quot;'); }).join('|||');
+      return ' <span class="nutrient-flag" onclick="showNutrientMissingPopup(event,\'' + escapedLabel + '\',\'' + escapedNames + '\')" title="Some products missing this nutrient">&#9873;</span>';
+    }
+
+    // Show popup for missing nutrient info
+    function showNutrientMissingPopup(evt, label, namesStr) {
+      // Remove any existing popup
+      closeNutrientMissingPopup();
+      var names = namesStr.split('|||');
+      var popup = document.createElement('div');
+      popup.className = 'nutrient-missing-popup';
+      popup.id = 'nutrient-missing-popup';
+      var listItems = names.map(function(n) { return '<li>' + n + '</li>'; }).join('');
+      popup.innerHTML = '<button class="nmp-close" onclick="closeNutrientMissingPopup()">&times;</button>' +
+        '<div class="nmp-title"><i class="fas fa-exclamation-triangle"></i> Incomplete Data</div>' +
+        '<div style="margin-bottom:6px;color:var(--text-secondary);"><strong>' + label + '</strong> is missing from:</div>' +
+        '<ul class="nmp-list">' + listItems + '</ul>';
+      document.body.appendChild(popup);
+      // Position near the click
+      var rect = popup.getBoundingClientRect();
+      var x = Math.min(evt.clientX, window.innerWidth - rect.width - 12);
+      var y = evt.clientY + 8;
+      if (y + rect.height > window.innerHeight - 12) { y = evt.clientY - rect.height - 8; }
+      if (x < 8) x = 8;
+      if (y < 8) y = 8;
+      popup.style.left = x + 'px';
+      popup.style.top = y + 'px';
+      // Close on outside click
+      setTimeout(function() {
+        document.addEventListener('click', closeNutrientMissingOnOutside);
+      }, 50);
+    }
+    function closeNutrientMissingPopup() {
+      var el = document.getElementById('nutrient-missing-popup');
+      if (el) el.remove();
+      document.removeEventListener('click', closeNutrientMissingOnOutside);
+    }
+    function closeNutrientMissingOnOutside(e) {
+      var popup = document.getElementById('nutrient-missing-popup');
+      if (popup && !popup.contains(e.target) && !e.target.closest('.nutrient-flag')) {
+        closeNutrientMissingPopup();
+      }
+    }
+
+    // === Build results table HTML (always visible) ===
+    function buildSuppResultsHTML(totals, totalVol, bw, hasAny, missingMap, noDataSet) {
+      var cid = 'supp';
+      var mm = missingMap || {};
+      var nd = noDataSet || {};
+      // Blank out fields where no product has any data
+      Object.keys(nd).forEach(function(f) { totals[f] = null; });
+      function fmtV(v, dp) { return (hasAny && v) ? v.toFixed(dp !== undefined ? dp : 1) : ''; }
+      function fmtPkg(v) { return (hasAny && bw && v) ? (v / bw).toFixed(1) : ''; }
+      function oL(field, fallback) { return getOutputLabel(cid, field, fallback); }
+      function oV(field, dp) { return fmtOutputVal(cid, field, totals[field], hasAny, dp); }
+      function flag(field, label) { return nutrientFlagHTML(field, mm, label); }
+
+      var kcal = totals.kcal;
+      var pro = totals.protein;
+      var carbs = totals.carbs;
+      var fat = totals.fat;
+      var pTE = kcal > 0 ? ((pro * 4) / kcal * 100) : 0;
+      var cTE = kcal > 0 ? ((carbs * 4) / kcal * 100) : 0;
+      var fTE = kcal > 0 ? ((fat * 9) / kcal * 100) : 0;
+
+      var html = '<table class="supp-result-table">';
+      html += '<tr class="supp-section-row macro"><td colspan="4">Macronutrients</td></tr>';
+      html += '<tr><td>Energy (kcal)</td><td>' + (hasAny && kcal != null ? Math.round(kcal) : '') + flag('kcal','Energy (kcal)') + '</td><td>Vol (mL)</td><td>' + (hasAny && totalVol ? Math.round(totalVol) : '') + '</td></tr>';
+      html += '<tr><td>kcal/kg</td><td>' + fmtPkg(kcal) + '</td><td>mL/kg</td><td>' + fmtPkg(totalVol) + '</td></tr>';
+      html += '<tr><td>Protein (g)</td><td>' + fmtV(pro) + flag('protein','Protein (g)') + '</td><td>%TE Pro</td><td>' + (hasAny && pTE > 0 ? pTE.toFixed(1) : '') + '</td></tr>';
+      html += '<tr><td>Pro g/kg</td><td>' + fmtPkg(pro) + '</td><td>%TE CHO</td><td>' + (hasAny && cTE > 0 ? cTE.toFixed(1) : '') + '</td></tr>';
+      html += '<tr><td>CHO (g)</td><td>' + fmtV(carbs) + flag('carbs','CHO (g)') + '</td><td>%TE Fat</td><td>' + (hasAny && fTE > 0 ? fTE.toFixed(1) : '') + '</td></tr>';
+      html += '<tr><td>Fat (g)</td><td>' + fmtV(fat) + flag('fat','Fat (g)') + '</td><td>Fibre (g)</td><td>' + fmtV(totals.fibre) + flag('fibre','Fibre (g)') + '</td></tr>';
+      html += '<tr><td>Water (mL)</td><td>' + fmtV(totals.water, 0) + flag('water','Water (mL)') + '</td><td>kcal/100mL</td><td>' + (hasAny && totalVol > 0 && kcal != null ? (kcal / totalVol * 100).toFixed(0) : '') + '</td></tr>';
+      html += '<tr class="supp-section-row vitamin"><td colspan="4">Vitamins</td></tr>';
+      html += '<tr><td>' + oL('vitA','Vit A (mcg)') + '</td><td>' + oV('vitA') + flag('vitA','Vit A') + '</td><td>' + oL('vitD','Vit D (mcg)') + '</td><td>' + oV('vitD') + flag('vitD','Vit D') + '</td></tr>';
+      html += '<tr><td>' + oL('vitE','Vit E (mg)') + '</td><td>' + oV('vitE') + flag('vitE','Vit E') + '</td><td>Vit K (mcg)</td><td>' + fmtV(totals.vitK) + flag('vitK','Vit K') + '</td></tr>';
+      html += '<tr><td>Vit C (mg)</td><td>' + fmtV(totals.vitC) + flag('vitC','Vit C') + '</td><td>Thiamin (mg)</td><td>' + oV('thiamin',3) + flag('thiamin','Thiamin') + '</td></tr>';
+      html += '<tr><td>Riboflavin (mg)</td><td>' + fmtV(totals.riboflavin) + flag('riboflavin','Riboflavin') + '</td><td>Niacin (mg)</td><td>' + fmtV(totals.niacin) + flag('niacin','Niacin') + '</td></tr>';
+      html += '<tr><td>Vit B6 (mg)</td><td>' + fmtV(totals.vitB6) + flag('vitB6','Vit B6') + '</td><td>Folate (mcg)</td><td>' + fmtV(totals.folate, 0) + flag('folate','Folate') + '</td></tr>';
+      html += '<tr><td>Vit B12 (mcg)</td><td>' + fmtV(totals.vitB12) + flag('vitB12','Vit B12') + '</td><td>Panto. Acid (mg)</td><td>' + fmtV(totals.pantoAcid) + flag('pantoAcid','Panto. Acid') + '</td></tr>';
+      html += '<tr><td>Biotin (mcg)</td><td>' + fmtV(totals.biotin) + flag('biotin','Biotin') + '</td><td>Choline (mg)</td><td>' + fmtV(totals.choline) + flag('choline','Choline') + '</td></tr>';
+      html += '<tr class="supp-section-row mineral"><td colspan="4">Minerals</td></tr>';
+      html += '<tr><td>' + oL('na','Na (mmol)') + '</td><td>' + oV('na',1) + flag('na','Na') + '</td><td>' + oL('k','K (mmol)') + '</td><td>' + oV('k',1) + flag('k','K') + '</td></tr>';
+      html += '<tr><td>' + oL('p','P (mmol)') + '</td><td>' + oV('p',1) + flag('p','P') + '</td><td>' + oL('ca','Ca (mg)') + '</td><td>' + oV('ca',0) + flag('ca','Ca') + '</td></tr>';
+      html += '<tr><td>' + oL('iron','Iron (mg)') + '</td><td>' + oV('iron') + flag('iron','Iron') + '</td><td>' + oL('zinc','Zinc (mg)') + '</td><td>' + oV('zinc') + flag('zinc','Zinc') + '</td></tr>';
+      html += '<tr><td>' + oL('iodine','Iodine (mcg)') + '</td><td>' + oV('iodine') + flag('iodine','Iodine') + '</td><td>' + oL('selenium','Selenium (mcg)') + '</td><td>' + oV('selenium') + flag('selenium','Selenium') + '</td></tr>';
+      html += '<tr><td>' + oL('copper','Copper (mg)') + '</td><td>' + oV('copper') + flag('copper','Copper') + '</td><td>' + oL('manganese','Manganese (mg)') + '</td><td>' + oV('manganese') + flag('manganese','Manganese') + '</td></tr>';
+      html += '<tr><td>' + oL('chromium','Chromium (mcg)') + '</td><td>' + oV('chromium') + flag('chromium','Chromium') + '</td><td>' + oL('molybdenum','Molybdenum (mcg)') + '</td><td>' + oV('molybdenum') + flag('molybdenum','Molybdenum') + '</td></tr>';
+      html += '<tr><td>' + oL('magnesium','Magnesium (mg)') + '</td><td>' + oV('magnesium',0) + flag('magnesium','Magnesium') + '</td><td>' + oL('chloride','Chloride (mg)') + '</td><td>' + oV('chloride',0) + flag('chloride','Chloride') + '</td></tr>';
+      html += '</table>';
+      return html;
+    }
+
+    // === Calculate combined totals (fixed 5 rows) ===
+    function calcSuppTotals() {
+      var bw = parseFloat(document.getElementById('supp-bw').value);
+      var totals = {};
+      SUPP_FIELDS.forEach(function(f) { totals[f] = 0; });
+      var totalVol = 0;
+      var hasAny = false;
+
+      // Track which products contribute and whic...
