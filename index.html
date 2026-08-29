@@ -612,6 +612,7 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
       <span style="font-size: 16px; font-weight: 700;">Tube Feed Calculation</span>
       <div style="display: flex; gap: 6px;">
+        <button class="supp-add-btn" onclick="openCatManager('supp')" style="background: var(--bg-tertiary); color: var(--text-primary);"><i class="fas fa-tags" style="font-size: 10px;"></i> Cat</button>
         <button class="supp-add-btn auth-only" onclick="toggleSuppManage()" style="background: var(--bg-tertiary); color: var(--text-primary);"><i class="fas fa-cog" style="font-size: 10px;"></i> Manage</button>
         <button class="supp-add-btn auth-only" onclick="openSuppModal('add')"><i class="fas fa-plus" style="font-size: 10px;"></i> New</button>
       </div>
@@ -657,6 +658,7 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
       <span style="font-size: 16px; font-weight: 700;">Paediatric Milk</span>
       <div style="display: flex; gap: 6px;">
+        <button class="supp-add-btn" onclick="openCatManager('ped')" style="background: var(--bg-tertiary); color: var(--text-primary);"><i class="fas fa-tags" style="font-size: 10px;"></i> Cat</button>
         <button class="supp-add-btn auth-only" onclick="toggleFormulaManage()" style="background: var(--bg-tertiary); color: var(--text-primary);"><i class="fas fa-cog" style="font-size: 10px;"></i> Manage</button>
         <button class="supp-add-btn auth-only" onclick="openFormulaModal('add')"><i class="fas fa-plus" style="font-size: 10px;"></i> New</button>
       </div>
@@ -1086,6 +1088,33 @@
     </div>
   </div>
 
+
+  <!-- Category Manager Modal (shared for supp + ped) -->
+  <div id="cat-manager-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.5);overflow-y:auto;-webkit-overflow-scrolling:touch;">
+    <div style="max-width:420px;margin:60px auto 40px;background:var(--bg-primary);border-radius:16px;padding:20px;margin-left:16px;margin-right:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <span id="cat-mgr-title" style="font-size:16px;font-weight:700;">Manage Categories</span>
+        <button onclick="closeCatManager()" style="background:none;border:none;font-size:20px;color:var(--text-secondary);cursor:pointer;">✕</button>
+      </div>
+      <div id="cat-mgr-list" style="margin-bottom:12px;max-height:50vh;overflow-y:auto;"></div>
+      <div style="display:flex;gap:8px;">
+        <input type="text" class="input-field" id="cat-mgr-new" placeholder="New category name" style="flex:1;" onkeydown="if(event.key==='Enter')addCatItem()">
+        <button class="btn btn-primary" onclick="addCatItem()" style="width:auto;padding:10px 16px;"><i class="fas fa-plus"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Rename Modal -->
+  <div id="cat-rename-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:10000;background:rgba(0,0,0,0.5);overflow-y:auto;-webkit-overflow-scrolling:touch;">
+    <div style="max-width:380px;margin:100px auto;background:var(--bg-primary);border-radius:16px;padding:20px;margin-left:16px;margin-right:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <span style="font-size:15px;font-weight:700;">Rename Category</span>
+        <button onclick="closeCatRename()" style="background:none;border:none;font-size:18px;color:var(--text-secondary);cursor:pointer;">✕</button>
+      </div>
+      <input type="text" class="input-field" id="cat-rename-input" placeholder="New name" style="margin-bottom:12px;" onkeydown="if(event.key==='Enter')confirmCatRename()">
+      <button class="btn btn-primary" onclick="confirmCatRename()" style="width:100%;">Save</button>
+    </div>
+  </div>
 
   <!-- Tab: Stock (Nutrition Formula Inventory) -->
   <div id="tab-stock" class="tab-content">
@@ -2272,6 +2301,31 @@
       fbLoadSuppDB(function() {
         initSuppDropdowns();
       });
+      // Load category lists from Firebase
+      if (fbDb) {
+        fbDb.ref('suppCategories').once('value').then(function(snap) {
+          var data = snap.val();
+          if (data && Array.isArray(data) && data.length > 0) {
+            suppCategories = data;
+            localSave('suppCategories', suppCategories);
+          } else if (suppCategories.length > 0) {
+            fbDb.ref('suppCategories').set(suppCategories);
+          }
+          rebuildCatSelectOptions('ns-category', suppCategories);
+          refreshAllSuppDropdowns();
+        });
+        fbDb.ref('pedCategories').once('value').then(function(snap) {
+          var data = snap.val();
+          if (data && Array.isArray(data) && data.length > 0) {
+            pedCategories = data;
+            localSave('pedCategories', pedCategories);
+          } else if (pedCategories.length > 0) {
+            fbDb.ref('pedCategories').set(pedCategories);
+          }
+          rebuildCatSelectOptions('fm-category', pedCategories);
+          populateFormulaDropdown();
+        });
+      }
       fbLoadFoodOptions(function() {
         fbLoadFoodDB(function() {
           populateFoodCategories();
@@ -2301,6 +2355,8 @@
       if (!fbReady || !fbDb) return;
       fbDb.ref('formulaDatabase').set(formulaDatabase);
       fbDb.ref('supplements').set({ items: suppDB, nextId: suppNextId });
+      fbDb.ref('suppCategories').set(suppCategories);
+      fbDb.ref('pedCategories').set(pedCategories);
       fbDb.ref('stock').set({ items: stockItems, categories: stockCategories });
       fbDb.ref('tmhFoodDB').set({ items: tmhFoodDB, nextId: tmhFoodNextId });
       fbDb.ref('foodOptions').set({
@@ -2336,6 +2392,25 @@
           localSave('formulaDB', data);
           initFormulaNextId();
           initFormulaGrid();
+        }
+      }).catch(function() {});
+      // Load category lists
+      fbDb.ref('suppCategories').once('value').then(function(snap) {
+        var data = snap.val();
+        if (data && Array.isArray(data) && data.length > 0) {
+          suppCategories = data;
+          localSave('suppCategories', suppCategories);
+          rebuildCatSelectOptions('ns-category', suppCategories);
+          refreshAllSuppDropdowns();
+        }
+      }).catch(function() {});
+      fbDb.ref('pedCategories').once('value').then(function(snap) {
+        var data = snap.val();
+        if (data && Array.isArray(data) && data.length > 0) {
+          pedCategories = data;
+          localSave('pedCategories', pedCategories);
+          rebuildCatSelectOptions('fm-category', pedCategories);
+          populateFormulaDropdown();
         }
       }).catch(function() {});
       // Load food
@@ -2456,6 +2531,15 @@
         if (cachedStock.items && cachedStock.items.length > 0) stockItems = cachedStock.items;
         if (cachedStock.categories && cachedStock.categories.length > 0) stockCategories = cachedStock.categories;
         console.log('Loaded ' + stockItems.length + ' stock items from local cache');
+      }
+      // Load cached category lists
+      var cachedSuppCats = localLoad('suppCategories');
+      if (cachedSuppCats && Array.isArray(cachedSuppCats) && cachedSuppCats.length > 0) {
+        suppCategories = cachedSuppCats;
+      }
+      var cachedPedCats = localLoad('pedCategories');
+      if (cachedPedCats && Array.isArray(cachedPedCats) && cachedPedCats.length > 0) {
+        pedCategories = cachedPedCats;
       }
     }
 
@@ -3499,6 +3583,10 @@
       document.getElementById('res-protein-req').textContent = bw && pf ? Math.round(bw * pf) : '--';
     }
 
+    // Category lists for adult supplements and paediatric milks
+    var suppCategories = ['Standard Formula', 'Higher Energy Formula', 'DM Formula', 'Renal Formula', 'Wound Healing Formula', 'Cancer Formula', 'Hepatic Formula', 'Modular', 'Medications', 'Others'];
+    var pedCategories = ['Amino Acid Formula', 'Extensively Hydrolyzed Formula', 'High Energy Formula (<1 year)', 'High Energy Formula (>1 year)', 'Soy/Lactose-free Formula', 'Stage 1 Formula (0-6m)', 'Stage 2 Formula (6-12m)', 'Stage 3 Formula (1-3y)', 'Preterm Formula', 'Other'];
+
     // Supplements - user-defined (values per 100mL)
     let suppDB = [
       { id:1, name:'Isocal HN', category:'', dilution:'', notes:'',
@@ -4515,15 +4603,17 @@
       var html = '<option value="">-- Select --</option>';
       var suppGroups = {};
       suppDB.forEach(function(s) {
-        var cat = s.category || 'Adult Formula';
+        var cat = s.category || 'Uncategorized';
         if (!suppGroups[cat]) suppGroups[cat] = [];
         suppGroups[cat].push(s);
       });
-      Object.keys(suppGroups).sort(function(a,b) {
-        if (a === 'Adult Formula') return -1;
-        if (b === 'Adult Formula') return 1;
-        return a.localeCompare(b);
-      }).forEach(function(cat) {
+      // Use suppCategories order, then any remaining categories
+      var orderedCats = suppCategories.slice();
+      Object.keys(suppGroups).forEach(function(cat) {
+        if (orderedCats.indexOf(cat) < 0) orderedCats.push(cat);
+      });
+      orderedCats.forEach(function(cat) {
+        if (!suppGroups[cat] || suppGroups[cat].length === 0) return;
         html += '<optgroup label="' + cat + '">';
         suppGroups[cat].forEach(function(s) {
           var key = 's:' + s.id;
@@ -4537,37 +4627,47 @@
 
     function buildPedDropdownHTML(selectedVal) {
       var html = '<option value="">-- Select --</option>';
-      var currentCat = '';
+      var pedGroups = {};
       formulaDatabase.forEach(function(f) {
-        if (f.category !== currentCat) {
-          if (currentCat !== '') html += '</optgroup>';
-          html += '<optgroup label="' + f.category + '">';
-          currentCat = f.category;
-        }
-        var displayName = f.nameCN ? f.name + ' (' + f.nameCN + ')' : f.name;
-        var key = 'f:' + f.id;
-        var sel = (selectedVal === key) ? ' selected' : '';
-        html += '<option value="' + key + '"' + sel + '>' + displayName + '</option>';
+        var cat = f.category || 'Uncategorized';
+        if (!pedGroups[cat]) pedGroups[cat] = [];
+        pedGroups[cat].push(f);
       });
-      if (currentCat !== '') html += '</optgroup>';
+      // Use pedCategories order, then any remaining categories
+      var orderedCats = pedCategories.slice();
+      Object.keys(pedGroups).forEach(function(cat) {
+        if (orderedCats.indexOf(cat) < 0) orderedCats.push(cat);
+      });
+      orderedCats.forEach(function(cat) {
+        if (!pedGroups[cat] || pedGroups[cat].length === 0) return;
+        html += '<optgroup label="' + cat + '">';
+        pedGroups[cat].forEach(function(f) {
+          var displayName = f.nameCN ? f.name + ' (' + f.nameCN + ')' : f.name;
+          var key = 'f:' + f.id;
+          var sel = (selectedVal === key) ? ' selected' : '';
+          html += '<option value="' + key + '"' + sel + '>' + displayName + '</option>';
+        });
+        html += '</optgroup>';
+      });
       return html;
     }
 
     function buildCombinedDropdownHTML(selectedVal) {
       var html = '<option value="">-- Select --</option>';
-      // Adult formulas grouped by category
+      // Adult formulas grouped by category using suppCategories order
       var suppGroups = {};
       suppDB.forEach(function(s) {
-        var cat = s.category || 'Adult Formula';
+        var cat = s.category || 'Uncategorized';
         if (!suppGroups[cat]) suppGroups[cat] = [];
         suppGroups[cat].push(s);
       });
-      Object.keys(suppGroups).sort(function(a,b) {
-        if (a === 'Adult Formula') return -1;
-        if (b === 'Adult Formula') return 1;
-        return a.localeCompare(b);
-      }).forEach(function(cat) {
-        var label = (cat === 'Adult Formula') ? cat : 'Adult – ' + cat;
+      var orderedSuppCats = suppCategories.slice();
+      Object.keys(suppGroups).forEach(function(cat) {
+        if (orderedSuppCats.indexOf(cat) < 0) orderedSuppCats.push(cat);
+      });
+      orderedSuppCats.forEach(function(cat) {
+        if (!suppGroups[cat] || suppGroups[cat].length === 0) return;
+        var label = 'Adult – ' + cat;
         html += '<optgroup label="' + label + '">';
         suppGroups[cat].forEach(function(s) {
           var key = 's:' + s.id;
@@ -4576,20 +4676,28 @@
         });
         html += '</optgroup>';
       });
-      // Ped milk grouped by category
-      var currentCat = '';
+      // Ped milk grouped by category using pedCategories order
+      var pedGroups = {};
       formulaDatabase.forEach(function(f) {
-        if (f.category !== currentCat) {
-          if (currentCat !== '') html += '</optgroup>';
-          html += '<optgroup label="' + f.category + '">';
-          currentCat = f.category;
-        }
-        var displayName = f.nameCN ? f.name + ' (' + f.nameCN + ')' : f.name;
-        var key = 'f:' + f.id;
-        var sel = (selectedVal === key) ? ' selected' : '';
-        html += '<option value="' + key + '"' + sel + '>' + displayName + '</option>';
+        var cat = f.category || 'Uncategorized';
+        if (!pedGroups[cat]) pedGroups[cat] = [];
+        pedGroups[cat].push(f);
       });
-      if (currentCat !== '') html += '</optgroup>';
+      var orderedPedCats = pedCategories.slice();
+      Object.keys(pedGroups).forEach(function(cat) {
+        if (orderedPedCats.indexOf(cat) < 0) orderedPedCats.push(cat);
+      });
+      orderedPedCats.forEach(function(cat) {
+        if (!pedGroups[cat] || pedGroups[cat].length === 0) return;
+        html += '<optgroup label="' + cat + '">';
+        pedGroups[cat].forEach(function(f) {
+          var displayName = f.nameCN ? f.name + ' (' + f.nameCN + ')' : f.name;
+          var key = 'f:' + f.id;
+          var sel = (selectedVal === key) ? ' selected' : '';
+          html += '<option value="' + key + '"' + sel + '>' + displayName + '</option>';
+        });
+        html += '</optgroup>';
+      });
       return html;
     }
 
@@ -4730,7 +4838,154 @@
       document.getElementById('supp-results-container').innerHTML = buildSuppResultsHTML(emptyTotals, 0, 0, false);
     }
 
+    // =============================================
+    // Category Manager (shared for supp + ped)
+    // =============================================
+    var catMgrType = ''; // 'supp' or 'ped'
+    var catRenameIdx = -1;
+
+    function openCatManager(type) {
+      catMgrType = type;
+      var title = type === 'supp' ? 'Adult Formula Categories' : 'Paediatric Milk Categories';
+      document.getElementById('cat-mgr-title').textContent = title;
+      document.getElementById('cat-mgr-new').value = '';
+      renderCatMgrList();
+      document.getElementById('cat-manager-modal').style.display = '';
+    }
+
+    function closeCatManager() {
+      document.getElementById('cat-manager-modal').style.display = 'none';
+    }
+
+    function getCatList() {
+      return catMgrType === 'supp' ? suppCategories : pedCategories;
+    }
+
+    function renderCatMgrList() {
+      var list = getCatList();
+      var container = document.getElementById('cat-mgr-list');
+      if (list.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-secondary);font-size:13px;">No categories yet. Add one below.</div>';
+        return;
+      }
+      container.innerHTML = list.map(function(cat, idx) {
+        var isFirst = idx === 0;
+        var isLast = idx === list.length - 1;
+        return '<div style="display:flex;align-items:center;gap:6px;padding:8px 4px;border-bottom:1px solid var(--border-color);">' +
+          '<span style="flex:1;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + cat + '</span>' +
+          '<button onclick="moveCat(' + idx + ',-1)" style="background:none;border:none;font-size:13px;cursor:pointer;padding:4px;color:' + (isFirst ? 'var(--text-tertiary)' : 'var(--accent)') + ';" ' + (isFirst ? 'disabled' : '') + '><i class="fas fa-arrow-up"></i></button>' +
+          '<button onclick="moveCat(' + idx + ',1)" style="background:none;border:none;font-size:13px;cursor:pointer;padding:4px;color:' + (isLast ? 'var(--text-tertiary)' : 'var(--accent)') + ';" ' + (isLast ? 'disabled' : '') + '><i class="fas fa-arrow-down"></i></button>' +
+          '<button onclick="openCatRename(' + idx + ')" style="background:none;border:none;font-size:13px;cursor:pointer;padding:4px;color:var(--text-secondary);"><i class="fas fa-pen"></i></button>' +
+          '<button onclick="deleteCat(' + idx + ')" style="background:none;border:none;font-size:13px;cursor:pointer;padding:4px;color:#ef4444;"><i class="fas fa-times"></i></button>' +
+        '</div>';
+      }).join('');
+    }
+
+    function moveCat(idx, direction) {
+      var list = getCatList();
+      var newIdx = idx + direction;
+      if (newIdx < 0 || newIdx >= list.length) return;
+      var temp = list[idx];
+      list[idx] = list[newIdx];
+      list[newIdx] = temp;
+      renderCatMgrList();
+      saveCatList();
+    }
+
+    function openCatRename(idx) {
+      catRenameIdx = idx;
+      var list = getCatList();
+      document.getElementById('cat-rename-input').value = list[idx];
+      document.getElementById('cat-rename-modal').style.display = '';
+      setTimeout(function() { document.getElementById('cat-rename-input').focus(); }, 100);
+    }
+
+    function closeCatRename() {
+      document.getElementById('cat-rename-modal').style.display = 'none';
+      catRenameIdx = -1;
+    }
+
+    function confirmCatRename() {
+      var list = getCatList();
+      var newName = document.getElementById('cat-rename-input').value.trim();
+      if (!newName || catRenameIdx < 0) return;
+      var oldName = list[catRenameIdx];
+      if (newName === oldName) { closeCatRename(); return; }
+      // Check for duplicate
+      if (list.indexOf(newName) >= 0) { closeCatRename(); return; }
+      // Cascade rename to all items
+      list[catRenameIdx] = newName;
+      if (catMgrType === 'supp') {
+        suppDB.forEach(function(s) { if (s.category === oldName) s.category = newName; });
+        saveSuppData();
+      } else {
+        formulaDatabase.forEach(function(f) { if (f.category === oldName) f.category = newName; });
+        saveFormulaData();
+      }
+      closeCatRename();
+      renderCatMgrList();
+      saveCatList();
+    }
+
+    function deleteCat(idx) {
+      var list = getCatList();
+      list.splice(idx, 1);
+      renderCatMgrList();
+      saveCatList();
+    }
+
+    function addCatItem() {
+      var input = document.getElementById('cat-mgr-new');
+      var name = input.value.trim();
+      if (!name) return;
+      var list = getCatList();
+      if (list.indexOf(name) >= 0) { input.value = ''; return; }
+      list.push(name);
+      input.value = '';
+      renderCatMgrList();
+      saveCatList();
+    }
+
+    function rebuildCatSelectOptions(selectId, cats) {
+      var sel = document.getElementById(selectId);
+      if (!sel) return;
+      var curVal = sel.value;
+      var html = '<option value="">-- Select Category --</option>';
+      cats.forEach(function(c) {
+        html += '<option value="' + c + '">' + c + '</option>';
+      });
+      sel.innerHTML = html;
+      // Restore previous value if still in list
+      if (curVal && cats.indexOf(curVal) >= 0) sel.value = curVal;
+    }
+
+    function saveSuppData() {
+      localSave('suppDB', { items: suppDB, nextId: suppNextId });
+      if (fbReady && fbDb) fbDb.ref('supplements').set({ items: suppDB, nextId: suppNextId });
+    }
+
+    function saveFormulaData() {
+      localSave('formulaDB', formulaDatabase);
+      if (fbReady && fbDb) fbDb.ref('formulaDatabase').set(formulaDatabase);
+    }
+
+    function saveCatList() {
+      if (catMgrType === 'supp') {
+        localSave('suppCategories', suppCategories);
+        if (fbReady && fbDb) fbDb.ref('suppCategories').set(suppCategories);
+        rebuildCatSelectOptions('ns-category', suppCategories);
+        refreshAllSuppDropdowns();
+      } else {
+        localSave('pedCategories', pedCategories);
+        if (fbReady && fbDb) fbDb.ref('pedCategories').set(pedCategories);
+        rebuildCatSelectOptions('fm-category', pedCategories);
+        populateFormulaDropdown();
+      }
+    }
+
     // Close modals on overlay click
+    document.getElementById('cat-manager-modal').addEventListener('click', function(e) { if (e.target === this) closeCatManager(); });
+    document.getElementById('cat-rename-modal').addEventListener('click', function(e) { if (e.target === this) closeCatRename(); });
     document.getElementById('supp-modal').addEventListener('click', function(e) { if (e.target === this) closeSuppModal(); });
     document.getElementById('supp-info-modal').addEventListener('click', function(e) { if (e.target === this) closeSuppInfoModal(); });
     document.getElementById('formula-modal').addEventListener('click', function(e) { if (e.target === this) closeFormulaModal(); });
