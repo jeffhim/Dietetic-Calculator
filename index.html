@@ -654,8 +654,20 @@
       <!-- Adjustment factors (aligned to 3 columns matching above) -->
       <div class="input-row three" style="margin-top:8px;">
         <div class="input-group">
-          <label class="input-label">Energy Adj.</label>
+          <label class="input-label">Energy Adj. <span onclick="toggleEnergyAdjRef()" style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--primary-color);color:#fff;font-size:11px;font-weight:700;cursor:pointer;vertical-align:middle;margin-left:2px;line-height:1;">!</span></label>
           <input type="number" class="input-field" id="ped-energy-adj" placeholder="1" value="1" step="0.1" min="0" oninput="calculatePedRealtime()" onfocus="this.select()">
+          <div id="energy-adj-ref-table" style="display:none;margin-top:6px;background:var(--card-bg);border:1px solid var(--border-color);border-radius:8px;padding:8px;font-size:12px;width:max-content;max-width:100%;">
+            <table style="border-collapse:collapse;width:100%;">
+              <thead><tr style="border-bottom:2px solid var(--border-color);"><th style="text-align:left;padding:3px 8px 3px 4px;font-weight:700;color:var(--text-primary);">Age</th><th style="text-align:right;padding:3px 4px;font-weight:700;color:var(--text-primary);">Energy Adj.</th></tr></thead>
+              <tbody>
+                <tr><td style="padding:2px 8px 2px 4px;color:var(--text-secondary);">&lt;3 months</td><td style="text-align:right;padding:2px 4px;color:var(--text-primary);">× 0.90</td></tr>
+                <tr><td style="padding:2px 8px 2px 4px;color:var(--text-secondary);">9–12 months</td><td style="text-align:right;padding:2px 4px;color:var(--text-primary);">× 0.85</td></tr>
+                <tr><td style="padding:2px 8px 2px 4px;color:var(--text-secondary);">2–3 years</td><td style="text-align:right;padding:2px 4px;color:var(--text-primary);">× 0.77</td></tr>
+                <tr><td style="padding:2px 8px 2px 4px;color:var(--text-secondary);">4–5 years</td><td style="text-align:right;padding:2px 4px;color:var(--text-primary);">× 0.72</td></tr>
+                <tr><td style="padding:2px 8px 2px 4px;color:var(--text-secondary);">9–10 years</td><td style="text-align:right;padding:2px 4px;color:var(--text-primary);">× 0.74</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
         <div class="input-group">
           <label class="input-label">Protein Adj.</label>
@@ -3409,6 +3421,11 @@
       updateGrowthChart();
     }
 
+    function toggleEnergyAdjRef() {
+      var el = document.getElementById('energy-adj-ref-table');
+      el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+
     function calculatePedRealtime() {
       var rv = getPedReqValues();
       var weight = rv.weight;
@@ -4818,7 +4835,7 @@
       html += '<tr class="supp-section-row macro"><td colspan="4">Macronutrients</td></tr>';
       html += '<tr><td>Energy (kcal)</td><td>' + (hasAny && kcal != null ? Math.round(kcal) : '') + flag('kcal','Energy (kcal)') + '</td><td>Vol (mL)</td><td>' + (hasAny && totalVol ? Math.round(totalVol) : '') + '</td></tr>';
       html += '<tr><td>kcal/kg</td><td>' + fmtPkg(kcal) + '</td><td>mL/kg</td><td>' + fmtPkg(totalVol) + '</td></tr>';
-      html += '<tr><td>Protein (g)</td><td>' + fmtV(pro) + flag('protein','Protein (g)') + '</td><td>%TE Pro</td><td>' + (hasAny && pTE > 0 ? pTE.toFixed(1) : '') + '</td></tr>';
+      html += '<tr><td>Protein (g)</td><td>' + fmtV(pro) + flag('protein','Protein (g)') + '</td><td>%TE Pro <span style="font-size:9px;color:var(--text-secondary);font-weight:400;">(7.2-12%)</span></td><td>' + (hasAny && pTE > 0 ? pTE.toFixed(1) : '') + '</td></tr>';
       html += '<tr><td>Pro g/kg</td><td>' + fmtPkg(pro) + '</td><td>%TE CHO</td><td>' + (hasAny && cTE > 0 ? cTE.toFixed(1) : '') + '</td></tr>';
       html += '<tr><td>CHO (g)</td><td>' + fmtV(carbs) + flag('carbs','CHO (g)') + '</td><td>%TE Fat</td><td>' + (hasAny && fTE > 0 ? fTE.toFixed(1) : '') + '</td></tr>';
       html += '<tr><td>Fat (g)</td><td>' + fmtV(fat) + flag('fat','Fat (g)') + '</td><td>Fibre (g)</td><td>' + fmtV(totals.fibre) + flag('fibre','Fibre (g)') + '</td></tr>';
