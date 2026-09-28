@@ -14,14 +14,14 @@
   <!-- <link rel="manifest" href="manifest.json"> -->
   <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700&family=SF+Pro+Text:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <!-- PDF.js for rendering growth charts (async – not needed at startup) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" async></script>
-  <!-- SheetJS for Excel import/export (async – not needed at startup) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" async></script>
-  <!-- Firebase SDK (compat for simpler API) — defer so page renders first -->
-  <script src="https://cdn.jsdelivr.net/npm/firebase@11.7.1/firebase-app-compat.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/firebase@11.7.1/firebase-auth-compat.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/firebase@11.7.1/firebase-database-compat.min.js" defer></script>
+  <!-- PDF.js for rendering growth charts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- SheetJS for Excel import/export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- Firebase SDK (compat for simpler API) -->
+  <script src="https://cdn.jsdelivr.net/npm/firebase@11.7.1/firebase-app-compat.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@11.7.1/firebase-auth-compat.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@11.7.1/firebase-database-compat.min.js"></script>
   <style>
     :root {
       --bg-primary: #f0faf6;
@@ -522,6 +522,66 @@
           <img id="gc-fullscreen-img" style="transform-origin:0 0;max-width:100%;max-height:100%;user-select:none;-webkit-user-drag:none;" draggable="false" alt="Growth Chart">
         </div>
       </div>
+
+      <!-- Growth Rate Reference Table -->
+      <div style="margin-top:14px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid var(--border-color);">Expected Growth Rate</div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="background:var(--bg-tertiary);">
+              <th style="padding:8px 6px;text-align:left;font-weight:600;border-bottom:2px solid var(--border-color);width:40%;">Age</th>
+              <th style="padding:8px 6px;text-align:center;font-weight:600;border-bottom:2px solid var(--border-color);color:#3b82f6;width:30%;"><i class="fas fa-mars" style="margin-right:3px;"></i>Boy</th>
+              <th style="padding:8px 6px;text-align:center;font-weight:600;border-bottom:2px solid var(--border-color);color:#ec4899;width:30%;"><i class="fas fa-venus" style="margin-right:3px;"></i>Girl</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid var(--border-color);">
+              <td style="padding:7px 6px;">At birth, 50th percentile</td>
+              <td style="padding:7px 6px;text-align:center;font-weight:600;">3.2 kg</td>
+              <td style="padding:7px 6px;text-align:center;font-weight:600;">3.1 kg</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border-color);background:var(--bg-tertiary);">
+              <td style="padding:7px 6px;">3-5 days</td>
+              <td style="padding:7px 6px;text-align:center;color:var(--text-secondary);"><i class="fas fa-arrow-trend-down" style="color:#ef4444;"></i> wt loss</td>
+              <td style="padding:7px 6px;text-align:center;color:var(--text-secondary);"><i class="fas fa-arrow-trend-down" style="color:#ef4444;"></i> wt loss</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border-color);">
+              <td style="padding:7px 6px;">10-14 days</td>
+              <td style="padding:7px 6px;text-align:center;">Birth weight</td>
+              <td style="padding:7px 6px;text-align:center;">Birth weight</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border-color);background:var(--bg-tertiary);">
+              <td style="padding:7px 6px;">0-3 months</td>
+              <td style="padding:7px 6px;text-align:center;font-weight:600;">240 g/week</td>
+              <td style="padding:7px 6px;text-align:center;font-weight:600;">210 g/week</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border-color);">
+              <td style="padding:7px 6px;">4-6 months</td>
+              <td style="padding:7px 6px;text-align:center;font-weight:600;">130 g/week</td>
+              <td style="padding:7px 6px;text-align:center;font-weight:600;">120 g/week</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border-color);background:var(--bg-tertiary);">
+              <td style="padding:7px 6px;">7-9 months</td>
+              <td style="padding:7px 6px;text-align:center;font-weight:600;">80 g/week</td>
+              <td style="padding:7px 6px;text-align:center;font-weight:600;">75 g/week</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border-color);">
+              <td style="padding:7px 6px;">10-12 months</td>
+              <td style="padding:7px 6px;text-align:center;font-weight:600;">65 g/week</td>
+              <td style="padding:7px 6px;text-align:center;font-weight:600;">60 g/week</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border-color);background:var(--bg-tertiary);">
+              <td style="padding:7px 6px;">2 years old</td>
+              <td colspan="2" style="padding:7px 6px;text-align:center;">2-3 kg, 10 cm</td>
+            </tr>
+            <tr>
+              <td style="padding:7px 6px;">Until puberty<br><span style="font-size:11px;color:var(--text-secondary);">(M: 9-14, F: 8-13)</span></td>
+              <td colspan="2" style="padding:7px 6px;text-align:center;">2-3 kg, steadily decrease to 5 cm/year</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
       <div class="section-divider"></div>
       <!-- Normal vs Critical toggle -->
       <div class="input-group">
@@ -2174,6 +2234,13 @@
   </div>
 
   <script>
+    // Global error handler — shows JS errors visually on the page
+    window.onerror = function(msg, url, line, col, err) {
+      var d = document.createElement('div');
+      d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#ff0000;color:#fff;padding:12px 16px;font-size:13px;font-family:monospace;word-break:break-all;';
+      d.textContent = 'JS ERROR line ' + line + ': ' + msg;
+      document.body.appendChild(d);
+    };
     // Dark mode
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       document.documentElement.classList.add('dark');
